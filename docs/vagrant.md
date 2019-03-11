@@ -86,4 +86,4 @@ export CERTHASH=""
 pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cert-hash $CERTHASH --kubernetes-api-server 192.168.64.11:6443
 ```
 
-Note that you can add as many worker nodes as you fish repeating the commands above. You can check the status of the containers by issueing `crictl ps`
+Note that you can add as many worker nodes as you wish repeating the commands above. You can check the status of the containers by issueing `crictl ps`
