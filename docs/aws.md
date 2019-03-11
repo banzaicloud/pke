@@ -76,7 +76,7 @@ aws ec2 run-instances --image-id ami-3548444c \
 Once you single master instance booted up, SSH into it with the key file configured. Run the following commands as root:
 
 ```
-curl -v https://banzaicloud.com/downloads/pke/pke-0.1.0 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.1.1 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -103,7 +103,7 @@ aws ec2 describe-instances --output json | jq '.Reservations[].Instances[]|[.Ins
 To install the cluster, set the `MASTER_IP_ADDRESS` variable, and run:
 
 ```
-curl -v https://banzaicloud.com/downloads/pke/pke-0.1.0 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.1.1 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -130,7 +130,7 @@ pke token create
 To install a worker node, run the following commands. Take note that you'd need to set the TOKEN and CERTHASH variables from above.
 
 ```
-curl -v https://banzaicloud.com/downloads/pke/pke-0.0.12 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.1.1 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
