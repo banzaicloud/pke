@@ -10,7 +10,9 @@ A flat network between nodes is required. Port `6443` (K8s API server) should be
 
 ### The `pke` binary
 
-Check get a particular release please follow the release page on [GitHub](https://github.com/banzaicloud/pke/releases)
+You can download a particular binary release from the project's release page on [GitHub](https://github.com/banzaicloud/pke/releases). Our guides assume that the executable is available as `pke` in the system PATH.
+
+You can also use the following commands as root to achieve this:
 
 
 ```
