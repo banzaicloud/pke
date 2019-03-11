@@ -1,0 +1,160 @@
+package certificates
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"os"
+
+	"github.com/antihax/optional"
+	"github.com/banzaicloud/pipeline/client"
+	"github.com/banzaicloud/pke/cmd/pke/app/constants"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+)
+
+const (
+	use   = "pipeline-certificates"
+	short = "Pipeline pre-generated certificate download"
+
+	etcdDir                 = "/etc/kubernetes/pki/etcd"
+	etcdCACert              = "/etc/kubernetes/pki/etcd/ca.crt"
+	etcdCAKey               = "/etc/kubernetes/pki/etcd/ca.key"
+	kubernetesCASigningCert = "/etc/kubernetes/pki/cm-signing-ca.crt"
+	kubernetesCACert        = "/etc/kubernetes/pki/ca.crt"
+	kubernetesCAKey         = "/etc/kubernetes/pki/ca.key"
+	frontProxyCACert        = "/etc/kubernetes/pki/front-proxy-ca.crt"
+	frontProxyCAKey         = "/etc/kubernetes/pki/front-proxy-ca.key"
+)
+
+var _ phases.Runnable = (*Certificates)(nil)
+
+type Certificates struct {
+	pipelineAPIEndpoint    string
+	pipelineAPIToken       string
+	pipelineOrganizationID int32
+	pipelineClusterID      int32
+}
+
+func NewCommand(out io.Writer) *cobra.Command {
+	return phases.NewCommand(out, &Certificates{})
+}
+
+func (c *Certificates) Use() string {
+	return use
+}
+
+func (c *Certificates) Short() string {
+	return short
+}
+
+func (c *Certificates) RegisterFlags(flags *pflag.FlagSet) {
+	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
+	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
+	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
+	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
+}
+
+func (c *Certificates) Validate(cmd *cobra.Command) error {
+	if !pipeline.Enabled(cmd) {
+		// TODO: Warning
+		return nil
+	}
+
+	var err error
+	c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID, err = pipeline.CommandArgs(cmd)
+	if err != nil {
+		return err
+	}
+
+	return pipeline.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID)
+}
+
+func (c *Certificates) Run(out io.Writer) error {
+	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
+
+	if err := pipeline.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID); err != nil {
+		_, _ = fmt.Fprintf(out, "[WARNING] Skipping %s phase due to missing Pipeline API endpoint. err: %v\n", use, err)
+		return nil
+	}
+
+	var err error
+	req := &client.GetSecretsOpts{
+		Type_:  optional.NewString("pkecert"),
+		Values: optional.NewBool(true),
+		Tags:   optional.NewInterface([]string{fmt.Sprintf("clusterID:%d", c.pipelineClusterID)}),
+	}
+	pc := pipeline.Client(out, c.pipelineAPIEndpoint, c.pipelineAPIToken)
+	secrets, _, err := pc.SecretsApi.GetSecrets(context.Background(), c.pipelineOrganizationID, req)
+	if err != nil {
+		return err
+	}
+	if n := len(secrets); n <= 0 || n > 1 {
+		ids := func(secrets []client.SecretItem) []string {
+			ids := make([]string, len(secrets))
+			for k, s := range secrets {
+				ids[k] = s.Id
+			}
+			return ids
+		}(secrets)
+
+		return errors.New(fmt.Sprintf("multiple or none PKE certificates are returned for cluster: %q", ids))
+	}
+
+	secret := secrets[0]
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, etcdDir)
+	err = os.MkdirAll(etcdDir, 0750)
+	if err != nil {
+		return err
+	}
+	// /etc/kubernetes/pki/etcd/ca.crt
+	if err = write(out, etcdCACert, secret.Values["etcdCaCert"]); err != nil {
+		return err
+	}
+
+	// /etc/kubernetes/pki/etcd/ca.key
+	if err = write(out, etcdCAKey, secret.Values["etcdCaKey"]); err != nil {
+		return err
+	}
+
+	// /etc/kubernetes/pki/cm-signing-ca.crt
+	if err = write(out, kubernetesCASigningCert, secret.Values["kubernetesCaSigningCert"]); err != nil {
+		return err
+	}
+
+	// /etc/kubernetes/pki/ca.crt
+	if err = write(out, kubernetesCACert, secret.Values["kubernetesCaCert"]); err != nil {
+		return err
+	}
+
+	// /etc/kubernetes/pki/ca.key
+	if err = write(out, kubernetesCAKey, secret.Values["kubernetesCaKey"]); err != nil {
+		return err
+	}
+
+	// /etc/kubernetes/pki/front-proxy-ca.crt
+	if err = write(out, frontProxyCACert, secret.Values["frontProxyCaCert"]); err != nil {
+		return err
+	}
+
+	// /etc/kubernetes/pki/front-proxy-ca.key
+	if err = write(out, frontProxyCAKey, secret.Values["frontProxyCaKey"]); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func write(out io.Writer, filename string, value interface{}) error {
+	_, _ = fmt.Fprintf(out, "[%s] writing file: %s\n", use, filename)
+	if v, ok := value.(string); ok {
+		return file.Overwrite(filename, v)
+	}
+
+	return errors.New(fmt.Sprintf("unexpected interface type. expected string, got: %T", value))
+}
