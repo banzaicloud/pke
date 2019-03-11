@@ -80,7 +80,7 @@ curl -v https://banzaicloud.com/downloads/pke/pke-0.1.1 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
-pke install single
+pke install single --kubernetes-cloud-provider=aws
 mkdir -p $HOME/.kube
 cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 chown $(id -u):$(id -g) $HOME/.kube/config
@@ -107,7 +107,7 @@ curl -v https://banzaicloud.com/downloads/pke/pke-0.1.1 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
-pke install master --kubernetes-advertise-address=${MASTER_IP_ADDRESS} --kubernetes-api-server=${MASTER_IP_ADDRESS}:6443 
+pke install master --kubernetes-advertise-address=${MASTER_IP_ADDRESS} --kubernetes-api-server=${MASTER_IP_ADDRESS}:6443 --kubernetes-cloud-provider=aws
 mkdir -p $HOME/.kube
 cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 chown $(id -u):$(id -g) $HOME/.kube/config
@@ -137,7 +137,7 @@ export PATH=$PATH:/usr/local/bin/
 # copy values from master node
 TOKEN=""
 CERTHASH=""
-pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cert-hash $CERTHASH --kubernetes-api-server 192.168.64.11:6443
+pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cert-hash $CERTHASH --kubernetes-api-server 192.168.64.11:6443 --kubernetes-cloud-provider=aws
 ```
 
 Note that you can add as many worker nodes as you wish repeating the commands above. You can check the status of the containers by issuing `crictl ps`
