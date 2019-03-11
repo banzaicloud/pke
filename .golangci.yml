@@ -1,0 +1,22 @@
+linters:
+    enable-all: true
+    disable:
+        - maligned
+
+        # TODO: fix these
+        - gosimple
+        - staticcheck
+        - ineffassign
+        - structcheck
+        - lll
+        - gochecknoglobals
+        - nakedret
+        - gosec
+        - unparam
+        - interfacer
+        - unused
+        - golint
+
+linters-settings:
+    golint:
+        min-confidence: 0.1

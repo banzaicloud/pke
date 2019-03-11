@@ -1,0 +1,137 @@
+version: 2
+
+jobs:
+    build:
+        docker:
+            -
+                image: circleci/golang:1.12
+                environment:
+                    GOFLAGS: -mod=readonly
+
+        steps:
+            - checkout
+
+            -
+                restore_cache:
+                    name: Restore build dependencies
+                    keys:
+                        - build-deps-v1-{{ .Branch }}-{{ checksum "Makefile" }}
+
+            -
+                restore_cache:
+                    name: Restore Go module cache
+                    keys:
+                        - gomod-v1-{{ .Branch }}-{{ checksum "go.sum" }}
+                        - gomod-v1-{{ .Branch }}
+                        - gomod-v1-master
+                        - gomod-v1
+
+            -
+                run:
+                    name: Download Go module cache
+                    command: go mod download
+
+            -
+                save_cache:
+                    name: Save Go module cache
+                    key: gomod-v1-{{ .Branch }}-{{ checksum "go.sum" }}
+                    paths:
+                        - /go/pkg/mod
+
+            -
+                restore_cache:
+                    name: Restore license cache
+                    keys:
+                        - licensei-v1-{{ .Branch }}-{{ checksum "go.sum" }}
+                        - licensei-v1-{{ .Branch }}
+                        - licensei-v1-master
+                        - licensei-v1
+
+            -
+                run:
+                    name: Download license information for dependencies
+                    command: make license-cache
+
+            -
+                save_cache:
+                    name: Save license cache
+                    key: licensei-v1-{{ .Branch }}-{{ checksum "go.sum" }}
+                    paths:
+                        - .licensei.cache
+
+            -
+                run:
+                    name: Check dependency licenses
+                    command: make license-check
+
+            -
+                run:
+                    name: Build
+                    command: make build
+
+            -
+                run:
+                    name: Run linter
+                    command: make lint
+
+            -
+                run:
+                    name: Run tests
+                    command: GOARGS="-p=2" make test
+
+            -
+                save_cache:
+                    name: Save build dependencies
+                    key: build-deps-v1-{{ .Branch }}-{{ checksum "Makefile" }}
+                    paths:
+                        - bin/
+
+            -
+                store_test_results:
+                    path: build/test_results/
+            -
+                store_artifacts:
+                    path: build/
+
+    release:
+        docker:
+            -
+                image: circleci/golang:1.12
+                environment:
+                    GOFLAGS: -mod=readonly
+
+        steps:
+            - checkout
+
+            -
+                restore_cache:
+                    name: Restore Go module cache
+                    keys:
+                        - gomod-v1-{{ .Branch }}-{{ checksum "go.sum" }}
+                        - gomod-v1-{{ .Branch }}
+                        - gomod-v1-master
+                        - gomod-v1
+
+            -
+                run:
+                    name: Release
+                    command: make release
+
+workflows:
+    version: 2
+    build:
+        jobs:
+            -
+                build:
+                    filters:
+                        tags:
+                            only: /^v?\d+\.\d+\.\d+(-\S*)?$/
+            -
+                release:
+                    requires:
+                        - build
+                    filters:
+                        tags:
+                            only: /^v?\d+\.\d+\.\d+(-\S*)?$/
+                        branches:
+                            ignore: /.*/

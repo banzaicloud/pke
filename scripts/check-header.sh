@@ -1,4 +1,7 @@
-// Copyright © 2019 Banzai Cloud
+#!/usr/bin/env bash
+
+read -r -d '' EXPECTED <<EOF
+// Copyright © DATE Banzai Cloud
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,17 +14,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+EOF
 
-// +build !linux
+STATUS=0
+FILES=$(find . -name "*.go" -not -path "./vendor/*")
 
-package container
+for FILE in $FILES; do
+    # Replace the actual year with DATE so we can ignore the year when
+    # checking for the license header.
+    HEADER=$(head -n 13 $FILE | sed -E -e 's/Copyright © [0-9]+/Copyright © DATE/')
+    if [ "$HEADER" != "$EXPECTED" ]; then
+        echo "incorrect license header: $FILE"
+        STATUS=1
+    fi
+done
 
-import (
-	"io"
-
-	"github.com/pkg/errors"
-)
-
-func installRuntime(w io.Writer) error {
-	return errors.Errorf("unsupported operating system")
-}
+exit $STATUS
