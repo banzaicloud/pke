@@ -15,13 +15,19 @@
 package token
 
 import (
+	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -29,17 +35,18 @@ const (
 )
 
 type Token struct {
-	Token   string    `json:"token"`
-	TTL     int       `json:"-"`
-	Expires time.Time `json:"expires"`
-	Expired bool      `json:"expired"`
+	Token    string    `json:"token"`
+	TTL      int       `json:"-"`
+	Expires  time.Time `json:"expires"`
+	Expired  bool      `json:"expired"`
+	CertHash string    `json:"hash"`
 }
 
 type Output struct {
 	Tokens []*Token `json:"tokens"`
 }
 
-func Get(out io.Writer, secret string) (*Token, error) {
+func Get(out io.Writer, secret, certHash string) (*Token, error) {
 	// kubectl get -n kube-system secret -o json
 	subCmd := runner.Cmd(out, cmdKubectl, []string{"get", "secret", "-n", "kube-system", "-o", "json", secret}...)
 	cmdOut, err := subCmd.Output()
@@ -72,9 +79,29 @@ func Get(out io.Writer, secret string) (*Token, error) {
 	}
 
 	return &Token{
-		Token:   fmt.Sprintf("%s.%s", tid, ts),
-		TTL:     int(t.Sub(time.Now()).Hours()),
-		Expires: t,
-		Expired: t.Sub(time.Now()) <= 0,
+		Token:    fmt.Sprintf("%s.%s", tid, ts),
+		TTL:      int(t.Sub(time.Now()).Hours()),
+		Expires:  t,
+		Expired:  t.Sub(time.Now()) <= 0,
+		CertHash: certHash,
 	}, nil
+}
+
+func CertHash(out io.Writer, certFile string) (string, error) {
+	b, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to open certificate for hashing")
+	}
+
+	block, _ := pem.Decode(b)
+	if block == nil {
+		return "", errors.New("failed to parse certificate")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to parse certificate")
+	}
+
+	h := sha256.Sum256(cert.RawSubjectPublicKeyInfo)
+	return fmt.Sprintf("sha256:%s", hex.EncodeToString(h[:])), nil
 }

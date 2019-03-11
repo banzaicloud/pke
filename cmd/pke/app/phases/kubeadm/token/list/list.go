@@ -39,6 +39,7 @@ const (
 
 	cmdKubectl = "/bin/kubectl"
 	kubeConfig = "/etc/kubernetes/admin.conf"
+	caCertFile = "/etc/kubernetes/pki/ca.crt"
 )
 
 var _ phases.Runnable = (*List)(nil)
@@ -71,6 +72,11 @@ func (l *List) Validate(cmd *cobra.Command) error {
 }
 
 func (l *List) Run(out io.Writer) error {
+	hash, err := token.CertHash(ioutil.Discard, caCertFile)
+	if err != nil {
+		return err
+	}
+
 	// kubectl get secret -n kube-system -o jsonpath='{range .items[?(.type=="bootstrap.kubernetes.io/token")]}{.metadata.name}{"\n"}{end}'
 	args := []string{"get", "secret", "-n", "kube-system", "-o", `jsonpath={range .items[?(.type=="bootstrap.kubernetes.io/token")]}{.metadata.name}{"\n"}{end}`}
 	cmd := runner.Cmd(ioutil.Discard, cmdKubectl, args...)
@@ -92,7 +98,7 @@ func (l *List) Run(out io.Writer) error {
 			return err
 		}
 
-		t, err := token.Get(ioutil.Discard, line)
+		t, err := token.Get(ioutil.Discard, line, hash)
 		if err != nil {
 			return err
 		}
@@ -103,9 +109,9 @@ func (l *List) Run(out io.Writer) error {
 	switch l.o {
 	default:
 		tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
-		_, _ = fmt.Fprintf(tw, "Token\tTTL\tExpires\tExpired\n")
+		_, _ = fmt.Fprintf(tw, "Token\tTTL\tExpires\tExpired\tCert Hash\n")
 		for _, row := range list.Tokens {
-			_, _ = fmt.Fprintf(tw, "%s\t%dh\t%s\t%t\n", row.Token, row.TTL, row.Expires, row.Expired)
+			_, _ = fmt.Fprintf(tw, "%s\t%dh\t%s\t%t\t%s\n", row.Token, row.TTL, row.Expires, row.Expired, row.CertHash)
 		}
 		_ = tw.Flush()
 

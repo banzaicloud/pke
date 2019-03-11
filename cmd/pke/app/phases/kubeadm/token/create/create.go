@@ -41,6 +41,7 @@ const (
 
 	cmdKubeadm = "/bin/kubeadm"
 	kubeConfig = "/etc/kubernetes/admin.conf"
+	caCertFile = "/etc/kubernetes/pki/ca.crt"
 )
 
 var _ phases.Runnable = (*Create)(nil)
@@ -73,6 +74,11 @@ func (c *Create) Validate(cmd *cobra.Command) error {
 }
 
 func (c *Create) Run(out io.Writer) error {
+	hash, err := token.CertHash(ioutil.Discard, caCertFile)
+	if err != nil {
+		return err
+	}
+
 	cmd := runner.Cmd(ioutil.Discard, cmdKubeadm, "token", "create")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	o, err := cmd.CombinedOutput()
@@ -97,7 +103,7 @@ func (c *Create) Run(out io.Writer) error {
 			return errors.New("creation error: invalid token format")
 		}
 
-		t, err = token.Get(ioutil.Discard, "bootstrap-token-"+line[:idx])
+		t, err = token.Get(ioutil.Discard, "bootstrap-token-"+line[:idx], hash)
 		if err != nil {
 			return err
 		}
@@ -106,8 +112,9 @@ func (c *Create) Run(out io.Writer) error {
 	switch c.o {
 	default:
 		tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
-		_, _ = fmt.Fprintf(tw, "Token\tTTL\tExpires\tExpired\n")
-		_, _ = fmt.Fprintf(tw, "%s\t%dh\t%s\t%t\n", t.Token, t.TTL, t.Expires, t.Expired)
+		_, _ = fmt.Fprintf(tw, "Token\tTTL\tExpires\tExpired\tCert Hash\n")
+		_, _ = fmt.Fprintf(tw, "%s\t%dh\t%s\t%t\t%s\n", t.Token, t.TTL, t.Expires, t.Expired, t.CertHash)
+		_ = tw.Flush()
 		_ = tw.Flush()
 
 	case "yaml":
