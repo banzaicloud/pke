@@ -48,6 +48,8 @@ pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cer
 
 ### Using `kubectl`
 
+To use `kubectl` and other command line tools on the master node, set up its config:
+
 ```
 mkdir -p $HOME/.kube
 cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
