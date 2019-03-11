@@ -21,7 +21,7 @@ Please review the [requirements](/docs/requirements.md) before creating Kubernet
 
 ### Single node PKE
 
-Creating a single node K8s clusters is as simple as:
+Creating a single node K8s clusters is as simple as running the following command as root:
 
 `pke install single`
 
