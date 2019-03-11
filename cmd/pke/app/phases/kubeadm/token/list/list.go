@@ -1,10 +1,12 @@
 package list
 
 import (
-	"github.com/banzaicloud/pke/cmd/pke/app/phases"
+	"io"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"io"
+
+	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 )
 
 const (
