@@ -31,7 +31,7 @@ To create the Kubernetes API server:
 
 ```
 export MASTER_IP_ADDRESS=""
-pke install master --kubernetes-api-server=MASTER_IP_ADDRESS:6443
+pke install master --kubernetes-api-server=$MASTER_IP_ADDRESS:6443
 ```
 
 >Please get the token and certhash from the logs or issue the `pke token list` command to print the token and cert hash needed by workers to join the cluster.
@@ -43,7 +43,7 @@ Once the API server is up and running you can add as many nodes as needed:
 export TOKEN=""
 export CERTHASH=""
 export MASTER_IP_ADDRESS=""
-pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cert-hash $CERTHASH --kubernetes-api-server MASTER_IP_ADDRESS:6443
+pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cert-hash $CERTHASH --kubernetes-api-server $MASTER_IP_ADDRESS:6443
 ```
 
 ### Using `kubectl`
