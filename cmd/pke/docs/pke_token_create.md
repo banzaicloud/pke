@@ -13,7 +13,8 @@ pke token create [flags]
 ### Options
 
 ```
-  -h, --help   help for create
+  -h, --help            help for create
+  -o, --output string   Output format; available options are 'yaml', 'json' and 'short'
 ```
 
 ### SEE ALSO

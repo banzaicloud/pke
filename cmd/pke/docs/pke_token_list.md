@@ -13,7 +13,8 @@ pke token list [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help            help for list
+  -o, --output string   Output format; available options are 'yaml', 'json' and 'short'
 ```
 
 ### SEE ALSO

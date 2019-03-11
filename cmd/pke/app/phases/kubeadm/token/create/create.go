@@ -15,9 +15,22 @@
 package create
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"strings"
+	"text/tabwriter"
 
+	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/token"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
+	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -25,13 +38,15 @@ import (
 const (
 	use   = "create"
 	short = "Create Kubernetes bootstrap token"
+
+	cmdKubeadm = "/bin/kubeadm"
+	kubeConfig = "/etc/kubernetes/admin.conf"
 )
 
 var _ phases.Runnable = (*Create)(nil)
 
 type Create struct {
-	kubernetesVersion string
-	imageRepository   string
+	o string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -46,12 +61,68 @@ func (*Create) Short() string {
 	return short
 }
 
-func (*Create) RegisterFlags(flags *pflag.FlagSet) {}
-
-func (*Create) Validate(cmd *cobra.Command) error {
-	return nil
+func (*Create) RegisterFlags(flags *pflag.FlagSet) {
+	flags.StringP(constants.FlagOutput, constants.FlagOutputShort, "", "Output format; available options are 'yaml', 'json' and 'short'")
 }
 
-func (*Create) Run(out io.Writer) error {
+func (c *Create) Validate(cmd *cobra.Command) error {
+	var err error
+	c.o, err = cmd.Flags().GetString(constants.FlagOutput)
+
+	return err
+}
+
+func (c *Create) Run(out io.Writer) error {
+	cmd := runner.Cmd(ioutil.Discard, cmdKubeadm, "token", "create")
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	o, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	var t *token.Token
+
+	scn := bufio.NewScanner(bytes.NewReader(o))
+	for scn.Scan() {
+		line := scn.Text()
+		if line == "" {
+			continue
+		}
+		if err := scn.Err(); err != nil {
+			return err
+		}
+
+		idx := strings.IndexRune(line, '.')
+		if idx < 0 {
+			return errors.New("creation error: invalid token format")
+		}
+
+		t, err = token.Get(ioutil.Discard, "bootstrap-token-"+line[:idx])
+		if err != nil {
+			return err
+		}
+	}
+
+	switch c.o {
+	default:
+		tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
+		_, _ = fmt.Fprintf(tw, "Token\tTTL\tExpires\tExpired\n")
+		_, _ = fmt.Fprintf(tw, "%s\t%dh\t%s\t%t\n", t.Token, t.TTL, t.Expires, t.Expired)
+		_ = tw.Flush()
+
+	case "yaml":
+		y, err := yaml.Marshal(&t)
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(out, string(y))
+	case "json":
+		y, err := json.MarshalIndent(&t, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(out, string(y))
+	}
+
 	return nil
 }

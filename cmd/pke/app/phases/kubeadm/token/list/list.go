@@ -15,24 +15,36 @@
 package list
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"text/tabwriter"
 
+	"github.com/banzaicloud/pke/cmd/pke/app/constants"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/token"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
-	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 )
 
 const (
 	use   = "list"
 	short = "List Kubernetes bootstrap token(s)"
+
+	cmdKubectl = "/bin/kubectl"
+	kubeConfig = "/etc/kubernetes/admin.conf"
 )
 
 var _ phases.Runnable = (*List)(nil)
 
 type List struct {
-	kubernetesVersion string
-	imageRepository   string
+	o string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -47,12 +59,69 @@ func (*List) Short() string {
 	return short
 }
 
-func (*List) RegisterFlags(flags *pflag.FlagSet) {}
-
-func (*List) Validate(cmd *cobra.Command) error {
-	return nil
+func (*List) RegisterFlags(flags *pflag.FlagSet) {
+	flags.StringP(constants.FlagOutput, constants.FlagOutputShort, "", "Output format; available options are 'yaml', 'json' and 'short'")
 }
 
-func (*List) Run(out io.Writer) error {
+func (l *List) Validate(cmd *cobra.Command) error {
+	var err error
+	l.o, err = cmd.Flags().GetString(constants.FlagOutput)
+
+	return err
+}
+
+func (l *List) Run(out io.Writer) error {
+	// kubectl get secret -n kube-system -o jsonpath='{range .items[?(.type=="bootstrap.kubernetes.io/token")]}{.metadata.name}{"\n"}{end}'
+	args := []string{"get", "secret", "-n", "kube-system", "-o", `jsonpath={range .items[?(.type=="bootstrap.kubernetes.io/token")]}{.metadata.name}{"\n"}{end}`}
+	cmd := runner.Cmd(ioutil.Discard, cmdKubectl, args...)
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	o, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+
+	var list = token.Output{}
+
+	scn := bufio.NewScanner(bytes.NewReader(o))
+	for scn.Scan() {
+		line := scn.Text()
+		if line == "" {
+			continue
+		}
+		if err := scn.Err(); err != nil {
+			return err
+		}
+
+		t, err := token.Get(ioutil.Discard, line)
+		if err != nil {
+			return err
+		}
+
+		list.Tokens = append(list.Tokens, t)
+	}
+
+	switch l.o {
+	default:
+		tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
+		_, _ = fmt.Fprintf(tw, "Token\tTTL\tExpires\tExpired\n")
+		for _, row := range list.Tokens {
+			_, _ = fmt.Fprintf(tw, "%s\t%dh\t%s\t%t\n", row.Token, row.TTL, row.Expires, row.Expired)
+		}
+		_ = tw.Flush()
+
+	case "yaml":
+		y, err := yaml.Marshal(&list)
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(out, string(y))
+	case "json":
+		y, err := json.MarshalIndent(&list, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, _ = fmt.Fprintln(out, string(y))
+	}
+
 	return nil
 }
