@@ -47,6 +47,20 @@ Wait until the template is executed successfully. You can check the status with:
 aws cloudformation describe-stacks --stack-name pke-global
 ```
 
+After that, we can create security groups and rules to allow SSH and HTTP(s) for API server:
+
+To create a security group for the cluster and allow SSH and all Traefik from the specific vpc:
+```
+aws ec2 create-security-group --group-name pke-cluster --description "PKE security group"
+aws ec2 authorize-security-group-ingress --group-name pke-cluster --protocol tcp --port 22 --cidr 0.0.0.0/0
+```
+
+To create a security group for the master node and allow SSH:
+```
+aws ec2 create-security-group --group-name pke-master --description "PKE master security group"
+aws ec2 authorize-security-group-ingress --group-name pke-master --protocol tcp --port 6443 --cidr 0.0.0.0/0
+```
+
 After that, we can create the EC2 instances that will host the nodes of the cluster. You should create one master instance, and any number of worker nodes.
 You can use any OS AMI image that meets our requirements. You can check the AMI numbers we use in Pipeline [here](https://github.com/banzaicloud/pipeline/blob/0.14.3/internal/providers/pke/pkeworkflow/create_cluster.go#L29).
 
@@ -56,7 +70,8 @@ aws ec2 run-instances --image-id ami-3548444c \
 --count 1 \
 --instance-type c3.xlarge \
 --key-name $AWS_SSH_KEY_PAIR_NAME \
---tag-specifications "ResourceType=instance,Tags=[{Key=kuberenetes.io/cluster/$CLUSTER_NAME,Value=owned}]" \
+--tag-specifications "ResourceType=instance,Tags=[{Key=kubernetes.io/cluster/$CLUSTER_NAME,Value=owned},{Key=Name,Value=pke-master}]" \
+--security-groups pke-cluster pke-master \
 --iam-instance-profile Name=pke-global-master-profile
 ```
 
@@ -66,7 +81,8 @@ aws ec2 run-instances --image-id ami-3548444c \
 --count 1 \
 --instance-type c3.xlarge \
 --key-name $AWS_SSH_KEY_PAIR_NAME \
---tag-specifications "ResourceType=instance,Tags=[{Key=kuberenetes.io/cluster/$CLUSTER_NAME,Value=owned}]" \
+--tag-specifications "ResourceType=instance,Tags=[{Key=kubernetes.io/cluster/$CLUSTER_NAME,Value=owned},{Key=Name,Value=pke-worker}]" \
+--security-groups pke-cluster \
 --iam-instance-profile Name=pke-global-worker-profile
 ```
 
@@ -97,17 +113,31 @@ In case of multi node clusters, you will have to provide something more informat
 Find out the address of the master that is accessible to the other nodes, and the clients you want to use the API server. This can be retrieved with a command like:
 
 ```
-aws ec2 describe-instances --output json | jq '.Reservations[].Instances[]|[.InstanceId, .PublicIpAddress]'
+aws ec2 describe-instances --filters Name=tag:Name,Values=pke-master --query "Reservations[*].Instances[*].PublicIpAddress" --output=text
 ```
 
-To install the cluster, set the `MASTER_IP_ADDRESS` variable, and run:
+To install the cluster, set the `CLUSTER_NAME` variable, and run:
 
 ```
+export CLUSTER_NAME=""
+
+export EXTERNAL_IP=$(curl http://169.254.169.254/latest/meta-data/public-ipv4)
+export INTERNAL_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+
+export MAC=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
+export VPC_CIDR=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/vpc-ipv4-cidr-block/)
+
 curl -v https://banzaicloud.com/downloads/pke/pke-0.1.1 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
-pke install master --kubernetes-advertise-address=${MASTER_IP_ADDRESS} --kubernetes-api-server=${MASTER_IP_ADDRESS}:6443 --kubernetes-cloud-provider=aws
+pke install master \
+--kubernetes-advertise-address=${INTERNAL_IP} \
+--kubernetes-api-server=${EXTERNAL_IP}:6443 \
+--kubernetes-cloud-provider=aws \
+--kubernetes-cluster-name=${CLUSTER_NAME} \
+--kubernetes-infrastructure-cidr=${VPC_CIDR}
+
 mkdir -p $HOME/.kube
 cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 chown $(id -u):$(id -g) $HOME/.kube/config
@@ -135,9 +165,15 @@ chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
 # copy values from master node
-TOKEN=""
-CERTHASH=""
-pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cert-hash $CERTHASH --kubernetes-api-server 192.168.64.11:6443 --kubernetes-cloud-provider=aws
+export TOKEN=""
+export CERTHASH=""
+# same as $INTERNAL_IP from master node
+export API_SERVER_INTERNAL_IP=""
+
+pke install worker \
+--kubernetes-node-token $TOKEN \
+--kubernetes-api-server-ca-cert-hash $CERTHASH \
+--kubernetes-api-server $API_SERVER_INTERNAL_IP:6443
 ```
 
 Note that you can add as many worker nodes as you wish repeating the commands above. You can check the status of the containers by issuing `crictl ps`
