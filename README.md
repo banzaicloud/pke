@@ -9,10 +9,6 @@ If you would like to supercharge your Kubernetes experience using Banzai Cloud P
   </a>
 </p>
 
-### Installation
-
-Please review the [OS requirements](/docs/requirements.md) for the nodes in your Kubernetes clusters. The `pke` tool will install all required dependencies (e.g. CRI (containerd, Docker), CNI (Weave, Calico)).
-
 ## Create clusters
 
 Please review the [requirements](/docs/requirements.md) before creating Kubernetes clusters. Note that the `pke` tool will install all required dependencies (like CRI, CNI, etc).
@@ -54,6 +50,14 @@ cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 chown $(id -u):$(id -g) $HOME/.kube/config
 kubectl get nodes
 ```
+
+### Other options
+
+You can create PKE clusters on any of the cloud providers, Vagrant, virtual machines, etc using the `pke` tool or let the [Pipeline platform](https://beta.banzaicloud.io/) do it for you, using all the complementary features as: centralized log collection, federated monitoring, autoscaling, Vault based secret management, disaster recovery, security scans and lots more.
+
+- [PKE in Vagrant](/docs/vagrant.md)
+- [PKE on AWS](/docs/aws.md)
+- [PKE with Pipeline](https://beta.banzaicloud.io/)
 
 ### License
 
