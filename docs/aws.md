@@ -178,4 +178,22 @@ pke install worker \
 --kubernetes-api-server $API_SERVER_INTERNAL_IP:6443
 ```
 
+You must define storage classes for your cluster to use it like this:
+```
+cat <<EOF | kubectl create -f -
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: gp2
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp2
+  fsType: ext4
+EOF
+```
+
+For more information, see [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/) in the Kubernetes documentation.
+
 Note that you can add as many worker nodes as you wish repeating the commands above. You can check the status of the containers by issuing `crictl ps`
