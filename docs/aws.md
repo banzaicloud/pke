@@ -53,6 +53,8 @@ To create a security group for the cluster and allow SSH and all Traefik from th
 ```
 aws ec2 create-security-group --group-name pke-cluster --description "PKE security group"
 aws ec2 authorize-security-group-ingress --group-name pke-cluster --protocol tcp --port 22 --cidr 0.0.0.0/0
+PKE_CLUSTER_SEC_GROUP_ID=$(aws ec2 describe-security-groups --group-name pke-cluster --region eu-west-1 --query "SecurityGroups[*].GroupId" --output=text)
+aws ec2 authorize-security-group-ingress --group-name pke-cluster --source-group $PKE_CLUSTER_SEC_GROUP_ID --protocol -1
 ```
 
 To create a security group for the master node and allow SSH:
