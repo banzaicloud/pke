@@ -433,6 +433,10 @@ controllerManagerExtraArgs:
   cloud-provider: aws
   cloud-config: /etc/kubernetes/aws.conf{{end}}
   {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}
+etcd:
+  local:
+    extraArgs:
+      peer-auto-tls: "false"
 `
 	tmpl, err := template.New("kubeadm-config").Parse(conf)
 	if err != nil {
