@@ -47,7 +47,7 @@ Wait until the template is executed successfully. You can check the status with:
 aws cloudformation describe-stacks --stack-name pke-global
 ```
 
-The easiest way to configure the machines is to allow SSH traffic to it. To manage the new Kubernetes cluster remotely, you will also need to access the Kubernetes API server on the master node. In case of multi-node clusters, the nodes of the cluster should access each other as well.
+The easiest way to configure the machines is to allow SSH traffic to them. To manage the new Kubernetes cluster remotely, you will also need to access the Kubernetes API server on the master node. In case of multi-node clusters, the nodes of the cluster should access each other as well.
 
 Create a security group for the cluster nodes with SSH access:
 ```
