@@ -122,7 +122,7 @@ func (c *Certificates) Run(out io.Writer) error {
 	secret := secrets[0]
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, etcdDir)
-	err = os.MkdirAll(etcdDir, 0750)
+	err = os.MkdirAll(etcdDir, 0640)
 	if err != nil {
 		return err
 	}

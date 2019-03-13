@@ -184,7 +184,7 @@ func writeKubeadmConfig(out io.Writer, filename, apiServerHostPort, token, caCer
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0750)
+	err := os.MkdirAll(dir, 0640)
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ discoveryTokenCACertHashes:
 	}
 
 	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
 	}

@@ -31,26 +31,33 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
+	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 )
 
 const (
 	use   = "kubernetes-controlplane"
 	short = "Kubernetes Control Plane installation"
 
-	cmdKubeadm              = "/bin/kubeadm"
-	cmdKubectl              = "/bin/kubectl"
-	weaveNetUrl             = "https://cloud.weave.works/k8s/net"
-	kubeConfig              = "/etc/kubernetes/admin.conf"
-	kubeadmConfig           = "/etc/kubernetes/kubeadm.conf"
-	kubeadmAmazonConfig     = "/etc/kubernetes/aws.conf"
-	urlAWSAZ                = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
-	kubernetesCASigningCert = "/etc/kubernetes/pki/cm-signing-ca.crt"
+	cmdKubeadm                    = "/bin/kubeadm"
+	cmdKubectl                    = "/bin/kubectl"
+	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
+	kubeConfig                    = "/etc/kubernetes/admin.conf"
+	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
+	kubeadmAmazonConfig           = "/etc/kubernetes/aws.conf"
+	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
+	kubernetesCASigningCert       = "/etc/kubernetes/pki/cm-signing-ca.crt"
+	admissionConfig               = "/etc/kubernetes/admission-control.yaml"
+	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
+	apiServerManifest             = "/etc/kubernetes/manifests/kube-apiserver.yaml"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -245,13 +252,26 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 
 func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServerHostPort, clusterName, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
 	// write kubeadm config
-	err := WriteKubeadmConfig(out, kubeadmConfig, advertiseAddress, apiServerHostPort, clusterName, "", kubernetesVersion, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA, apiServerCertSANs, oidcIssuerURL, oidcClientID, imageRepository)
+	err := WriteKubeadmConfig(out, kubeadmConfig, advertiseAddress, apiServerHostPort, admissionConfig, clusterName, "", kubernetesVersion, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA, apiServerCertSANs, oidcIssuerURL, oidcClientID, imageRepository)
+	if err != nil {
+		return err
+	}
+
+	err = writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
+	if err != nil {
+		return err
+	}
+
+	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
 	if err != nil {
 		return err
 	}
 
 	// write kubeadm aws.conf
 	err = writeKubeadmAmazonConfig(out, kubeadmAmazonConfig, cloudProvider)
+	if err != nil {
+		return err
+	}
 
 	// kubeadm init --config=/etc/kubernetes/kubeadm.conf
 	args := []string{
@@ -259,6 +279,16 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 		"--config=" + kubeadmConfig,
 	}
 	err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
+	if err != nil {
+		return err
+	}
+
+	err = replaceLivelinessProbe(out, apiServerManifest)
+	if err != nil {
+		return err
+	}
+
+	err = waitForAPIServer(out)
 	if err != nil {
 		return err
 	}
@@ -298,11 +328,11 @@ func installPodNetwork(out io.Writer, podNetworkCIDR, kubeConfig string) error {
 	return nil
 }
 
-func WriteKubeadmConfig(out io.Writer, filename, advertiseAddress, controlPlaneEndpoint, clusterName, fqdn, kubernetesVersion, serviceCIDR, podCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
+func WriteKubeadmConfig(out io.Writer, filename, advertiseAddress, controlPlaneEndpoint, admissionConfig, clusterName, fqdn, kubernetesVersion, serviceCIDR, podCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0750)
+	err := os.MkdirAll(dir, 0640)
 	if err != nil {
 		return err
 	}
@@ -356,7 +386,18 @@ certificatesDir: "/etc/kubernetes/pki"
 {{if .APIServerCertSANs}}apiServerCertSANs:
 {{range $k, $san := .APIServerCertSANs}}  - "{{ $san }}"
 {{end}}{{end}}
-apiServerExtraArgs:{{if (and .OIDCIssuerURL .OIDCClientID) }}
+apiServerExtraArgs:
+  anonymous-auth: "false"
+  profiling: "false"
+  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NamespaceLifecycle,NodeRestriction,ServiceAccount"
+  admission-control-config-file: "{{ .AdmissionConfig }}"
+  audit-log-path: "/var/log/audit/apiserver.log"
+  audit-log-maxage: "30"
+  audit-log-maxbackup: "10"
+  audit-log-maxsize: "100"
+  service-account-lookup: "true"
+  tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+{{if (and .OIDCIssuerURL .OIDCClientID) }}
   oidc-issuer-url: "{{ .OIDCIssuerURL }}"
   oidc-client-id: "{{ .OIDCClientID }}"
   oidc-username-claim: "email"
@@ -364,8 +405,20 @@ apiServerExtraArgs:{{if (and .OIDCIssuerURL .OIDCClientID) }}
   oidc-groups-claim: "groups"{{end}}
 {{if eq .CloudProvider "aws" }}
   cloud-provider: aws
-  cloud-config: /etc/kubernetes/aws.conf
+  cloud-config: /etc/kubernetes/aws.conf{{end}}
+schedulerExtraArgs:
+  profiling: "false"
 apiServerExtraVolumes:
+  - name: admission-control-config-file
+    hostPath: /etc/kubernetes/admission-control.yaml
+    mountPath: /etc/kubernetes/admission-control.yaml
+    writable: false
+    pathType: File
+  - name: admission-control-config-dir
+    hostPath: /etc/kubernetes/admission-control/
+    mountPath: /etc/kubernetes/admission-control/
+    writable: false
+    pathType: Directory{{if eq .CloudProvider "aws" }}
   - name: cloud-config
     hostPath: /etc/kubernetes/aws.conf
     mountPath: /etc/kubernetes/aws.conf
@@ -373,7 +426,10 @@ controllerManagerExtraVolumes:
   - name: cloud-config
     hostPath: /etc/kubernetes/aws.conf
     mountPath: /etc/kubernetes/aws.conf{{end}}
-controllerManagerExtraArgs:{{if eq .CloudProvider "aws" }}
+controllerManagerExtraArgs:
+  profiling: "false"
+  terminated-pod-gc-threshold: "10"
+  feature-gates: "RotateKubeletServerCertificate=true"{{if eq .CloudProvider "aws" }}
   cloud-provider: aws
   cloud-config: /etc/kubernetes/aws.conf{{end}}
   {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}
@@ -384,7 +440,7 @@ controllerManagerExtraArgs:{{if eq .CloudProvider "aws" }}
 	}
 
 	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
 	}
@@ -395,6 +451,7 @@ controllerManagerExtraArgs:{{if eq .CloudProvider "aws" }}
 		APIServerBindPort          string
 		ControlPlaneEndpoint       string
 		APIServerCertSANs          []string
+		AdmissionConfig            string
 		ClusterName                string
 		FQDN                       string
 		KubernetesVersion          string
@@ -413,6 +470,7 @@ controllerManagerExtraArgs:{{if eq .CloudProvider "aws" }}
 		APIServerBindPort:          bindPort,
 		ControlPlaneEndpoint:       controlPlaneEndpoint,
 		APIServerCertSANs:          apiServerCertSANs,
+		AdmissionConfig:            admissionConfig,
 		ClusterName:                clusterName,
 		FQDN:                       fqdn,
 		KubernetesVersion:          kubernetesVersion,
@@ -450,7 +508,7 @@ func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) err
 			return errors.Wrap(err, "failed to read response body")
 		}
 
-		w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+		w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 		if err != nil {
 			return err
 		}
@@ -458,6 +516,131 @@ func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) err
 
 		_, err = fmt.Fprintf(w, "[GLOBAL]\nZone=%s\n", b)
 		return err
+	}
+
+	return nil
+}
+
+func writeAdmissionConfiguration(out io.Writer, filename, rateLimitConfigFile string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0640)
+	if err != nil {
+		return err
+	}
+
+	conf := `kind: AdmissionConfiguration
+apiVersion: apiserver.k8s.io/v1alpha1
+plugins:
+- name: EventRateLimit
+  path: {{ .RateLimitConfigFile }}
+`
+
+	tmpl, err := template.New("admission-config").Parse(conf)
+	if err != nil {
+		return err
+	}
+
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	type data struct {
+		RateLimitConfigFile string
+	}
+
+	d := data{
+		RateLimitConfigFile: rateLimitConfigFile,
+	}
+
+	return tmpl.Execute(w, d)
+}
+
+func writeEventRateLimitConfig(out io.Writer, filename string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0640)
+	if err != nil {
+		return err
+	}
+
+	conf := `kind: Configuration
+apiVersion: eventratelimit.admission.k8s.io/v1alpha1
+limits:
+- type: Namespace
+  qps: 50
+  burst: 100
+  cacheSize: 2000
+- type: User
+  qps: 10
+  burst: 50
+`
+
+	return file.Overwrite(filename, conf)
+}
+
+func replaceLivelinessProbe(out io.Writer, filename string) error {
+	_, _ = fmt.Fprintf(out, "[replace] apiserver liveliness probe to tcp based %s\n", filename)
+
+	// read configuration
+	f, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	// convert json to yaml
+	j, err := yaml.YAMLToJSON(f)
+	if err != nil {
+		return err
+	}
+	sj := string(j)
+
+	// get port value
+	port := gjson.Get(sj, "spec.containers.0.livenessProbe.httpGet.port")
+
+	// remove http get liveliness probe
+	sj, err = sjson.Delete(sj, "spec.containers.0.livenessProbe.httpGet")
+	if err != nil {
+		return err
+	}
+
+	// add tcp probe
+	sj, err = sjson.Set(sj, "spec.containers.0.livenessProbe.tcpSocket.port", port.Num)
+	if err != nil {
+		return err
+	}
+
+	// convert json to yaml
+	j, err = yaml.JSONToYAML([]byte(sj))
+	if err != nil {
+		return err
+	}
+
+	// overwrite file
+	return file.Overwrite(filename, string(j))
+}
+
+func waitForAPIServer(out io.Writer) error {
+	_, _ = fmt.Fprintf(out, "[wait] waiting for API Server to restart\n")
+
+	tout := time.After(15 * time.Second)
+	tick := time.Tick(500 * time.Millisecond)
+	select {
+	case <-tick:
+		// kubectl get cs
+		cmd := runner.Cmd(out, cmdKubectl, "taint", "node", "-l node-role.kubernetes.io/master", "node-role.kubernetes.io/master:NoSchedule-")
+		cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+		err := cmd.Run()
+		if err == nil {
+			return nil
+		}
+	case <-tout:
+		return errors.New("wait timeout")
 	}
 
 	return nil
