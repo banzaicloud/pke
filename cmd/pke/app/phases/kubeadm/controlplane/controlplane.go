@@ -32,6 +32,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/node"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
@@ -77,12 +78,14 @@ type ControlPlane struct {
 	nodepool                    string
 	controllerManagerSigningCA  string
 	clusterMode                 string
+	joinControlPlane            bool
 	apiServerCertSANs           []string
 	kubeletCertificateAuthority string
 	oidcIssuerURL               string
 	oidcClientID                string
 	imageRepository             string
 	withPluginPSP               bool
+	node                        *node.Node
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -109,7 +112,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagKubernetesVersion, "1.13.3", "Kubernetes version")
 	// Kubernetes network
 	flags.String(constants.FlagNetworkProvider, "weave", "Kubernetes network provider")
-	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes advertise address")
+	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
 	flags.String(constants.FlagAPIServerHostPort, "", "Kubernetes API Server host port")
 	flags.String(constants.FlagServiceCIDR, "10.10.0.0/16", "range of IP address for service VIPs")
 	flags.String(constants.FlagPodNetworkCIDR, "10.20.0.0/16", "range of IP addresses for the pod network")
@@ -132,6 +135,25 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
+
+	addHAControlPlaneFlags(flags)
+}
+
+func addHAControlPlaneFlags(flags *pflag.FlagSet) {
+	var (
+		f = &pflag.FlagSet{}
+		n phases.Runnable
+	)
+	n = &node.Node{}
+	n.RegisterFlags(f)
+
+	f.VisitAll(func(flag *pflag.Flag) {
+		if flags.Lookup(flag.Name) == nil {
+			flags.AddFlag(flag)
+		}
+	})
+
+	flags.Bool(constants.FlagControlPlaneJoin, false, "Join and another control plane node")
 }
 
 func (c *ControlPlane) Validate(cmd *cobra.Command) error {
@@ -164,7 +186,14 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	}
 
 	switch c.clusterMode {
-	case "single", "default", "ha":
+	case "single", "default":
+		// noop
+	case "ha":
+		if c.joinControlPlane {
+			c.node = &node.Node{}
+			return c.node.Validate(cmd)
+		}
+
 	default:
 		return errors.New("Not supported --" + constants.FlagClusterMode + ". Possible values: single, default or ha.")
 	}
@@ -174,6 +203,10 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 
 func (c *ControlPlane) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
+
+	if c.clusterMode == "ha" && c.joinControlPlane {
+		return c.node.Run(out)
+	}
 
 	if err := c.installMaster(out); err != nil {
 		if rErr := kubeadm.Reset(out); rErr != nil {
@@ -269,6 +302,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.withPluginPSP, err = cmd.Flags().GetBool(constants.FlagAdmissionPluginPodSecurityPolicy)
+	if err != nil {
+		return
+	}
+	c.joinControlPlane, err = cmd.Flags().GetBool(constants.FlagControlPlaneJoin)
 
 	return
 }
@@ -397,7 +434,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	// API server advertisement
 	bindPort := "6443"
 	if c.advertiseAddress != "" {
-		host, port, err := splitHostPort(c.advertiseAddress, "6443")
+		host, port, err := kubeadm.SplitHostPort(c.advertiseAddress, "6443")
 		if err != nil {
 			return err
 		}
@@ -407,7 +444,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 
 	// Control Plane
 	if c.apiServerHostPort != "" {
-		host, port, err := splitHostPort(c.apiServerHostPort, "6443")
+		host, port, err := kubeadm.SplitHostPort(c.apiServerHostPort, "6443")
 		if err != nil {
 			return err
 		}
@@ -1174,15 +1211,4 @@ func deleteKubeDNSReplicaSet(out io.Writer) error {
 	cmd := runner.Cmd(out, cmdKubectl, "delete", "rs", "-n", "kube-system", "k8s-app=kube-dns")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	return cmd.CombinedOutputAsync()
-}
-
-func splitHostPort(hostport, defaultPort string) (host, port string, err error) {
-	host, port, err = net.SplitHostPort(hostport)
-	if aerr, ok := err.(*net.AddrError); ok {
-		if aerr.Err == "missing port in address" {
-			hostport = net.JoinHostPort(hostport, defaultPort)
-			host, port, err = net.SplitHostPort(hostport)
-		}
-	}
-	return
 }

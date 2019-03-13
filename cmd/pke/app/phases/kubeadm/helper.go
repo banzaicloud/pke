@@ -12,26 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package kubeadm
 
-import (
-	"io/ioutil"
-	"os"
-	"testing"
+import "net"
 
-	"github.com/banzaicloud/pke/cmd/pke/app/constants"
-	"github.com/stretchr/testify/require"
-)
-
-func TestWriteKubeadmConfig(t *testing.T) {
-	t.SkipNow()
-	filename := os.TempDir() + "kubeadm.conf"
-	t.Log(filename)
-	err := writeKubeadmConfig(os.Stdout, filename, "1.2.3.1:1234", "1.2.3.4:1234", "my.token", "sha256:xxx", constants.CloudProviderAmazon, "pool2")
-	require.NoError(t, err)
-	defer func() { _ = os.Remove(filename) }()
-
-	b, err := ioutil.ReadFile(filename)
-	require.NoError(t, err)
-	t.Logf("%s\n", b)
+func SplitHostPort(hostport, defaultPort string) (host, port string, err error) {
+	host, port, err = net.SplitHostPort(hostport)
+	if aerr, ok := err.(*net.AddrError); ok {
+		if aerr.Err == "missing port in address" {
+			hostport = net.JoinHostPort(hostport, defaultPort)
+			host, port, err = net.SplitHostPort(hostport)
+		}
+	}
+	return
 }
