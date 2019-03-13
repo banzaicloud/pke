@@ -47,9 +47,9 @@ Wait until the template is executed successfully. You can check the status with:
 aws cloudformation describe-stacks --stack-name pke-global
 ```
 
-After that, we can create security groups and rules to allow SSH and HTTP(s) for API server:
+The easiest way to configure the machines is to allow SSH traffic to it. To manage the new Kubernetes cluster remotely, you will also need to access the Kubernetes API server on the master node. In case of multi-node clusters, the nodes of the cluster should access each other as well.
 
-To create a security group for the cluster and allow SSH and all Traefik from the specific vpc:
+Create a security group for the cluster nodes with SSH access:
 ```
 aws ec2 create-security-group --group-name pke-cluster --description "PKE security group"
 aws ec2 authorize-security-group-ingress --group-name pke-cluster --protocol tcp --port 22 --cidr 0.0.0.0/0
@@ -57,7 +57,7 @@ PKE_CLUSTER_SEC_GROUP_ID=$(aws ec2 describe-security-groups --group-name pke-clu
 aws ec2 authorize-security-group-ingress --group-name pke-cluster --source-group $PKE_CLUSTER_SEC_GROUP_ID --protocol -1
 ```
 
-To create a security group for the master node and allow SSH:
+Create an additional security group for the master node which allows remote HTTPS access to the API server:
 ```
 aws ec2 create-security-group --group-name pke-master --description "PKE master security group"
 aws ec2 authorize-security-group-ingress --group-name pke-master --protocol tcp --port 6443 --cidr 0.0.0.0/0
