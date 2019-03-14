@@ -15,6 +15,7 @@
 package controlplane
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -57,8 +58,9 @@ const (
 	kubernetesCASigningCert       = "/etc/kubernetes/pki/cm-signing-ca.crt"
 	admissionConfig               = "/etc/kubernetes/admission-control.yaml"
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
-	apiServerManifest             = "/etc/kubernetes/manifests/kube-apiserver.yaml"
 	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
+	encryptionProviderConfig      = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
+	apiServerManifest             = "/etc/kubernetes/manifests/kube-apiserver.yaml"
 	cniDir                        = "/etc/cni/net.d"
 )
 
@@ -276,6 +278,11 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 		return err
 	}
 
+	err = writeEncryptionProviderConfig(out, encryptionProviderConfig, "")
+	if err != nil {
+		return err
+	}
+
 	// write kubeadm aws.conf
 	err = writeKubeadmAmazonConfig(out, kubeadmAmazonConfig, cloudProvider)
 	if err != nil {
@@ -378,6 +385,15 @@ func WriteKubeadmConfig(out io.Writer, filename, advertiseAddress, controlPlaneE
 		controlPlaneEndpoint = net.JoinHostPort(host, port)
 	}
 
+	encryptionProviderPrefix := ""
+	ver, err := semver.NewVersion(kubernetesVersion)
+	if err != nil {
+		return err
+	}
+	if ver.Major() == 1 && ver.Minor() <= 12 {
+		encryptionProviderPrefix = "experimental-"
+	}
+
 	// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
 	conf := `apiVersion: kubeadm.k8s.io/v1alpha3
 kind: InitConfiguration
@@ -418,6 +434,7 @@ apiServerExtraArgs:
   audit-log-maxsize: "100"
   service-account-lookup: "true"
   tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+  {{ .EncryptionProviderPrefix }}encryption-provider-config: "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 {{if (and .OIDCIssuerURL .OIDCClientID) }}
   oidc-issuer-url: "{{ .OIDCIssuerURL }}"
   oidc-client-id: "{{ .OIDCClientID }}"
@@ -431,8 +448,8 @@ schedulerExtraArgs:
   profiling: "false"
 apiServerExtraVolumes:
   - name: admission-control-config-file
-    hostPath: /etc/kubernetes/admission-control.yaml
-    mountPath: /etc/kubernetes/admission-control.yaml
+    hostPath: {{ .AdmissionConfig }}
+    mountPath: {{ .AdmissionConfig }}
     writable: false
     pathType: File
   - name: admission-control-config-dir
@@ -488,6 +505,7 @@ etcd:
 		OIDCIssuerURL              string
 		OIDCClientID               string
 		ImageRepository            string
+		EncryptionProviderPrefix   string
 	}
 
 	d := data{
@@ -507,6 +525,7 @@ etcd:
 		OIDCIssuerURL:              oidcIssuerURL,
 		OIDCClientID:               oidcClientID,
 		ImageRepository:            imageRepository,
+		EncryptionProviderPrefix:   encryptionProviderPrefix,
 	}
 
 	return tmpl.Execute(w, d)
@@ -762,6 +781,57 @@ spec:
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	return cmd.CombinedOutputAsync()
+}
+
+func writeEncryptionProviderConfig(out io.Writer, filename, encryptionSecret string) error {
+	if encryptionSecret == "" {
+		// generate encryption secret
+		var rnd = make([]byte, 32)
+		n, err := rand.Read(rnd)
+		if err != nil {
+			return err
+		}
+		if n != 32 {
+			return errors.New(fmt.Sprintf("invalid encryption secret length. got: %d expected: 32", n))
+		}
+
+		encryptionSecret = base64.StdEncoding.EncodeToString(rnd)
+	}
+
+	conf := `kind: EncryptionConfiguration
+apiVersion: apiserver.config.k8s.io/v1
+resources:
+  - resources:
+    - secrets
+    providers:
+    - aescbc:
+        keys:
+        - name: key1
+          secret: {{ .EncryptionSecret }}
+    - identity: {}
+`
+
+	tmpl, err := template.New("admission-config").Parse(conf)
+	if err != nil {
+		return err
+	}
+
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	type data struct {
+		EncryptionSecret string
+	}
+
+	d := data{
+		EncryptionSecret: encryptionSecret,
+	}
+
+	return tmpl.Execute(w, d)
 }
 
 func deleteKubeDNSReplicaSet(out io.Writer) error {

@@ -35,7 +35,7 @@ func TestWriteKubeadmConfig(t *testing.T) {
 		"/etc/kubernetes/admission-control.yaml",
 		"my-cluster",
 		"",
-		"1.12.2",
+		"1.13.3",
 		"10.32.0.0/24",
 		"10.200.0.0/16",
 		constants.CloudProviderAmazon,
