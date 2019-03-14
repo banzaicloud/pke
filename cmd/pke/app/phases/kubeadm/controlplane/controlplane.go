@@ -58,6 +58,8 @@ const (
 	admissionConfig               = "/etc/kubernetes/admission-control.yaml"
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
 	apiServerManifest             = "/etc/kubernetes/manifests/kube-apiserver.yaml"
+	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
+	cniDir                        = "/etc/cni/net.d"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -251,8 +253,15 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 }
 
 func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServerHostPort, clusterName, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
+	// create cni directory
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, cniDir)
+	err := os.MkdirAll(cniDir, 0644)
+	if err != nil {
+		return err
+	}
+
 	// write kubeadm config
-	err := WriteKubeadmConfig(out, kubeadmConfig, advertiseAddress, apiServerHostPort, admissionConfig, clusterName, "", kubernetesVersion, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA, apiServerCertSANs, oidcIssuerURL, oidcClientID, imageRepository)
+	err = WriteKubeadmConfig(out, kubeadmConfig, advertiseAddress, apiServerHostPort, admissionConfig, clusterName, "", kubernetesVersion, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA, apiServerCertSANs, oidcIssuerURL, oidcClientID, imageRepository)
 	if err != nil {
 		return err
 	}
@@ -283,6 +292,7 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 		return err
 	}
 
+	// --anonymous-auth=false implies this
 	err = replaceLivelinessProbe(out, apiServerManifest)
 	if err != nil {
 		return err
@@ -291,6 +301,17 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 	err = waitForAPIServer(out)
 	if err != nil {
 		return err
+	}
+
+	// apply PSP
+	if err := writePodSecurityPolicyConfig(out); err != nil {
+		return err
+	}
+
+	// if replica set started before default PSP is applied, replica set will hang. force re-create.
+	err = deleteKubeDNSReplicaSet(out)
+	if err != nil {
+		_, _ = fmt.Fprintf(out, "[%s] kube-dns replica set is not started yet, skipping\n", use)
 	}
 
 	return nil
@@ -389,7 +410,7 @@ certificatesDir: "/etc/kubernetes/pki"
 apiServerExtraArgs:
   anonymous-auth: "false"
   profiling: "false"
-  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NamespaceLifecycle,NodeRestriction,ServiceAccount"
+  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NamespaceLifecycle,NodeRestriction,PodSecurityPolicy,ServiceAccount"
   admission-control-config-file: "{{ .AdmissionConfig }}"
   audit-log-path: "/var/log/audit/apiserver.log"
   audit-log-maxage: "30"
@@ -589,7 +610,7 @@ limits:
 }
 
 func replaceLivelinessProbe(out io.Writer, filename string) error {
-	_, _ = fmt.Fprintf(out, "[replace] apiserver liveliness probe to tcp based %s\n", filename)
+	_, _ = fmt.Fprintf(out, "[%s] changing apiserver liveliness probe to tcp based: %q\n", use, filename)
 
 	// read configuration
 	f, err := ioutil.ReadFile(filename)
@@ -630,24 +651,25 @@ func replaceLivelinessProbe(out io.Writer, filename string) error {
 }
 
 func waitForAPIServer(out io.Writer) error {
-	_, _ = fmt.Fprintf(out, "[wait] waiting for API Server to restart\n")
+	timeout := 30 * time.Second
+	_, _ = fmt.Fprintf(out, "[%s] waiting for API Server to restart. this may take %s\n", use, timeout)
 
-	tout := time.After(15 * time.Second)
+	tout := time.After(timeout)
 	tick := time.Tick(500 * time.Millisecond)
-	select {
-	case <-tick:
-		// kubectl get cs
-		cmd := runner.Cmd(out, cmdKubectl, "taint", "node", "-l node-role.kubernetes.io/master", "node-role.kubernetes.io/master:NoSchedule-")
-		cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-		err := cmd.Run()
-		if err == nil {
-			return nil
+	for {
+		select {
+		case <-tick:
+			// kubectl get cs. ensures kube-apiserver is restarted.
+			cmd := runner.Cmd(out, cmdKubectl, "get", "cs")
+			cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+			err := cmd.CombinedOutputAsync()
+			if err == nil {
+				return nil
+			}
+		case <-tout:
+			return errors.New("wait timeout")
 		}
-	case <-tout:
-		return errors.New("wait timeout")
 	}
-
-	return nil
 }
 
 func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error {
@@ -658,6 +680,92 @@ func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error 
 
 	// kubectl taint node -l node-role.kubernetes.io/master node-role.kubernetes.io/master:NoSchedule-
 	cmd := runner.Cmd(out, cmdKubectl, "taint", "node", "-l node-role.kubernetes.io/master", "node-role.kubernetes.io/master:NoSchedule-")
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	return cmd.CombinedOutputAsync()
+}
+
+func writePodSecurityPolicyConfig(out io.Writer) error {
+	filename := podSecurityPolicyConfig
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0640)
+	if err != nil {
+		return err
+	}
+
+	conf := `kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: system:psp-binding
+roleRef:
+  kind: ClusterRole
+  name: system:psp:privileged
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: system:serviceaccounts
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: system:nodes
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:psp:privileged
+rules:
+- apiGroups:
+  - extensions
+  resourceNames:
+  - pke-psp
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: pke-psp
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities:
+  - '*'
+  volumes:
+  - '*'
+  hostNetwork: true
+  hostPorts:
+  - min: 0
+    max: 65535
+  hostIPC: true
+  hostPID: true
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+    rule: 'RunAsAny'
+`
+
+	err = file.Overwrite(filename, conf)
+	if err != nil {
+		return err
+	}
+
+	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	return cmd.CombinedOutputAsync()
+}
+
+func deleteKubeDNSReplicaSet(out io.Writer) error {
+	cmd := runner.Cmd(out, cmdKubectl, "delete", "rs", "-n", "kube-system", "k8s-app=kube-dns")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	return cmd.CombinedOutputAsync()
 }
