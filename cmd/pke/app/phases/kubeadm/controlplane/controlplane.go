@@ -36,12 +36,9 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/tidwall/gjson"
-	"github.com/tidwall/sjson"
 )
 
 const (
@@ -60,7 +57,6 @@ const (
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
 	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
 	encryptionProviderConfig      = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
-	apiServerManifest             = "/etc/kubernetes/manifests/kube-apiserver.yaml"
 	cniDir                        = "/etc/cni/net.d"
 	etcdDir                       = "/var/lib/etcd"
 )
@@ -265,7 +261,7 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 
 	// create etcd directory
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, etcdDir)
-	err = os.MkdirAll(etcdDir, 0600)
+	err = os.MkdirAll(etcdDir, 0700)
 	if err != nil {
 		return err
 	}
@@ -306,12 +302,6 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 	if err != nil {
 		return err
 	}
-
-	// --anonymous-auth=false implies this
-	// err = replaceLivelinessProbe(out, apiServerManifest)
-	// if err != nil {
-	// 	return err
-	// }
 
 	err = waitForAPIServer(out)
 	if err != nil {
@@ -434,7 +424,8 @@ certificatesDir: "/etc/kubernetes/pki"
 apiServerExtraArgs:
   # anonymous-auth: "false"
   profiling: "false"
-  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NamespaceLifecycle,NodeRestriction,PodSecurityPolicy,ServiceAccount"
+  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,PodSecurityPolicy,ServiceAccount"
+  disable-admission-plugins: "NamespaceLifecycle"
   admission-control-config-file: "{{ .AdmissionConfig }}"
   audit-log-path: "/var/log/audit/apiserver.log"
   audit-log-maxage: "30"
@@ -634,47 +625,6 @@ limits:
 `
 
 	return file.Overwrite(filename, conf)
-}
-
-func replaceLivelinessProbe(out io.Writer, filename string) error {
-	_, _ = fmt.Fprintf(out, "[%s] changing apiserver liveliness probe to tcp based: %q\n", use, filename)
-
-	// read configuration
-	f, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-
-	// convert json to yaml
-	j, err := yaml.YAMLToJSON(f)
-	if err != nil {
-		return err
-	}
-	sj := string(j)
-
-	// get port value
-	port := gjson.Get(sj, "spec.containers.0.livenessProbe.httpGet.port")
-
-	// remove http get liveliness probe
-	sj, err = sjson.Delete(sj, "spec.containers.0.livenessProbe.httpGet")
-	if err != nil {
-		return err
-	}
-
-	// add tcp probe
-	sj, err = sjson.Set(sj, "spec.containers.0.livenessProbe.tcpSocket.port", port.Num)
-	if err != nil {
-		return err
-	}
-
-	// convert json to yaml
-	j, err = yaml.JSONToYAML([]byte(sj))
-	if err != nil {
-		return err
-	}
-
-	// overwrite file
-	return file.Overwrite(filename, string(j))
 }
 
 func waitForAPIServer(out io.Writer) error {
