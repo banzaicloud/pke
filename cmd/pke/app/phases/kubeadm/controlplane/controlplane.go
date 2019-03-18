@@ -286,7 +286,7 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 		return err
 	}
 
-	err = writeEncryptionProviderConfig(out, encryptionProviderConfig, "")
+	err = writeEncryptionProviderConfig(out, encryptionProviderConfig, kubernetesVersion, "")
 	if err != nil {
 		return err
 	}
@@ -308,10 +308,10 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 	}
 
 	// --anonymous-auth=false implies this
-	err = replaceLivelinessProbe(out, apiServerManifest)
-	if err != nil {
-		return err
-	}
+	// err = replaceLivelinessProbe(out, apiServerManifest)
+	// if err != nil {
+	// 	return err
+	// }
 
 	err = waitForAPIServer(out)
 	if err != nil {
@@ -432,7 +432,7 @@ certificatesDir: "/etc/kubernetes/pki"
 {{range $k, $san := .APIServerCertSANs}}  - "{{ $san }}"
 {{end}}{{end}}
 apiServerExtraArgs:
-  anonymous-auth: "false"
+  # anonymous-auth: "false"
   profiling: "false"
   enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NamespaceLifecycle,NodeRestriction,PodSecurityPolicy,ServiceAccount"
   admission-control-config-file: "{{ .AdmissionConfig }}"
@@ -791,7 +791,7 @@ spec:
 	return cmd.CombinedOutputAsync()
 }
 
-func writeEncryptionProviderConfig(out io.Writer, filename, encryptionSecret string) error {
+func writeEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, encryptionSecret string) error {
 	if encryptionSecret == "" {
 		// generate encryption secret
 		var rnd = make([]byte, 32)
@@ -806,8 +806,21 @@ func writeEncryptionProviderConfig(out io.Writer, filename, encryptionSecret str
 		encryptionSecret = base64.StdEncoding.EncodeToString(rnd)
 	}
 
-	conf := `kind: EncryptionConfiguration
-apiVersion: apiserver.config.k8s.io/v1
+	var (
+		kind       = "EncryptionConfiguration"
+		apiVersion = "apiserver.config.k8s.io/v1"
+	)
+	ver, err := semver.NewVersion(kubernetesVersion)
+	if err != nil {
+		return err
+	}
+	if ver.Major() == 1 && ver.Minor() <= 12 {
+		kind = "EncryptionConfig"
+		apiVersion = "v1"
+	}
+
+	conf := `kind: {{ .Kind }}
+apiVersion: {{ .APIVersion }}
 resources:
   - resources:
     - secrets
@@ -815,7 +828,7 @@ resources:
     - aescbc:
         keys:
         - name: key1
-          secret: {{ .EncryptionSecret }}
+          secret: "{{ .EncryptionSecret }}"
     - identity: {}
 `
 
@@ -832,10 +845,14 @@ resources:
 	defer func() { _ = w.Close() }()
 
 	type data struct {
+		Kind             string
+		APIVersion       string
 		EncryptionSecret string
 	}
 
 	d := data{
+		Kind:             kind,
+		APIVersion:       apiVersion,
 		EncryptionSecret: encryptionSecret,
 	}
 
