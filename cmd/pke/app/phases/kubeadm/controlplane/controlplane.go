@@ -62,6 +62,7 @@ const (
 	encryptionProviderConfig      = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 	apiServerManifest             = "/etc/kubernetes/manifests/kube-apiserver.yaml"
 	cniDir                        = "/etc/cni/net.d"
+	etcdDir                       = "/var/lib/etcd"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -258,6 +259,13 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 	// create cni directory
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, cniDir)
 	err := os.MkdirAll(cniDir, 0644)
+	if err != nil {
+		return err
+	}
+
+	// create etcd directory
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, etcdDir)
+	err = os.MkdirAll(etcdDir, 0600)
 	if err != nil {
 		return err
 	}
