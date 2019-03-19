@@ -221,17 +221,15 @@ nodeRegistration:
   {{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
   {{if .CloudProvider }}
-    cloud-provider: {{ .CloudProvider }}{{end}}
-    read-only-port: 0
-    anonymous-auth: false
-    streaming-connection-idle-timeout: 5m
-    protect-kernel-defaults: true
-    event-qps: 0
-    tls-cert-file: "/var/lib/kubelet/pki/kubelet-server-current.pem"
-    tls-private-key-file: "/var/lib/kubelet/pki/kubelet-server-current.pem"
+    cloud-provider: "{{ .CloudProvider }}"{{end}}
+    read-only-port: "0"
+    anonymous-auth: "false"
+    streaming-connection-idle-timeout: "5m"
+    protect-kernel-defaults: "true"
+    event-qps: "0"
     client-ca-file: "/etc/kubernetes/pki/ca.crt"
-    feature-gates: RotateKubeletServerCertificate=true
-    rotate-certificates: true
+    feature-gates: "RotateKubeletServerCertificate=true"
+    rotate-certificates: "true"
 discoveryTokenAPIServers:
   - {{ .APIServerHostPort }}
 token: {{ .Token }}

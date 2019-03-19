@@ -57,6 +57,7 @@ const (
 	admissionConfig               = "/etc/kubernetes/admission-control.yaml"
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
 	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
+	certificateAutoApprover       = "/etc/kubernetes/admission-control/deploy-auto-approver.yaml"
 	encryptionProviderConfig      = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 	cniDir                        = "/etc/cni/net.d"
 	etcdDir                       = "/var/lib/etcd"
@@ -320,6 +321,10 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 		return err
 	}
 
+	// apply AutoApprover
+	if err := writeCertificateAutoApprover(out); err != nil {
+		return err
+	}
 	// apply PSP
 	if err := writePodSecurityPolicyConfig(out); err != nil {
 		return err
@@ -413,7 +418,6 @@ kind: InitConfiguration
 nodeRegistration:
   criSocket: "unix:///run/containerd/containerd.sock"
   kubeletExtraArgs:
-    serverTLSBootstrap: true
   {{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
   {{if .CloudProvider }}
@@ -445,7 +449,7 @@ apiServerExtraArgs:
   audit-log-maxbackup: "10"
   audit-log-maxsize: "100"
   service-account-lookup: "true"
-  kubelet-certificate-authority: {{ .KubeletCertificateAuthority }}
+  kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
   tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
   {{ .EncryptionProviderPrefix }}encryption-provider-config: "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 {{if (and .OIDCIssuerURL .OIDCClientID) }}
@@ -488,6 +492,10 @@ etcd:
   local:
     extraArgs:
       peer-auto-tls: "false"
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+serverTLSBootstrap: true
 `
 	tmpl, err := template.New("kubeadm-config").Parse(conf)
 	if err != nil {
@@ -689,6 +697,107 @@ func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error 
 
 	// kubectl taint node -l node-role.kubernetes.io/master node-role.kubernetes.io/master:NoSchedule-
 	cmd := runner.Cmd(out, cmdKubectl, "taint", "node", "-l node-role.kubernetes.io/master", "node-role.kubernetes.io/master:NoSchedule-")
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	return cmd.CombinedOutputAsync()
+}
+
+func writeCertificateAutoApprover(out io.Writer) error {
+	filename := certificateAutoApprover
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0640)
+	if err != nil {
+		return err
+	}
+
+	conf := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: auto-approver
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: auto-approver
+rules:
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/approval
+  verbs:
+  - create
+  - update
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: auto-approver
+subjects:
+- kind: ServiceAccount
+  namespace: kube-system
+  name: auto-approver
+roleRef:
+  kind: ClusterRole
+  name: auto-approver
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auto-approver
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: auto-approver
+  template:
+    metadata:
+      labels:
+        name: auto-approver
+    spec:
+      serviceAccountName: auto-approver
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+      priorityClassName: system-cluster-critical
+      containers:
+        - name: auto-approver
+          image: banzaicloud/auto-approver:latest
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "auto-approver"
+`
+	err = file.Overwrite(filename, conf)
+	if err != nil {
+		return err
+	}
+
+	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	return cmd.CombinedOutputAsync()
 }
