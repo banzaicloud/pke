@@ -32,6 +32,7 @@ func TestWriteKubeadmConfig(t *testing.T) {
 		filename,
 		"192.168.64.11:6443",
 		"192.168.64.11:6443",
+		"/etc/kubernetes/pki/ca.crt",
 		"/etc/kubernetes/admission-control.yaml",
 		"my-cluster",
 		"",

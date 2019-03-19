@@ -55,6 +55,7 @@ const (
 	// FlagControllerManagerSigningCA Kubernetes Controller Manager needs a single signing cert.
 	// This is needed when using Intermediate CAs.
 	FlagControllerManagerSigningCA = "kubernetes-controller-manager-signing-ca"
+	FlagKubeletCertificateAuthority = "kubelet-certificate-authority"
 
 	// FlagKubernetesVersion Kubernetes version.
 	FlagKubernetesVersion = "kubernetes-version"
