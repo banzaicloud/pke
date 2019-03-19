@@ -421,7 +421,17 @@ nodeRegistration:
   {{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
   {{if .CloudProvider }}
-    cloud-provider: {{ .CloudProvider }}{{end}}
+    cloud-provider: "{{ .CloudProvider }}"{{end}}
+    read-only-port: "0"
+    anonymous-auth: "false"
+    streaming-connection-idle-timeout: "5m"
+    protect-kernel-defaults: "true"
+    event-qps: "0"
+    client-ca-file: "/etc/kubernetes/pki/ca.crt"
+    feature-gates: "RotateKubeletServerCertificate=true"
+    rotate-certificates: "true"
+    tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+    authorization-mode: "Webhook"
 ---
 apiVersion: kubeadm.k8s.io/v1alpha3
 kind: ClusterConfiguration
@@ -442,7 +452,7 @@ apiServerExtraArgs:
   # anonymous-auth: "false"
   profiling: "false"
   enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,PodSecurityPolicy,ServiceAccount"
-  disable-admission-plugins: "NamespaceLifecycle"
+  disable-admission-plugins: ""
   admission-control-config-file: "{{ .AdmissionConfig }}"
   audit-log-path: "/var/log/audit/apiserver.log"
   audit-log-maxage: "30"
