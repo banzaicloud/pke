@@ -49,6 +49,7 @@ const (
 	cmdKubectl                    = "/bin/kubectl"
 	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
 	kubeConfig                    = "/etc/kubernetes/admin.conf"
+	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
 	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
 	kubeadmAmazonConfig           = "/etc/kubernetes/aws.conf"
 	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
@@ -284,6 +285,11 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 	}
 
 	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
+	if err != nil {
+		return err
+	}
+
+	err = writeKubeProxyConfig(out, kubeProxyConfig)
 	if err != nil {
 		return err
 	}
@@ -611,6 +617,22 @@ plugins:
 	}
 
 	return tmpl.Execute(w, d)
+}
+
+func writeKubeProxyConfig(out io.Writer, filename string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0640)
+	if err != nil {
+		return err
+	}
+
+	conf := `apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+`
+
+	return file.Overwrite(filename, conf)
 }
 
 func writeEventRateLimitConfig(out io.Writer, filename string) error {

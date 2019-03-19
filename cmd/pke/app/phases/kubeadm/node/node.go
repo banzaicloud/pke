@@ -26,6 +26,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
@@ -38,8 +39,9 @@ const (
 	use   = "kubernetes-node"
 	short = "Kubernetes worker node installation"
 
-	cmdKubeadm    = "/bin/kubeadm"
-	kubeadmConfig = "/etc/kubernetes/kubeadm.conf"
+	cmdKubeadm      = "/bin/kubeadm"
+	kubeProxyConfig = "/var/lib/kube-proxy/config.conf"
+	kubeadmConfig   = "/etc/kubernetes/kubeadm.conf"
 )
 
 var _ phases.Runnable = (*Node)(nil)
@@ -168,6 +170,11 @@ func install(out io.Writer, apiServerHostPort, token, caCertHash, cloudProvider,
 		return err
 	}
 
+	err := writeKubeProxyConfig(out, kubeProxyConfig)
+	if err != nil {
+		return err
+	}
+
 	// kubeadm join 10.240.0.11:6443 --token 0uk28q.e5i6ewi7xb0g8ye9 --discovery-token-ca-cert-hash sha256:a1a74c00ecccf947b69b49172390018096affbbae25447c4bd0c0906273c1482 --cri-socket=unix:///run/containerd/containerd.sock
 	if err := runner.Cmd(out, cmdKubeadm, "join", "--config="+kubeadmConfig).CombinedOutputAsync(); err != nil {
 		return err
@@ -178,6 +185,22 @@ func install(out io.Writer, apiServerHostPort, token, caCertHash, cloudProvider,
 	}
 
 	return nil
+}
+
+func writeKubeProxyConfig(out io.Writer, filename string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0640)
+	if err != nil {
+		return err
+	}
+
+	conf := `apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+`
+
+	return file.Overwrite(filename, conf)
 }
 
 func writeKubeadmConfig(out io.Writer, filename, apiServerHostPort, token, caCertHash, cloudProvider, nodepool string) error {
@@ -199,11 +222,25 @@ nodeRegistration:
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
   {{if .CloudProvider }}
     cloud-provider: {{ .CloudProvider }}{{end}}
+    read-only-port: 0
+    anonymous-auth: false
+    streaming-connection-idle-timeout: 5m
+    protect-kernel-defaults: true
+    event-qps: 0
+    tls-cert-file: "/var/lib/kubelet/pki/kubelet-server-current.pem"
+    tls-private-key-file: "/var/lib/kubelet/pki/kubelet-server-current.pem"
+    client-ca-file: "/etc/kubernetes/pki/ca.crt"
+    feature-gates: RotateKubeletServerCertificate=true
+    rotate-certificates: true
 discoveryTokenAPIServers:
   - {{ .APIServerHostPort }}
 token: {{ .Token }}
 discoveryTokenCACertHashes:
   - {{ .CACertHash }}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+serverTLSBootstrap: true
 `
 	tmpl, err := template.New("kubeadm-config").Parse(conf)
 	if err != nil {
