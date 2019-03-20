@@ -15,6 +15,7 @@ pke install master [flags]
 ```
   -h, --help                                              help for master
       --image-repository string                           Prefix for image repository (default "banzaicloud")
+      --kubelet-certificate-authority string              Path to a cert file for the certificate authority. Used for kubelet server certificate verify. (default "/etc/kubernetes/pki/ca.crt")
       --kubernetes-advertise-address string               Kubernetes advertise address
       --kubernetes-api-server string                      Kubernetes API Server host port
       --kubernetes-api-server-cert-sans stringArray       sets extra Subject Alternative Names for the API Server signing cert
@@ -34,6 +35,7 @@ pke install master [flags]
       --pipeline-org-id int32                             Organization ID to use with Pipeline API
   -t, --pipeline-token string                             Token for accessing Pipeline API
   -u, --pipeline-url string                               Pipeline API server url
+      --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
 ```
 
 ### SEE ALSO

@@ -91,6 +91,9 @@ const (
 
 	// FlagImageRepository prefix for image repository.
 	FlagImageRepository = "image-repository"
+
+	// FlagAdmissionPluginPodSecurityPolicy enable admission plugin PodSecurityPolicy.
+	FlagAdmissionPluginPodSecurityPolicy = "with-plugin-psp"
 )
 
 var (

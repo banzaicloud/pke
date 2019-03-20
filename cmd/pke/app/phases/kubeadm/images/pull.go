@@ -92,7 +92,9 @@ func (i *Image) Validate(cmd *cobra.Command) error {
 func (i *Image) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", i.Use())
 
-	err := controlplane.WriteKubeadmConfig(out, kubeadmConfig, "", "", "", "", "", "", i.kubernetesVersion, "", "", "", "", "", []string{}, "", "", i.imageRepository)
+	c := controlplane.NewDefault(i.kubernetesVersion, i.imageRepository)
+
+	err := c.WriteKubeadmConfig(out, kubeadmConfig)
 	if err != nil {
 		return err
 	}

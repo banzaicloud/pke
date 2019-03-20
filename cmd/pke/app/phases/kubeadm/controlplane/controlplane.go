@@ -82,10 +82,18 @@ type ControlPlane struct {
 	oidcIssuerURL               string
 	oidcClientID                string
 	imageRepository             string
+	withPluginPSP               bool
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
 	return phases.NewCommand(out, &ControlPlane{})
+}
+
+func NewDefault(kubernetesVersion, imageRepository string) *ControlPlane {
+	return &ControlPlane{
+		kubernetesVersion: kubernetesVersion,
+		imageRepository:   imageRepository,
+	}
 }
 
 func (c *ControlPlane) Use() string {
@@ -122,6 +130,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagOIDCClientID, "", "A client ID that all OIDC tokens must be issued for")
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+	// PodSecurityPolicy admission plugin
+	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
 }
 
 func (c *ControlPlane) Validate(cmd *cobra.Command) error {
@@ -165,7 +175,7 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 func (c *ControlPlane) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
 
-	if err := installMaster(out, c.kubernetesVersion, c.advertiseAddress, c.apiServerHostPort, c.kubeletCertificateAuthority, c.clusterName, c.serviceCIDR, c.podNetworkCIDR, c.cloudProvider, c.nodepool, c.controllerManagerSigningCA, c.apiServerCertSANs, c.oidcIssuerURL, c.oidcClientID, c.imageRepository); err != nil {
+	if err := c.installMaster(out); err != nil {
 		if rErr := kubeadm.Reset(out); rErr != nil {
 			_, _ = fmt.Fprintf(out, "%v\n", rErr)
 		}
@@ -255,11 +265,15 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.imageRepository, err = cmd.Flags().GetString(constants.FlagImageRepository)
+	if err != nil {
+		return
+	}
+	c.withPluginPSP, err = cmd.Flags().GetBool(constants.FlagAdmissionPluginPodSecurityPolicy)
 
 	return
 }
 
-func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServerHostPort, kubeletCertificateAuthority, clusterName, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
+func (c *ControlPlane) installMaster(out io.Writer) error {
 	// create cni directory
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, cniDir)
 	err := os.MkdirAll(cniDir, 0755)
@@ -275,7 +289,7 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 	}
 
 	// write kubeadm config
-	err = WriteKubeadmConfig(out, kubeadmConfig, advertiseAddress, apiServerHostPort, kubeletCertificateAuthority, admissionConfig, clusterName, "", kubernetesVersion, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA, apiServerCertSANs, oidcIssuerURL, oidcClientID, imageRepository)
+	err = c.WriteKubeadmConfig(out, kubeadmConfig)
 	if err != nil {
 		return err
 	}
@@ -295,13 +309,13 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 		return err
 	}
 
-	err = writeEncryptionProviderConfig(out, encryptionProviderConfig, kubernetesVersion, "")
+	err = writeEncryptionProviderConfig(out, encryptionProviderConfig, c.kubernetesVersion, "")
 	if err != nil {
 		return err
 	}
 
 	// write kubeadm aws.conf
-	err = writeKubeadmAmazonConfig(out, kubeadmAmazonConfig, cloudProvider)
+	err = writeKubeadmAmazonConfig(out, kubeadmAmazonConfig, c.cloudProvider)
 	if err != nil {
 		return err
 	}
@@ -371,7 +385,7 @@ func installPodNetwork(out io.Writer, podNetworkCIDR, kubeConfig string) error {
 	return nil
 }
 
-func WriteKubeadmConfig(out io.Writer, filename, advertiseAddress, controlPlaneEndpoint, kubeletCertificateAuthority, admissionConfig, clusterName, fqdn, kubernetesVersion, serviceCIDR, podCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
+func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
@@ -382,26 +396,26 @@ func WriteKubeadmConfig(out io.Writer, filename, advertiseAddress, controlPlaneE
 
 	// API server advertisement
 	bindPort := "6443"
-	if advertiseAddress != "" {
-		host, port, err := splitHostPort(advertiseAddress, "6443")
+	if c.advertiseAddress != "" {
+		host, port, err := splitHostPort(c.advertiseAddress, "6443")
 		if err != nil {
 			return err
 		}
-		advertiseAddress = host
+		c.advertiseAddress = host
 		bindPort = port
 	}
 
 	// Control Plane
-	if controlPlaneEndpoint != "" {
-		host, port, err := splitHostPort(controlPlaneEndpoint, "6443")
+	if c.apiServerHostPort != "" {
+		host, port, err := splitHostPort(c.apiServerHostPort, "6443")
 		if err != nil {
 			return err
 		}
-		controlPlaneEndpoint = net.JoinHostPort(host, port)
+		c.apiServerHostPort = net.JoinHostPort(host, port)
 	}
 
 	encryptionProviderPrefix := ""
-	ver, err := semver.NewVersion(kubernetesVersion)
+	ver, err := semver.NewVersion(c.kubernetesVersion)
 	if err != nil {
 		return err
 	}
@@ -451,7 +465,7 @@ certificatesDir: "/etc/kubernetes/pki"
 apiServerExtraArgs:
   # anonymous-auth: "false"
   profiling: "false"
-  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,PodSecurityPolicy,ServiceAccount"
+  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
   disable-admission-plugins: ""
   admission-control-config-file: "{{ .AdmissionConfig }}"
   audit-log-path: "/var/log/audit/apiserver.log"
@@ -527,7 +541,6 @@ serverTLSBootstrap: true
 		KubeletCertificateAuthority string
 		AdmissionConfig             string
 		ClusterName                 string
-		FQDN                        string
 		KubernetesVersion           string
 		ServiceCIDR                 string
 		PodCIDR                     string
@@ -538,27 +551,28 @@ serverTLSBootstrap: true
 		OIDCClientID                string
 		ImageRepository             string
 		EncryptionProviderPrefix    string
+		WithPluginPSP               bool
 	}
 
 	d := data{
-		APIServerAdvertiseAddress:   advertiseAddress,
+		APIServerAdvertiseAddress:   c.advertiseAddress,
 		APIServerBindPort:           bindPort,
-		ControlPlaneEndpoint:        controlPlaneEndpoint,
-		APIServerCertSANs:           apiServerCertSANs,
-		KubeletCertificateAuthority: kubeletCertificateAuthority,
+		ControlPlaneEndpoint:        c.apiServerHostPort,
+		APIServerCertSANs:           c.apiServerCertSANs,
+		KubeletCertificateAuthority: c.kubeletCertificateAuthority,
 		AdmissionConfig:             admissionConfig,
-		ClusterName:                 clusterName,
-		FQDN:                        fqdn,
-		KubernetesVersion:           kubernetesVersion,
-		ServiceCIDR:                 serviceCIDR,
-		PodCIDR:                     podCIDR,
-		CloudProvider:               cloudProvider,
-		Nodepool:                    nodepool,
-		ControllerManagerSigningCA:  controllerManagerSigningCA,
-		OIDCIssuerURL:               oidcIssuerURL,
-		OIDCClientID:                oidcClientID,
-		ImageRepository:             imageRepository,
+		ClusterName:                 c.clusterName,
+		KubernetesVersion:           c.kubernetesVersion,
+		ServiceCIDR:                 c.serviceCIDR,
+		PodCIDR:                     c.podNetworkCIDR,
+		CloudProvider:               c.cloudProvider,
+		Nodepool:                    c.nodepool,
+		ControllerManagerSigningCA:  c.controllerManagerSigningCA,
+		OIDCIssuerURL:               c.oidcIssuerURL,
+		OIDCClientID:                c.oidcClientID,
+		ImageRepository:             c.imageRepository,
 		EncryptionProviderPrefix:    encryptionProviderPrefix,
+		WithPluginPSP:               c.withPluginPSP,
 	}
 
 	return tmpl.Execute(w, d)
