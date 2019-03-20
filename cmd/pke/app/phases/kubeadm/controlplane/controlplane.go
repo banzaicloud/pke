@@ -804,7 +804,7 @@ spec:
       priorityClassName: system-cluster-critical
       containers:
         - name: auto-approver
-          image: banzaicloud/auto-approver:latest
+          image: banzaicloud/auto-approver:0.1.0
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
