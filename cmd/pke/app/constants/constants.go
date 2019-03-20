@@ -19,6 +19,9 @@ import (
 )
 
 const (
+	// Umask default umask
+	Umask = 0022
+
 	// FlagOutput output formatting.
 	FlagOutput = "output"
 	// FlagOutputShort output formatting.

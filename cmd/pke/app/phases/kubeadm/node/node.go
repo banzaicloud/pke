@@ -191,7 +191,7 @@ func writeKubeProxyConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0640)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func writeKubeadmConfig(out io.Writer, filename, apiServerHostPort, token, caCer
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0640)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}

@@ -17,13 +17,18 @@ package app
 import (
 	"flag"
 	"os"
+	"syscall"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/cmd"
+	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 func Run(gitVersion, gitCommit, gitTreeState, buildDate string) error {
+	// set global umask
+	syscall.Umask(constants.Umask)
+
 	cobra.EnableCommandSorting = false
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 

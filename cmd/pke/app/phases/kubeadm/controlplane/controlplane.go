@@ -262,7 +262,7 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServerHostPort, kubeletCertificateAuthority, clusterName, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
 	// create cni directory
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, cniDir)
-	err := os.MkdirAll(cniDir, 0644)
+	err := os.MkdirAll(cniDir, 0755)
 	if err != nil {
 		return err
 	}
@@ -375,7 +375,7 @@ func WriteKubeadmConfig(out io.Writer, filename, advertiseAddress, controlPlaneE
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0640)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}
@@ -602,7 +602,7 @@ func writeAdmissionConfiguration(out io.Writer, filename, rateLimitConfigFile st
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0640)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}
@@ -641,7 +641,7 @@ func writeKubeProxyConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0640)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}
@@ -657,7 +657,7 @@ func writeEventRateLimitConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0640)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}
@@ -716,7 +716,7 @@ func writeCertificateAutoApprover(out io.Writer) error {
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0640)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}
@@ -817,7 +817,7 @@ func writePodSecurityPolicyConfig(out io.Writer) error {
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0640)
+	err := os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}
