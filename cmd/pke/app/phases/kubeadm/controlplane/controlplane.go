@@ -696,10 +696,11 @@ func waitForAPIServer(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] waiting for API Server to restart. this may take %s\n", use, timeout)
 
 	tout := time.After(timeout)
-	tick := time.Tick(500 * time.Millisecond)
+	tick := time.NewTicker(500 * time.Millisecond)
+	defer tick.Stop()
 	for {
 		select {
-		case <-tick:
+		case <-tick.C:
 			// kubectl get cs. ensures kube-apiserver is restarted.
 			cmd := runner.Cmd(out, cmdKubectl, "get", "cs")
 			cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
