@@ -15,6 +15,7 @@
 package controlplane
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -31,6 +32,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
@@ -43,38 +45,55 @@ const (
 	use   = "kubernetes-controlplane"
 	short = "Kubernetes Control Plane installation"
 
-	cmdKubeadm              = "/bin/kubeadm"
-	cmdKubectl              = "/bin/kubectl"
-	weaveNetUrl             = "https://cloud.weave.works/k8s/net"
-	kubeConfig              = "/etc/kubernetes/admin.conf"
-	kubeadmConfig           = "/etc/kubernetes/kubeadm.conf"
-	kubeadmAmazonConfig     = "/etc/kubernetes/aws.conf"
-	urlAWSAZ                = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
-	kubernetesCASigningCert = "/etc/kubernetes/pki/cm-signing-ca.crt"
+	cmdKubeadm                    = "/bin/kubeadm"
+	cmdKubectl                    = "/bin/kubectl"
+	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
+	kubeConfig                    = "/etc/kubernetes/admin.conf"
+	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
+	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
+	kubeadmAmazonConfig           = "/etc/kubernetes/aws.conf"
+	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
+	kubernetesCASigningCert       = "/etc/kubernetes/pki/cm-signing-ca.crt"
+	admissionConfig               = "/etc/kubernetes/admission-control.yaml"
+	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
+	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
+	certificateAutoApprover       = "/etc/kubernetes/admission-control/deploy-auto-approver.yaml"
+	encryptionProviderConfig      = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
+	cniDir                        = "/etc/cni/net.d"
+	etcdDir                       = "/var/lib/etcd"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
 
 type ControlPlane struct {
-	kubernetesVersion          string
-	networkProvider            string
-	advertiseAddress           string
-	apiServerHostPort          string
-	clusterName                string
-	serviceCIDR                string
-	podNetworkCIDR             string
-	cloudProvider              string
-	nodepool                   string
-	controllerManagerSigningCA string
-	clusterMode                string
-	apiServerCertSANs          []string
-	oidcIssuerURL              string
-	oidcClientID               string
-	imageRepository            string
+	kubernetesVersion           string
+	networkProvider             string
+	advertiseAddress            string
+	apiServerHostPort           string
+	clusterName                 string
+	serviceCIDR                 string
+	podNetworkCIDR              string
+	cloudProvider               string
+	nodepool                    string
+	controllerManagerSigningCA  string
+	clusterMode                 string
+	apiServerCertSANs           []string
+	kubeletCertificateAuthority string
+	oidcIssuerURL               string
+	oidcClientID                string
+	imageRepository             string
+	withPluginPSP               bool
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
 	return phases.NewCommand(out, &ControlPlane{})
+}
+
+func NewDefault(kubernetesVersion, imageRepository string) *ControlPlane {
+	return &ControlPlane{
+		kubernetesVersion: kubernetesVersion,
+		imageRepository:   imageRepository,
+	}
 }
 
 func (c *ControlPlane) Use() string {
@@ -99,6 +118,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes certificates
 	flags.StringArray(constants.FlagAPIServerCertSANs, []string{}, "sets extra Subject Alternative Names for the API Server signing cert")
 	flags.String(constants.FlagControllerManagerSigningCA, "", "Kubernetes Controller Manager signing cert")
+	flags.String(constants.FlagKubeletCertificateAuthority, "/etc/kubernetes/pki/ca.crt", "Path to a cert file for the certificate authority. Used for kubelet server certificate verify.")
 	// Kubernetes cluster mode
 	flags.String(constants.FlagClusterMode, "default", "Kubernetes cluster mode")
 	// Kubernetes cloud provider (optional)
@@ -110,6 +130,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagOIDCClientID, "", "A client ID that all OIDC tokens must be issued for")
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+	// PodSecurityPolicy admission plugin
+	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
 }
 
 func (c *ControlPlane) Validate(cmd *cobra.Command) error {
@@ -153,7 +175,7 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 func (c *ControlPlane) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
 
-	if err := installMaster(out, c.kubernetesVersion, c.advertiseAddress, c.apiServerHostPort, c.clusterName, c.serviceCIDR, c.podNetworkCIDR, c.cloudProvider, c.nodepool, c.controllerManagerSigningCA, c.apiServerCertSANs, c.oidcIssuerURL, c.oidcClientID, c.imageRepository); err != nil {
+	if err := c.installMaster(out); err != nil {
 		if rErr := kubeadm.Reset(out); rErr != nil {
 			_, _ = fmt.Fprintf(out, "%v\n", rErr)
 		}
@@ -226,6 +248,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
+	c.kubeletCertificateAuthority, err = cmd.Flags().GetString(constants.FlagKubeletCertificateAuthority)
+	if err != nil {
+		return
+	}
 	c.clusterName, err = cmd.Flags().GetString(constants.FlagClusterName)
 	if err != nil {
 		return
@@ -239,19 +265,60 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.imageRepository, err = cmd.Flags().GetString(constants.FlagImageRepository)
+	if err != nil {
+		return
+	}
+	c.withPluginPSP, err = cmd.Flags().GetBool(constants.FlagAdmissionPluginPodSecurityPolicy)
 
 	return
 }
 
-func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServerHostPort, clusterName, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
+func (c *ControlPlane) installMaster(out io.Writer) error {
+	// create cni directory
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, cniDir)
+	err := os.MkdirAll(cniDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	// create etcd directory
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, etcdDir)
+	err = os.MkdirAll(etcdDir, 0700)
+	if err != nil {
+		return err
+	}
+
 	// write kubeadm config
-	err := WriteKubeadmConfig(out, kubeadmConfig, advertiseAddress, apiServerHostPort, clusterName, "", kubernetesVersion, serviceCIDR, podNetworkCIDR, cloudProvider, nodepool, controllerManagerSigningCA, apiServerCertSANs, oidcIssuerURL, oidcClientID, imageRepository)
+	err = c.WriteKubeadmConfig(out, kubeadmConfig)
+	if err != nil {
+		return err
+	}
+
+	err = writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
+	if err != nil {
+		return err
+	}
+
+	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
+	if err != nil {
+		return err
+	}
+
+	err = writeKubeProxyConfig(out, kubeProxyConfig)
+	if err != nil {
+		return err
+	}
+
+	err = writeEncryptionProviderConfig(out, encryptionProviderConfig, c.kubernetesVersion, "")
 	if err != nil {
 		return err
 	}
 
 	// write kubeadm aws.conf
-	err = writeKubeadmAmazonConfig(out, kubeadmAmazonConfig, cloudProvider)
+	err = writeKubeadmAmazonConfig(out, kubeadmAmazonConfig, c.cloudProvider)
+	if err != nil {
+		return err
+	}
 
 	// kubeadm init --config=/etc/kubernetes/kubeadm.conf
 	args := []string{
@@ -261,6 +328,26 @@ func installMaster(out io.Writer, kubernetesVersion, advertiseAddress, apiServer
 	err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {
 		return err
+	}
+
+	err = waitForAPIServer(out)
+	if err != nil {
+		return err
+	}
+
+	// apply AutoApprover
+	if err := writeCertificateAutoApprover(out); err != nil {
+		return err
+	}
+	// apply PSP
+	if err := writePodSecurityPolicyConfig(out); err != nil {
+		return err
+	}
+
+	// if replica set started before default PSP is applied, replica set will hang. force re-create.
+	err = deleteKubeDNSReplicaSet(out)
+	if err != nil {
+		_, _ = fmt.Fprintf(out, "[%s] kube-dns replica set is not started yet, skipping\n", use)
 	}
 
 	return nil
@@ -298,7 +385,7 @@ func installPodNetwork(out io.Writer, podNetworkCIDR, kubeConfig string) error {
 	return nil
 }
 
-func WriteKubeadmConfig(out io.Writer, filename, advertiseAddress, controlPlaneEndpoint, clusterName, fqdn, kubernetesVersion, serviceCIDR, podCIDR, cloudProvider, nodepool, controllerManagerSigningCA string, apiServerCertSANs []string, oidcIssuerURL, oidcClientID, imageRepository string) error {
+func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
@@ -309,22 +396,31 @@ func WriteKubeadmConfig(out io.Writer, filename, advertiseAddress, controlPlaneE
 
 	// API server advertisement
 	bindPort := "6443"
-	if advertiseAddress != "" {
-		host, port, err := splitHostPort(advertiseAddress, "6443")
+	if c.advertiseAddress != "" {
+		host, port, err := splitHostPort(c.advertiseAddress, "6443")
 		if err != nil {
 			return err
 		}
-		advertiseAddress = host
+		c.advertiseAddress = host
 		bindPort = port
 	}
 
 	// Control Plane
-	if controlPlaneEndpoint != "" {
-		host, port, err := splitHostPort(controlPlaneEndpoint, "6443")
+	if c.apiServerHostPort != "" {
+		host, port, err := splitHostPort(c.apiServerHostPort, "6443")
 		if err != nil {
 			return err
 		}
-		controlPlaneEndpoint = net.JoinHostPort(host, port)
+		c.apiServerHostPort = net.JoinHostPort(host, port)
+	}
+
+	encryptionProviderPrefix := ""
+	ver, err := semver.NewVersion(c.kubernetesVersion)
+	if err != nil {
+		return err
+	}
+	if ver.Major() == 1 && ver.Minor() <= 12 {
+		encryptionProviderPrefix = "experimental-"
 	}
 
 	// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
@@ -339,7 +435,17 @@ nodeRegistration:
   {{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
   {{if .CloudProvider }}
-    cloud-provider: {{ .CloudProvider }}{{end}}
+    cloud-provider: "{{ .CloudProvider }}"{{end}}
+    read-only-port: "0"
+    anonymous-auth: "false"
+    streaming-connection-idle-timeout: "5m"
+    protect-kernel-defaults: "true"
+    event-qps: "0"
+    client-ca-file: "/etc/kubernetes/pki/ca.crt"
+    feature-gates: "RotateKubeletServerCertificate=true"
+    rotate-certificates: "true"
+    tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+    authorization-mode: "Webhook"
 ---
 apiVersion: kubeadm.k8s.io/v1alpha3
 kind: ClusterConfiguration
@@ -356,7 +462,21 @@ certificatesDir: "/etc/kubernetes/pki"
 {{if .APIServerCertSANs}}apiServerCertSANs:
 {{range $k, $san := .APIServerCertSANs}}  - "{{ $san }}"
 {{end}}{{end}}
-apiServerExtraArgs:{{if (and .OIDCIssuerURL .OIDCClientID) }}
+apiServerExtraArgs:
+  # anonymous-auth: "false"
+  profiling: "false"
+  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
+  disable-admission-plugins: ""
+  admission-control-config-file: "{{ .AdmissionConfig }}"
+  audit-log-path: "/var/log/audit/apiserver.log"
+  audit-log-maxage: "30"
+  audit-log-maxbackup: "10"
+  audit-log-maxsize: "100"
+  service-account-lookup: "true"
+  kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
+  tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+  {{ .EncryptionProviderPrefix }}encryption-provider-config: "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
+{{if (and .OIDCIssuerURL .OIDCClientID) }}
   oidc-issuer-url: "{{ .OIDCIssuerURL }}"
   oidc-client-id: "{{ .OIDCClientID }}"
   oidc-username-claim: "email"
@@ -364,8 +484,20 @@ apiServerExtraArgs:{{if (and .OIDCIssuerURL .OIDCClientID) }}
   oidc-groups-claim: "groups"{{end}}
 {{if eq .CloudProvider "aws" }}
   cloud-provider: aws
-  cloud-config: /etc/kubernetes/aws.conf
+  cloud-config: /etc/kubernetes/aws.conf{{end}}
+schedulerExtraArgs:
+  profiling: "false"
 apiServerExtraVolumes:
+  - name: admission-control-config-file
+    hostPath: {{ .AdmissionConfig }}
+    mountPath: {{ .AdmissionConfig }}
+    writable: false
+    pathType: File
+  - name: admission-control-config-dir
+    hostPath: /etc/kubernetes/admission-control/
+    mountPath: /etc/kubernetes/admission-control/
+    writable: false
+    pathType: Directory{{if eq .CloudProvider "aws" }}
   - name: cloud-config
     hostPath: /etc/kubernetes/aws.conf
     mountPath: /etc/kubernetes/aws.conf
@@ -373,10 +505,21 @@ controllerManagerExtraVolumes:
   - name: cloud-config
     hostPath: /etc/kubernetes/aws.conf
     mountPath: /etc/kubernetes/aws.conf{{end}}
-controllerManagerExtraArgs:{{if eq .CloudProvider "aws" }}
+controllerManagerExtraArgs:
+  profiling: "false"
+  terminated-pod-gc-threshold: "10"
+  feature-gates: "RotateKubeletServerCertificate=true"{{if eq .CloudProvider "aws" }}
   cloud-provider: aws
   cloud-config: /etc/kubernetes/aws.conf{{end}}
   {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}
+etcd:
+  local:
+    extraArgs:
+      peer-auto-tls: "false"
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+serverTLSBootstrap: true
 `
 	tmpl, err := template.New("kubeadm-config").Parse(conf)
 	if err != nil {
@@ -384,46 +527,52 @@ controllerManagerExtraArgs:{{if eq .CloudProvider "aws" }}
 	}
 
 	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = w.Close() }()
 
 	type data struct {
-		APIServerAdvertiseAddress  string
-		APIServerBindPort          string
-		ControlPlaneEndpoint       string
-		APIServerCertSANs          []string
-		ClusterName                string
-		FQDN                       string
-		KubernetesVersion          string
-		ServiceCIDR                string
-		PodCIDR                    string
-		CloudProvider              string
-		Nodepool                   string
-		ControllerManagerSigningCA string
-		OIDCIssuerURL              string
-		OIDCClientID               string
-		ImageRepository            string
+		APIServerAdvertiseAddress   string
+		APIServerBindPort           string
+		ControlPlaneEndpoint        string
+		APIServerCertSANs           []string
+		KubeletCertificateAuthority string
+		AdmissionConfig             string
+		ClusterName                 string
+		KubernetesVersion           string
+		ServiceCIDR                 string
+		PodCIDR                     string
+		CloudProvider               string
+		Nodepool                    string
+		ControllerManagerSigningCA  string
+		OIDCIssuerURL               string
+		OIDCClientID                string
+		ImageRepository             string
+		EncryptionProviderPrefix    string
+		WithPluginPSP               bool
 	}
 
 	d := data{
-		APIServerAdvertiseAddress:  advertiseAddress,
-		APIServerBindPort:          bindPort,
-		ControlPlaneEndpoint:       controlPlaneEndpoint,
-		APIServerCertSANs:          apiServerCertSANs,
-		ClusterName:                clusterName,
-		FQDN:                       fqdn,
-		KubernetesVersion:          kubernetesVersion,
-		ServiceCIDR:                serviceCIDR,
-		PodCIDR:                    podCIDR,
-		CloudProvider:              cloudProvider,
-		Nodepool:                   nodepool,
-		ControllerManagerSigningCA: controllerManagerSigningCA,
-		OIDCIssuerURL:              oidcIssuerURL,
-		OIDCClientID:               oidcClientID,
-		ImageRepository:            imageRepository,
+		APIServerAdvertiseAddress:   c.advertiseAddress,
+		APIServerBindPort:           bindPort,
+		ControlPlaneEndpoint:        c.apiServerHostPort,
+		APIServerCertSANs:           c.apiServerCertSANs,
+		KubeletCertificateAuthority: c.kubeletCertificateAuthority,
+		AdmissionConfig:             admissionConfig,
+		ClusterName:                 c.clusterName,
+		KubernetesVersion:           c.kubernetesVersion,
+		ServiceCIDR:                 c.serviceCIDR,
+		PodCIDR:                     c.podNetworkCIDR,
+		CloudProvider:               c.cloudProvider,
+		Nodepool:                    c.nodepool,
+		ControllerManagerSigningCA:  c.controllerManagerSigningCA,
+		OIDCIssuerURL:               c.oidcIssuerURL,
+		OIDCClientID:                c.oidcClientID,
+		ImageRepository:             c.imageRepository,
+		EncryptionProviderPrefix:    encryptionProviderPrefix,
+		WithPluginPSP:               c.withPluginPSP,
 	}
 
 	return tmpl.Execute(w, d)
@@ -450,7 +599,7 @@ func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) err
 			return errors.Wrap(err, "failed to read response body")
 		}
 
-		w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+		w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 		if err != nil {
 			return err
 		}
@@ -463,6 +612,107 @@ func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) err
 	return nil
 }
 
+func writeAdmissionConfiguration(out io.Writer, filename, rateLimitConfigFile string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	conf := `kind: AdmissionConfiguration
+apiVersion: apiserver.k8s.io/v1alpha1
+plugins:
+- name: EventRateLimit
+  path: {{ .RateLimitConfigFile }}
+`
+
+	tmpl, err := template.New("admission-config").Parse(conf)
+	if err != nil {
+		return err
+	}
+
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	type data struct {
+		RateLimitConfigFile string
+	}
+
+	d := data{
+		RateLimitConfigFile: rateLimitConfigFile,
+	}
+
+	return tmpl.Execute(w, d)
+}
+
+func writeKubeProxyConfig(out io.Writer, filename string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	conf := `apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+`
+
+	return file.Overwrite(filename, conf)
+}
+
+func writeEventRateLimitConfig(out io.Writer, filename string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	conf := `kind: Configuration
+apiVersion: eventratelimit.admission.k8s.io/v1alpha1
+limits:
+- type: Namespace
+  qps: 50
+  burst: 100
+  cacheSize: 2000
+- type: User
+  qps: 10
+  burst: 50
+`
+
+	return file.Overwrite(filename, conf)
+}
+
+func waitForAPIServer(out io.Writer) error {
+	timeout := 30 * time.Second
+	_, _ = fmt.Fprintf(out, "[%s] waiting for API Server to restart. this may take %s\n", use, timeout)
+
+	tout := time.After(timeout)
+	tick := time.Tick(500 * time.Millisecond)
+	for {
+		select {
+		case <-tick:
+			// kubectl get cs. ensures kube-apiserver is restarted.
+			cmd := runner.Cmd(out, cmdKubectl, "get", "cs")
+			cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+			err := cmd.CombinedOutputAsync()
+			if err == nil {
+				return nil
+			}
+		case <-tout:
+			return errors.New("wait timeout")
+		}
+	}
+}
+
 func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error {
 	if clusterMode != "single" {
 		_, _ = fmt.Fprintf(out, "skipping NoSchedule taint removal\n")
@@ -471,6 +721,458 @@ func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error 
 
 	// kubectl taint node -l node-role.kubernetes.io/master node-role.kubernetes.io/master:NoSchedule-
 	cmd := runner.Cmd(out, cmdKubectl, "taint", "node", "-l node-role.kubernetes.io/master", "node-role.kubernetes.io/master:NoSchedule-")
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	return cmd.CombinedOutputAsync()
+}
+
+func writeCertificateAutoApprover(out io.Writer) error {
+	filename := certificateAutoApprover
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	conf := `apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: auto-approver
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: auto-approver
+rules:
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/approval
+  verbs:
+  - create
+  - update
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: auto-approver
+subjects:
+- kind: ServiceAccount
+  namespace: kube-system
+  name: auto-approver
+roleRef:
+  kind: ClusterRole
+  name: auto-approver
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auto-approver
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: auto-approver
+  template:
+    metadata:
+      labels:
+        name: auto-approver
+    spec:
+      serviceAccountName: auto-approver
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+      priorityClassName: system-cluster-critical
+      containers:
+        - name: auto-approver
+          image: banzaicloud/auto-approver:0.1.0
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "auto-approver"
+`
+	err = file.Overwrite(filename, conf)
+	if err != nil {
+		return err
+	}
+
+	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	return cmd.CombinedOutputAsync()
+}
+
+func writePodSecurityPolicyConfig(out io.Writer) error {
+	filename := podSecurityPolicyConfig
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	conf := `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pke:podsecuritypolicy:unprivileged-addon
+  namespace: kube-system
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    kubernetes.io/cluster-service: "true"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pke:podsecuritypolicy:unprivileged-addon
+subjects:
+- kind: Group
+  # All service accounts in the kube-system namespace are allowed to use this.
+  name: system:serviceaccounts:kube-system
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pke:podsecuritypolicy:nodes
+  namespace: kube-system
+  annotations:
+    kubernetes.io/description: 'Allow nodes to create privileged pods. Should
+      be used in combination with the NodeRestriction admission plugin to limit
+      nodes to mirror pods bound to themselves.'
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    kubernetes.io/cluster-service: 'true'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pke:podsecuritypolicy:privileged
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:nodes
+  - kind: User
+    apiGroup: rbac.authorization.k8s.io
+    # Legacy node ID
+    name: kubelet
+---
+apiVersion: rbac.authorization.k8s.io/v1
+# The persistent volume binder creates recycler pods in the default namespace,
+# but the addon manager only creates namespaced objects in the kube-system
+# namespace, so this is a ClusterRoleBinding.
+kind: ClusterRoleBinding
+metadata:
+  name: pke:podsecuritypolicy:persistent-volume-binder
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    kubernetes.io/cluster-service: "true"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pke:podsecuritypolicy:persistent-volume-binder
+subjects:
+- kind: ServiceAccount
+  name: persistent-volume-binder
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+# The persistent volume binder creates recycler pods in the default namespace,
+# but the addon manager only creates namespaced objects in the kube-system
+# namespace, so this is a ClusterRole.
+kind: ClusterRole
+metadata:
+  name: pke:podsecuritypolicy:persistent-volume-binder
+  namespace: default
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+rules:
+- apiGroups:
+  - policy
+  resourceNames:
+  - pke.persistent-volume-binder
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: pke.persistent-volume-binder
+  annotations:
+    kubernetes.io/description: 'Policy used by the persistent-volume-binder
+      (a.k.a. persistentvolume-controller) to run recycler pods.'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'docker/default'
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default'
+  labels:
+    kubernetes.io/cluster-service: 'true'
+    addonmanager.kubernetes.io/mode: Reconcile
+spec:
+  privileged: false
+  volumes:
+  - 'nfs'
+  - 'secret'   # Required for service account credentials.
+  - 'projected'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  readOnlyRootFilesystem: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pke:podsecuritypolicy:privileged-binding
+  namespace: kube-system
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    kubernetes.io/cluster-service: "true"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pke:podsecuritypolicy:privileged
+subjects:
+  - kind: ServiceAccount
+    name: kube-proxy
+    namespace: kube-system
+  - kind: ServiceAccount
+    name: weave-net
+    namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pke:podsecuritypolicy:privileged
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+rules:
+- apiGroups:
+  - policy
+  resourceNames:
+  - pke.privileged
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: pke.privileged
+  annotations:
+    kubernetes.io/description: 'privileged allows full unrestricted access to
+      pod features, as if the PodSecurityPolicy controller was not enabled.'
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities:
+  - '*'
+  volumes:
+  - '*'
+  hostNetwork: true
+  hostPorts:
+  - min: 0
+    max: 65535
+  hostIPC: true
+  hostPID: true
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  readOnlyRootFilesystem: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pke:podsecuritypolicy:unprivileged-addon
+  namespace: kube-system
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+rules:
+- apiGroups:
+  - policy
+  resourceNames:
+  - pke.unprivileged-addon
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: pke.unprivileged-addon
+  annotations:
+    kubernetes.io/description: 'This policy grants the minimum amount of
+      privilege necessary to run non-privileged kube-system pods. This policy is
+      not intended for use outside of kube-system, and may include further
+      restrictions in the future.'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'docker/default'
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default'
+  labels:
+    kubernetes.io/cluster-service: 'true'
+    addonmanager.kubernetes.io/mode: Reconcile
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  # The docker default set of capabilities
+  allowedCapabilities:
+  - SETPCAP
+  - MKNOD
+  - AUDIT_WRITE
+  - CHOWN
+  - NET_RAW
+  - DAC_OVERRIDE
+  - FOWNER
+  - FSETID
+  - KILL
+  - SETGID
+  - SETUID
+  - NET_BIND_SERVICE
+  - SYS_CHROOT
+  - SETFCAP
+  volumes:
+  - 'emptyDir'
+  - 'configMap'
+  - 'secret'
+  - 'projected'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  # TODO: The addons using this profile should not run as root.
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  readOnlyRootFilesystem: false
+`
+
+	err = file.Overwrite(filename, conf)
+	if err != nil {
+		return err
+	}
+
+	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	return cmd.CombinedOutputAsync()
+}
+
+func writeEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, encryptionSecret string) error {
+	if encryptionSecret == "" {
+		// generate encryption secret
+		var rnd = make([]byte, 32)
+		n, err := rand.Read(rnd)
+		if err != nil {
+			return err
+		}
+		if n != 32 {
+			return errors.New(fmt.Sprintf("invalid encryption secret length. got: %d expected: 32", n))
+		}
+
+		encryptionSecret = base64.StdEncoding.EncodeToString(rnd)
+	}
+
+	var (
+		kind       = "EncryptionConfiguration"
+		apiVersion = "apiserver.config.k8s.io/v1"
+	)
+	ver, err := semver.NewVersion(kubernetesVersion)
+	if err != nil {
+		return err
+	}
+	if ver.Major() == 1 && ver.Minor() <= 12 {
+		kind = "EncryptionConfig"
+		apiVersion = "v1"
+	}
+
+	conf := `kind: {{ .Kind }}
+apiVersion: {{ .APIVersion }}
+resources:
+  - resources:
+    - secrets
+    providers:
+    - aescbc:
+        keys:
+        - name: key1
+          secret: "{{ .EncryptionSecret }}"
+    - identity: {}
+`
+
+	tmpl, err := template.New("admission-config").Parse(conf)
+	if err != nil {
+		return err
+	}
+
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	type data struct {
+		Kind             string
+		APIVersion       string
+		EncryptionSecret string
+	}
+
+	d := data{
+		Kind:             kind,
+		APIVersion:       apiVersion,
+		EncryptionSecret: encryptionSecret,
+	}
+
+	return tmpl.Execute(w, d)
+}
+
+func deleteKubeDNSReplicaSet(out io.Writer) error {
+	cmd := runner.Cmd(out, cmdKubectl, "delete", "rs", "-n", "kube-system", "k8s-app=kube-dns")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	return cmd.CombinedOutputAsync()
 }

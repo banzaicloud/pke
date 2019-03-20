@@ -29,6 +29,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/token"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -74,7 +75,7 @@ func (l *List) Validate(cmd *cobra.Command) error {
 func (l *List) Run(out io.Writer) error {
 	hash, err := token.CertHash(ioutil.Discard, caCertFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate certificate hash")
 	}
 
 	// kubectl get secret -n kube-system -o jsonpath='{range .items[?(.type=="bootstrap.kubernetes.io/token")]}{.metadata.name}{"\n"}{end}'
@@ -83,7 +84,7 @@ func (l *List) Run(out io.Writer) error {
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	o, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read secret")
 	}
 
 	var list = token.Output{}
@@ -95,12 +96,12 @@ func (l *List) Run(out io.Writer) error {
 			continue
 		}
 		if err := scn.Err(); err != nil {
-			return err
+			return errors.Wrapf(err, "failed to scan output: %s", o)
 		}
 
 		t, err := token.Get(ioutil.Discard, line, hash)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to get token for %q", line)
 		}
 
 		list.Tokens = append(list.Tokens, t)

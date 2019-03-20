@@ -15,6 +15,7 @@ pke install single kubernetes-controlplane [flags]
 ```
   -h, --help                                              help for kubernetes-controlplane
       --image-repository string                           Prefix for image repository (default "banzaicloud")
+      --kubelet-certificate-authority string              Path to a cert file for the certificate authority. Used for kubelet server certificate verify. (default "/etc/kubernetes/pki/ca.crt")
       --kubernetes-advertise-address string               Kubernetes advertise address
       --kubernetes-api-server string                      Kubernetes API Server host port
       --kubernetes-api-server-cert-sans stringArray       sets extra Subject Alternative Names for the API Server signing cert
@@ -29,6 +30,7 @@ pke install single kubernetes-controlplane [flags]
       --kubernetes-service-cidr string                    range of IP address for service VIPs (default "10.10.0.0/16")
       --kubernetes-version string                         Kubernetes version (default "1.13.3")
       --pipeline-nodepool string                          name of the nodepool the node belongs to
+      --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
 ```
 
 ### SEE ALSO

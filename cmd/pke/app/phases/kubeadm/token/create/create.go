@@ -76,14 +76,14 @@ func (c *Create) Validate(cmd *cobra.Command) error {
 func (c *Create) Run(out io.Writer) error {
 	hash, err := token.CertHash(ioutil.Discard, caCertFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate certificate hash")
 	}
 
 	cmd := runner.Cmd(ioutil.Discard, cmdKubeadm, "token", "create")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	o, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create secret")
 	}
 
 	var t *token.Token
@@ -95,7 +95,7 @@ func (c *Create) Run(out io.Writer) error {
 			continue
 		}
 		if err := scn.Err(); err != nil {
-			return err
+			return errors.Wrapf(err, "failed to scan output: %s", o)
 		}
 
 		idx := strings.IndexRune(line, '.')
@@ -105,7 +105,7 @@ func (c *Create) Run(out io.Writer) error {
 
 		t, err = token.Get(ioutil.Discard, "bootstrap-token-"+line[:idx], hash)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to get token for %q", line)
 		}
 	}
 

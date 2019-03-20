@@ -15,7 +15,10 @@
 package kubernetes
 
 import (
+	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
@@ -34,7 +37,8 @@ repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 exclude=kube*`
 
-	selinuxConfig = "/etc/selinux/config"
+	selinuxConfig       = "/etc/selinux/config"
+	kubeletKernelparams = "/etc/sysctl.d/90-kubelet.conf"
 )
 
 func (r *Runtime) installRuntime(out io.Writer, kubernetesVersion string) error {
@@ -79,6 +83,14 @@ func (r *Runtime) installRuntime(out io.Writer, kubernetesVersion string) error 
 		return errors.Wrap(err, "missing ip_vs_sh Linux Kernel module")
 	}
 
+	if err := writeKubeletKernelParams(out, kubeletKernelparams); err != nil {
+		return errors.Wrapf(err, "unable to write kubernetes kernel params to %s", kubeletKernelparams)
+	}
+
+	if err := linux.SysctlLoadAllFiles(out); err != nil {
+		return errors.Wrapf(err, "unable to load all sysctl rules from files")
+	}
+
 	// Add kubernetes repo
 	// cat <<EOF > /etc/yum.repos.d/kubernetes.repo
 	// [kubernetes]
@@ -104,6 +116,23 @@ func (r *Runtime) installRuntime(out io.Writer, kubernetesVersion string) error 
 	_ = linux.SystemctlDisableAndStop(out, "kubelet")
 
 	return nil
+}
+
+func writeKubeletKernelParams(out io.Writer, filename string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	conf := `vm.overcommit_memory=1
+kernel.panic=10
+kernel.panic_on_oops=1
+`
+
+	return file.Overwrite(filename, conf)
 }
 
 func yumPackages(kubernetesVersion string) []string {

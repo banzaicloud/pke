@@ -105,7 +105,7 @@ func installCentOS7(out io.Writer) error {
 	// [Service]
 	// Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
 	// EOF
-	if err := os.MkdirAll(filepath.Dir(containerDConfFile), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(containerDConfFile), 0750); err != nil {
 		return err
 	}
 	if err := file.Overwrite(containerDConfFile, containerDConf); err != nil {

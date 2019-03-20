@@ -19,6 +19,9 @@ import (
 )
 
 const (
+	// Umask default umask
+	Umask = 0022
+
 	// FlagOutput output formatting.
 	FlagOutput = "output"
 	// FlagOutputShort output formatting.
@@ -54,7 +57,8 @@ const (
 	FlagAPIServerCertSANs = "kubernetes-api-server-cert-sans"
 	// FlagControllerManagerSigningCA Kubernetes Controller Manager needs a single signing cert.
 	// This is needed when using Intermediate CAs.
-	FlagControllerManagerSigningCA = "kubernetes-controller-manager-signing-ca"
+	FlagControllerManagerSigningCA  = "kubernetes-controller-manager-signing-ca"
+	FlagKubeletCertificateAuthority = "kubelet-certificate-authority"
 
 	// FlagKubernetesVersion Kubernetes version.
 	FlagKubernetesVersion = "kubernetes-version"
@@ -87,6 +91,9 @@ const (
 
 	// FlagImageRepository prefix for image repository.
 	FlagImageRepository = "image-repository"
+
+	// FlagAdmissionPluginPodSecurityPolicy enable admission plugin PodSecurityPolicy.
+	FlagAdmissionPluginPodSecurityPolicy = "with-plugin-psp"
 )
 
 var (
