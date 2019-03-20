@@ -1108,12 +1108,9 @@ func writeEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, e
 	if encryptionSecret == "" {
 		// generate encryption secret
 		var rnd = make([]byte, 32)
-		n, err := rand.Read(rnd)
+		_, err := rand.Read(rnd)
 		if err != nil {
 			return err
-		}
-		if n != 32 {
-			return errors.New(fmt.Sprintf("invalid encryption secret length. got: %d expected: 32", n))
 		}
 
 		encryptionSecret = base64.StdEncoding.EncodeToString(rnd)
