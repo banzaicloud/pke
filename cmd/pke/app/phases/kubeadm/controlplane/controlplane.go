@@ -696,10 +696,11 @@ func waitForAPIServer(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] waiting for API Server to restart. this may take %s\n", use, timeout)
 
 	tout := time.After(timeout)
-	tick := time.Tick(500 * time.Millisecond)
+	tick := time.NewTicker(500 * time.Millisecond)
+	defer tick.Stop()
 	for {
 		select {
-		case <-tick:
+		case <-tick.C:
 			// kubectl get cs. ensures kube-apiserver is restarted.
 			cmd := runner.Cmd(out, cmdKubectl, "get", "cs")
 			cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
@@ -1107,12 +1108,9 @@ func writeEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, e
 	if encryptionSecret == "" {
 		// generate encryption secret
 		var rnd = make([]byte, 32)
-		n, err := rand.Read(rnd)
+		_, err := rand.Read(rnd)
 		if err != nil {
 			return err
-		}
-		if n != 32 {
-			return errors.New(fmt.Sprintf("invalid encryption secret length. got: %d expected: 32", n))
 		}
 
 		encryptionSecret = base64.StdEncoding.EncodeToString(rnd)
