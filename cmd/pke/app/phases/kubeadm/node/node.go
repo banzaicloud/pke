@@ -17,10 +17,10 @@ package node
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"io"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/banzaicloud/pipeline/client"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"

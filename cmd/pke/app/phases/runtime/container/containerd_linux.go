@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
@@ -33,23 +34,19 @@ const (
 	containerDSHA256      = "3391758c62d17a56807ddac98b05487d9e78e5beb614a0602caab747b0eda9e0"
 	containerDURL         = "https://storage.googleapis.com/cri-containerd-release/cri-containerd-%s.linux-amd64.tar.gz"
 	containerDVersionPath = "/opt/containerd/cluster/version"
+	containerDConf        = "/etc/containerd/config.toml"
 
 	criConfFile = "/etc/sysctl.d/99-kubernetes-cri.conf"
 	criConf     = `net.bridge.bridge-nf-call-iptables  = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 net.ipv4.ip_forward                 = 1
 `
-
-	containerDConfFile = "/etc/systemd/system/kubelet.service.d/0-containerd.conf"
-	containerDConf     = `[Service]
-Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
-`
 )
 
-func installRuntime(out io.Writer) error {
+func (r *Runtime) installRuntime(out io.Writer) error {
 	if ver, err := linux.CentOSVersion(out); err == nil {
 		if ver == "7" {
-			return installCentOS7(out)
+			return installCentOS7(out, r.imageRepository)
 		}
 		return constants.ErrUnsupportedOS
 	}
@@ -57,7 +54,7 @@ func installRuntime(out io.Writer) error {
 	return constants.ErrUnsupportedOS
 }
 
-func installCentOS7(out io.Writer) error {
+func installCentOS7(out io.Writer, imageRepository string) error {
 	// modprobe overlay
 	if err := linux.ModprobeOverlay(out); err != nil {
 		return errors.Wrap(err, "missing overlay Linux Kernel module")
@@ -90,7 +87,7 @@ func installCentOS7(out io.Writer) error {
 	_ = linux.SystemctlDisableAndStop(out, "containerd")
 
 	// Check ContainerD installed or not
-	if err := installContainerD(out); err != nil {
+	if err := installContainerD(out, imageRepository); err != nil {
 		return err
 	}
 
@@ -101,17 +98,6 @@ func installCentOS7(out io.Writer) error {
 
 	_ = linux.SystemctlDisableAndStop(out, "kubelet")
 
-	// cat > /etc/systemd/system/kubelet.service.d/0-containerd.conf <<EOF
-	// [Service]
-	// Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock"
-	// EOF
-	if err := os.MkdirAll(filepath.Dir(containerDConfFile), 0750); err != nil {
-		return err
-	}
-	if err := file.Overwrite(containerDConfFile, containerDConf); err != nil {
-		return err
-	}
-
 	// systemctl daemon-reload
 	if err := linux.SystemctlReload(out); err != nil {
 		return err
@@ -120,7 +106,7 @@ func installCentOS7(out io.Writer) error {
 	return nil
 }
 
-func installContainerD(out io.Writer) error {
+func installContainerD(out io.Writer, imageRepository string) error {
 	// Check ContainerD installed or not
 	if _, err := os.Stat(containerDVersionPath); !os.IsNotExist(err) {
 		// TODO: check ContainerD version
@@ -162,5 +148,40 @@ func installContainerD(out io.Writer) error {
 		return err
 	}
 
-	return nil
+	return writeContainerDConfig(out, containerDConf, imageRepository)
+}
+
+func writeContainerDConfig(out io.Writer, filename, imageRepository string) error {
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	conf := `[plugins.cri]
+  sandbox_image = "{{ .ImageRepository }}/pause:3.1"`
+
+	tmpl, err := template.New("containerd-config").Parse(conf)
+	if err != nil {
+		return err
+	}
+
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	type data struct {
+		ImageRepository string
+	}
+
+	d := data{
+		ImageRepository: imageRepository,
+	}
+
+	return tmpl.Execute(w, d)
 }

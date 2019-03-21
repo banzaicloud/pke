@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -30,7 +32,9 @@ const (
 
 var _ phases.Runnable = (*Runtime)(nil)
 
-type Runtime struct{}
+type Runtime struct {
+	imageRepository string
+}
 
 func NewCommand(out io.Writer) *cobra.Command {
 	return phases.NewCommand(out, &Runtime{})
@@ -44,14 +48,29 @@ func (r *Runtime) Short() string {
 	return short
 }
 
-func (r *Runtime) RegisterFlags(flags *pflag.FlagSet) {}
+func (r *Runtime) RegisterFlags(flags *pflag.FlagSet) {
+	// Image repository
+	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+}
 
 func (r *Runtime) Validate(cmd *cobra.Command) error {
+	var err error
+	r.imageRepository, err = cmd.Flags().GetString(constants.FlagImageRepository)
+	if err != nil {
+		return err
+	}
+
+	if err := validator.NotEmpty(map[string]interface{}{
+		constants.FlagImageRepository: r.imageRepository,
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (r *Runtime) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", r.Use())
 
-	return installRuntime(out)
+	return r.installRuntime(out)
 }

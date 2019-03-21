@@ -14,6 +14,7 @@ pke install worker [flags]
 
 ```
   -h, --help                                        help for worker
+      --image-repository string                     Prefix for image repository (default "banzaicloud")
       --kubernetes-api-server string                Kubernetes API Server host port
       --kubernetes-api-server-ca-cert-hash string   CA cert hash
       --kubernetes-cloud-provider string            cloud provider. example: aws
