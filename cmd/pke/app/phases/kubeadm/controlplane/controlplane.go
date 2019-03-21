@@ -434,6 +434,7 @@ nodeRegistration:
   kubeletExtraArgs:
   {{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
+    # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker
   {{if .CloudProvider }}
     cloud-provider: "{{ .CloudProvider }}"{{end}}
     read-only-port: "0"

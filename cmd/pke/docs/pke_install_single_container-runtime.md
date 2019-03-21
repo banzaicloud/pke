@@ -13,7 +13,8 @@ pke install single container-runtime [flags]
 ### Options
 
 ```
-  -h, --help   help for container-runtime
+  -h, --help                      help for container-runtime
+      --image-repository string   Prefix for image repository (default "banzaicloud")
 ```
 
 ### SEE ALSO

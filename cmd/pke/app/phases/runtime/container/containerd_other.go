@@ -22,6 +22,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func installRuntime(w io.Writer) error {
+func (r *Runtime) installRuntime(w io.Writer) error {
 	return errors.Errorf("unsupported operating system")
 }
