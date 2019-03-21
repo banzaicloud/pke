@@ -61,7 +61,7 @@ You can create PKE clusters on any of the cloud providers, Vagrant, virtual mach
 
 ### Contributing
 
-Thanks you for your contribution and being part of our community. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the code of conduct, and the process for submitting pull requests. When you are opening a PR to PKE the first time we will require you to sign a standard CLA.
+Thanks you for your contribution and being part of our community. Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details on the code of conduct, and the process for submitting pull requests. When you are opening a PR to PKE the first time we will require you to sign a standard CLA.
 
 ### License
 
