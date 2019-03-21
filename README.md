@@ -59,6 +59,10 @@ You can create PKE clusters on any of the cloud providers, Vagrant, virtual mach
 - [PKE on AWS](/docs/aws.md)
 - [PKE with Pipeline](https://beta.banzaicloud.io/)
 
+### Contributing
+
+Thanks you for your contribution and being part of our community. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the code of conduct, and the process for submitting pull requests. When you are opening a PR to PKE the first time we will require you to sign a standard CLA.
+
 ### License
 
 Copyright (c) 2017-2019 [Banzai Cloud, Inc.](https://banzaicloud.com)
