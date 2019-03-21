@@ -13,13 +13,13 @@ If you would like to supercharge your Kubernetes experience using Banzai Cloud P
 
 Please review the [requirements](/docs/requirements.md) before creating Kubernetes clusters. Note that the `pke` tool will install all required dependencies (like CRI, CNI, etc).
 
-### Single node PKE
+### Single-node PKE
 
-Creating a single node K8s clusters is as simple as running the following command as root:
+Creating a single-node Kubernetes cluster is as simple as running the following command as root:
 
 `pke install single`
 
-### Multi node PKE
+### Multi-node PKE
 
 To create the Kubernetes API server:
 
@@ -53,7 +53,7 @@ kubectl get nodes
 
 ### Other options
 
-You can create PKE clusters on any of the cloud providers, Vagrant, virtual machines, etc using the `pke` tool or let the [Pipeline platform](https://beta.banzaicloud.io/) do it for you, using all the complementary features as: centralized log collection, federated monitoring, autoscaling, Vault based secret management, disaster recovery, security scans and lots more.
+You can create PKE clusters on any of the cloud providers, Vagrant, virtual machines, etc using the `pke` tool or let the [Pipeline platform](https://beta.banzaicloud.io/) do it for you using all the complementary features, such as: centralized log collection, federated monitoring, autoscaling, Vault based secret management, disaster recovery, security scans and a lot more.
 
 - [PKE in Vagrant](/docs/vagrant.md)
 - [PKE on AWS](/docs/aws.md)
@@ -61,7 +61,7 @@ You can create PKE clusters on any of the cloud providers, Vagrant, virtual mach
 
 ### Contributing
 
-Thanks you for your contribution and being part of our community. Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details on the code of conduct, and the process for submitting pull requests. When you are opening a PR to PKE the first time we will require you to sign a standard CLA.
+Thank you for your contribution and being part of our community. Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details on the code of conduct, and the process for submitting pull requests. When you are opening a PR to PKE for the first time we will require you to sign a standard CLA.
 
 ### License
 
