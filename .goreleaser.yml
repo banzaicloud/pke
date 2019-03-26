@@ -11,10 +11,17 @@ builds:
             - amd64
 
 archive:
-    name_template: "pke_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "pke-{{ .Version }}"
+    format: binary
 
 checksum:
-    name_template: "pke_checksums.txt"
+    name_template: "pke-{{ .Version }}-checksums.txt"
 
 changelog:
     skip: true
+
+s3:
+    -
+       bucket: banzaicloud.com
+       region: eu-central-1
+       folder: "downloads/pke"
