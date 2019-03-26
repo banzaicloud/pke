@@ -140,6 +140,7 @@ func yumPackages(kubernetesVersion string) []string {
 		"kubelet-" + kubernetesVersion + "-0",
 		"kubeadm-" + kubernetesVersion + "-0",
 		"kubectl-" + kubernetesVersion + "-0",
+		"kubernetes-cni-0.6.0", // FIXME: workaround yum failures
 		"--disableexcludes=kubernetes",
 	}
 }
