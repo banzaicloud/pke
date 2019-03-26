@@ -152,7 +152,7 @@ func addHAControlPlaneFlags(flags *pflag.FlagSet) {
 		}
 	})
 
-	flags.Bool(constants.FlagControlPlaneJoin, false, "Join and another control plane node")
+	flags.Bool(constants.FlagControlPlaneJoin, false, "Join an another control plane node")
 }
 
 func (c *ControlPlane) Validate(cmd *cobra.Command) error {
@@ -967,7 +967,7 @@ func writeEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, e
 	if err != nil {
 		return err
 	}
-	if ver.Major() == 1 && ver.Minor() <= 12 {
+	if ver.LessThan(semver.MustParse("1.13.0")) {
 		kind = "EncryptionConfig"
 		apiVersion = "v1"
 	}

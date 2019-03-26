@@ -62,7 +62,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	}
 
 	encryptionProviderPrefix := ""
-	if ver.Major() == 1 && ver.Minor() <= 12 {
+	if ver.LessThan(semver.MustParse("1.13.0")) {
 		encryptionProviderPrefix = "experimental-"
 	}
 

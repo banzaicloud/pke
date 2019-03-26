@@ -140,7 +140,7 @@ func yumPackages(kubernetesVersion string) []string {
 	ver, _ := semver.NewVersion(kubernetesVersion)
 
 	cniVer := "0.6.0"
-	if ver.Minor() >= 14 {
+	if !ver.LessThan(semver.MustParse("1.14.0")) {
 		cniVer = "0.7.5"
 	}
 
