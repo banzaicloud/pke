@@ -17,7 +17,9 @@ package version
 import (
 	"testing"
 
+	"github.com/Masterminds/semver"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidVersion(t *testing.T) {
@@ -32,13 +34,17 @@ func TestValidVersion(t *testing.T) {
 		{"1.12.3", true},
 		{"1.12.4", true},
 		{"1.12.5", true},
-		{"1.12.6", false},
+		{"1.12.6", true},
 		{"1.13.0", true},
 		{"1.13.1", true},
 		{"1.13.2", true},
 		{"1.13.3", true},
 		{"1.13.4", true},
-		{"1.13.5", false},
+		{"1.13.5", true},
+		{"1.14.0", true},
+		{"1.14.1", true},
+		{"v1.14.1-beta.0", true},
+		{"v1.15.0", false},
 	}
 
 	for _, tc := range testCases {
@@ -48,5 +54,26 @@ func TestValidVersion(t *testing.T) {
 		} else {
 			assert.NoError(t, err, tc.version)
 		}
+	}
+}
+
+func TestMajorMinorVersion(t *testing.T) {
+	testCases := []struct {
+		version string
+		major   int64
+		minor   int64
+	}{
+		{"0.0.1", 0, 0},
+		{"1.12.0", 1, 12},
+		{"1.13.0", 1, 13},
+		{"1.14.0", 1, 14},
+		{"v1.14.1-beta.0", 1, 14},
+	}
+
+	for _, tc := range testCases {
+		v, err := semver.NewVersion(tc.version)
+		require.NoError(t, err)
+		require.Equal(t, tc.major, v.Major())
+		require.Equal(t, tc.minor, v.Minor())
 	}
 }
