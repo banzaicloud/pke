@@ -30,8 +30,8 @@ import (
 )
 
 const (
-	containerDVersion     = "1.2.4"
-	containerDSHA256      = "3391758c62d17a56807ddac98b05487d9e78e5beb614a0602caab747b0eda9e0"
+	containerDVersion     = "1.2.5"
+	containerDSHA256      = "40300c61ab44bd39a2440c5eedb8ac573d8b8d848acbad5efa0bc214cffb422b"
 	containerDURL         = "https://storage.googleapis.com/cri-containerd-release/cri-containerd-%s.linux-amd64.tar.gz"
 	containerDVersionPath = "/opt/containerd/cluster/version"
 	containerDConf        = "/etc/containerd/config.toml"
