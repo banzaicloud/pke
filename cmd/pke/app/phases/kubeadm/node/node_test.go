@@ -27,7 +27,18 @@ func TestWriteKubeadmConfig(t *testing.T) {
 	t.SkipNow()
 	filename := os.TempDir() + "kubeadm.conf"
 	t.Log(filename)
-	err := writeKubeadmConfig(os.Stdout, filename, "1.2.3.4:1234", "my.token", "sha256:xxx", constants.CloudProviderAmazon, "pool2")
+
+	n := &Node{
+		"1.14.0",
+		"1.2.3.1:1234",
+		"1.2.3.4:1234",
+		"my.token",
+		"sha256:xxx",
+		constants.CloudProviderAmazon,
+		"pool2",
+	}
+
+	err := n.writeKubeadmConfig(os.Stdout, filename)
 	require.NoError(t, err)
 	defer func() { _ = os.Remove(filename) }()
 

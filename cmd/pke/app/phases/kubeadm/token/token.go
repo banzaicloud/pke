@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
@@ -32,6 +33,7 @@ import (
 
 const (
 	cmdKubectl = "/bin/kubectl"
+	kubeConfig = "/etc/kubernetes/admin.conf"
 )
 
 type Token struct {
@@ -49,6 +51,7 @@ type Output struct {
 func Get(out io.Writer, secret, certHash string) (*Token, error) {
 	// kubectl get -n kube-system secret -o json
 	subCmd := runner.Cmd(out, cmdKubectl, []string{"get", "secret", "-n", "kube-system", "-o", "json", secret}...)
+	subCmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	cmdOut, err := subCmd.Output()
 	if err != nil {
 		return nil, err

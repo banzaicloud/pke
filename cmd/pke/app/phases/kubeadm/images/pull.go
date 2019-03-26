@@ -57,7 +57,7 @@ func (i *Image) Short() string {
 
 func (i *Image) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.13.3", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.14.0", "Kubernetes version")
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 }
@@ -98,7 +98,7 @@ func (i *Image) Run(out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	// kubeadm config images pull --kubernetes-version 1.13.3 --cri-socket unix:///run/containerd/containerd.sock
+	// kubeadm config images pull --kubernetes-version 1.14.0 --cri-socket unix:///run/containerd/containerd.sock
 	err = runner.Cmd(
 		out,
 		cmdKubeadm,

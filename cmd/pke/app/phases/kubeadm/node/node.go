@@ -20,7 +20,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"text/template"
 
 	"github.com/banzaicloud/pipeline/client"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
@@ -47,6 +46,8 @@ const (
 var _ phases.Runnable = (*Node)(nil)
 
 type Node struct {
+	kubernetesVersion string
+	advertiseAddress  string
 	apiServerHostPort string
 	kubeadmToken      string
 	caCertHash        string
@@ -58,15 +59,17 @@ func NewCommand(out io.Writer) *cobra.Command {
 	return phases.NewCommand(out, &Node{})
 }
 
-func (w *Node) Use() string {
+func (n *Node) Use() string {
 	return use
 }
 
-func (w *Node) Short() string {
+func (n *Node) Short() string {
 	return short
 }
 
-func (w *Node) RegisterFlags(flags *pflag.FlagSet) {
+func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
+	// Kubernetes version
+	flags.String(constants.FlagKubernetesVersion, "1.14.0", "Kubernetes version")
 	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
@@ -74,6 +77,9 @@ func (w *Node) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	// Kubernetes cloud provider (optional)
 	flags.String(constants.FlagCloudProvider, "", "cloud provider. example: aws")
+	// Control Plane
+	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
+	_ = flags.MarkHidden(constants.FlagAdvertiseAddress)
 	// Kubernetes cluster join parameters
 	flags.String(constants.FlagAPIServerHostPort, "", "Kubernetes API Server host port")
 	flags.String(constants.FlagKubeadmToken, "", "PKE join token")
@@ -82,25 +88,26 @@ func (w *Node) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagPipelineNodepool, "", "name of the nodepool the node belongs to")
 }
 
-func (w *Node) Validate(cmd *cobra.Command) error {
-	if err := w.workerBootstrapParameters(cmd); err != nil {
+func (n *Node) Validate(cmd *cobra.Command) error {
+	if err := n.workerBootstrapParameters(cmd); err != nil {
 		return err
 	}
 
 	if err := validator.NotEmpty(map[string]interface{}{
-		constants.FlagAPIServerHostPort: w.apiServerHostPort,
-		constants.FlagKubeadmToken:      w.kubeadmToken,
-		constants.FlagCACertHash:        w.caCertHash,
+		constants.FlagKubernetesVersion: n.kubernetesVersion,
+		constants.FlagAPIServerHostPort: n.apiServerHostPort,
+		constants.FlagKubeadmToken:      n.kubeadmToken,
+		constants.FlagCACertHash:        n.caCertHash,
 	}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (w *Node) Run(out io.Writer) error {
-	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", w.Use())
+func (n *Node) Run(out io.Writer) error {
+	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", n.Use())
 
-	if err := install(out, w.apiServerHostPort, w.kubeadmToken, w.caCertHash, w.cloudProvider, w.nodepool); err != nil {
+	if err := n.install(out); err != nil {
 		if rErr := kubeadm.Reset(out); rErr != nil {
 			_, _ = fmt.Fprintf(out, "%v\n", rErr)
 		}
@@ -110,33 +117,41 @@ func (w *Node) Run(out io.Writer) error {
 	return nil
 }
 
-func (w *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
+func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
+	n.kubernetesVersion, err = cmd.Flags().GetString(constants.FlagKubernetesVersion)
+	if err != nil {
+		return
+	}
 	// Override values with flags
-	w.apiServerHostPort, err = cmd.Flags().GetString(constants.FlagAPIServerHostPort)
+	n.advertiseAddress, err = cmd.Flags().GetString(constants.FlagAdvertiseAddress)
 	if err != nil {
 		return
 	}
-	w.kubeadmToken, err = cmd.Flags().GetString(constants.FlagKubeadmToken)
+	n.apiServerHostPort, err = cmd.Flags().GetString(constants.FlagAPIServerHostPort)
 	if err != nil {
 		return
 	}
-	w.caCertHash, err = cmd.Flags().GetString(constants.FlagCACertHash)
+	n.kubeadmToken, err = cmd.Flags().GetString(constants.FlagKubeadmToken)
+	if err != nil {
+		return
+	}
+	n.caCertHash, err = cmd.Flags().GetString(constants.FlagCACertHash)
 	if err != nil {
 		return
 	}
 
-	if w.apiServerHostPort == "" && w.kubeadmToken == "" && w.caCertHash == "" {
-		w.apiServerHostPort, w.kubeadmToken, w.caCertHash, err = pipelineJoinArgs(cmd)
+	if n.apiServerHostPort == "" && n.kubeadmToken == "" && n.caCertHash == "" {
+		n.apiServerHostPort, n.kubeadmToken, n.caCertHash, err = pipelineJoinArgs(cmd)
 		if err != nil {
 			return
 		}
 	}
 
-	w.cloudProvider, err = cmd.Flags().GetString(constants.FlagCloudProvider)
+	n.cloudProvider, err = cmd.Flags().GetString(constants.FlagCloudProvider)
 	if err != nil {
 		return
 	}
-	w.nodepool, err = cmd.Flags().GetString(constants.FlagPipelineNodepool)
+	n.nodepool, err = cmd.Flags().GetString(constants.FlagPipelineNodepool)
 
 	return
 }
@@ -164,9 +179,9 @@ func pipelineJoinArgs(cmd *cobra.Command) (apiServerHostPort, kubeadmToken, caCe
 	return
 }
 
-func install(out io.Writer, apiServerHostPort, token, caCertHash, cloudProvider, nodepool string) error {
+func (n *Node) install(out io.Writer) error {
 	// write kubeadm config
-	if err := writeKubeadmConfig(out, kubeadmConfig, apiServerHostPort, token, caCertHash, cloudProvider, nodepool); err != nil {
+	if err := n.writeKubeadmConfig(out, kubeadmConfig); err != nil {
 		return err
 	}
 
@@ -201,74 +216,4 @@ kind: KubeProxyConfiguration
 `
 
 	return file.Overwrite(filename, conf)
-}
-
-func writeKubeadmConfig(out io.Writer, filename, apiServerHostPort, token, caCertHash, cloudProvider, nodepool string) error {
-	dir := filepath.Dir(filename)
-
-	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0750)
-	if err != nil {
-		return err
-	}
-
-	// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
-	conf := `apiVersion: kubeadm.k8s.io/v1alpha3
-kind: JoinConfiguration
-nodeRegistration:
-  criSocket: "unix:///run/containerd/containerd.sock"
-  kubeletExtraArgs:
-  {{if .Nodepool }}
-    node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
-  {{if .CloudProvider }}
-    cloud-provider: "{{ .CloudProvider }}"{{end}}
-    read-only-port: "0"
-    anonymous-auth: "false"
-    streaming-connection-idle-timeout: "5m"
-    protect-kernel-defaults: "true"
-    event-qps: "0"
-    client-ca-file: "/etc/kubernetes/pki/ca.crt"
-    feature-gates: "RotateKubeletServerCertificate=true"
-    rotate-certificates: "true"
-    tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
-    authorization-mode: "Webhook"
-discoveryTokenAPIServers:
-  - {{ .APIServerHostPort }}
-token: {{ .Token }}
-discoveryTokenCACertHashes:
-  - {{ .CACertHash }}
----
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serverTLSBootstrap: true
-`
-	tmpl, err := template.New("kubeadm-config").Parse(conf)
-	if err != nil {
-		return err
-	}
-
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
-	type data struct {
-		APIServerHostPort string
-		Token             string
-		CACertHash        string
-		CloudProvider     string
-		Nodepool          string
-	}
-
-	d := data{
-		APIServerHostPort: apiServerHostPort,
-		Token:             token,
-		CACertHash:        caCertHash,
-		CloudProvider:     cloudProvider,
-		Nodepool:          nodepool,
-	}
-
-	return tmpl.Execute(w, d)
 }

@@ -18,6 +18,7 @@ pke install worker kubernetes-node [flags]
       --kubernetes-api-server-ca-cert-hash string   CA cert hash
       --kubernetes-cloud-provider string            cloud provider. example: aws
       --kubernetes-node-token string                PKE join token
+      --kubernetes-version string                   Kubernetes version (default "1.14.0")
       --pipeline-cluster-id int32                   Cluster ID to use with Pipeline API
       --pipeline-nodepool string                    name of the nodepool the node belongs to
       --pipeline-org-id int32                       Organization ID to use with Pipeline API

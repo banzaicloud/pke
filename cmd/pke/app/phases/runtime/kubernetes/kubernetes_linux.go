@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
@@ -136,11 +137,18 @@ kernel.panic_on_oops=1
 }
 
 func yumPackages(kubernetesVersion string) []string {
+	ver, _ := semver.NewVersion(kubernetesVersion)
+
+	cniVer := "0.6.0"
+	if ver.Minor() >= 14 {
+		cniVer = "0.7.5"
+	}
+
 	return []string{
 		"kubelet-" + kubernetesVersion + "-0",
 		"kubeadm-" + kubernetesVersion + "-0",
 		"kubectl-" + kubernetesVersion + "-0",
-		"kubernetes-cni-0.6.0", // FIXME: workaround yum failures
+		"kubernetes-cni-" + cniVer,
 		"--disableexcludes=kubernetes",
 	}
 }

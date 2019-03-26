@@ -15,7 +15,7 @@ pke machine-image image-pull [flags]
 ```
   -h, --help                        help for image-pull
       --image-repository string     Prefix for image repository (default "banzaicloud")
-      --kubernetes-version string   Kubernetes version (default "1.13.3")
+      --kubernetes-version string   Kubernetes version (default "1.14.0")
 ```
 
 ### SEE ALSO

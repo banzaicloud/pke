@@ -20,7 +20,7 @@ pke install worker [flags]
       --kubernetes-cloud-provider string            cloud provider. example: aws
       --kubernetes-infrastructure-cidr string       network CIDR for the actual machine (default "192.168.64.0/20")
       --kubernetes-node-token string                PKE join token
-      --kubernetes-version string                   Kubernetes version (default "1.13.3")
+      --kubernetes-version string                   Kubernetes version (default "1.14.0")
       --pipeline-cluster-id int32                   Cluster ID to use with Pipeline API
       --pipeline-nodepool string                    name of the nodepool the node belongs to
       --pipeline-org-id int32                       Organization ID to use with Pipeline API

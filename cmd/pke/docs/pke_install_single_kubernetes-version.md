@@ -14,7 +14,7 @@ pke install single kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.13.3")
+      --kubernetes-version string   Kubernetes version (default "1.14.0")
 ```
 
 ### SEE ALSO
