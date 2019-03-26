@@ -152,7 +152,7 @@ func addHAControlPlaneFlags(flags *pflag.FlagSet) {
 		}
 	})
 
-	flags.Bool(constants.FlagControlPlaneJoin, false, "Join and another control plane node")
+	flags.Bool(constants.FlagControlPlaneJoin, false, "Join an another control plane node")
 }
 
 func (c *ControlPlane) Validate(cmd *cobra.Command) error {
