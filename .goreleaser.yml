@@ -23,5 +23,5 @@ changelog:
 s3:
     -
        bucket: banzaicloud.com
-       region: eu-central-1
+       region: us-east-1
        folder: "downloads/pke"
