@@ -8,6 +8,7 @@ Vagrant.configure("2") do |config|
 
     # sync build folder
     config.vm.synced_folder '.', '/vagrant', disabled: true
+    config.vm.synced_folder 'scripts/vagrant/', '/scripts/', create: true
 
     $num_instances = 4
 
