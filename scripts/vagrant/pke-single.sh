@@ -6,7 +6,7 @@
 )
 
 systemctl is-active kubelet || ( \
-    /usr/local/bin/pke install single && \
+    /usr/local/bin/pke install single --kubernetes-advertise-address=192.168.64.11:6443 --kubernetes-api-server=192.168.64.11:6443 && \
     mkdir -p $HOME/.kube && \
     cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
     chown $(id -u):$(id -g) $HOME/.kube/config
