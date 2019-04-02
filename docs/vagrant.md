@@ -5,6 +5,7 @@ In order to try out a single/multi node PKE Kubernetes cluster you will need a V
 - Install VirtualBox: `brew cask install virtualbox`
 - Install Vagrant: `brew cask install vagrant`
 - Install the VirtualBox extension pack: `brew cask install virtualbox-extension-pack`
+- Install the vagrant-vbguest plugin `vagrant plugin install vagrant-vbguest`
 
 You are set, and ready to install PKE on your machine. Now you should clone the PKE repo and follow these steps:
 
