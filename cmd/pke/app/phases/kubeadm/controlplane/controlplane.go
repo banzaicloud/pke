@@ -15,6 +15,7 @@
 package controlplane
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -28,14 +29,18 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/banzaicloud/pipeline/client"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/node"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/network"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
+	"github.com/lestrrat-go/backoff"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -95,6 +100,7 @@ type ControlPlane struct {
 	azureVMType                 string
 	azureLoadBalancerSku        string
 	azureRouteTableName         string
+	cidr                        string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -105,6 +111,7 @@ func NewDefault(kubernetesVersion, imageRepository string) *ControlPlane {
 	return &ControlPlane{
 		kubernetesVersion: kubernetesVersion,
 		imageRepository:   imageRepository,
+		node:              &node.Node{},
 	}
 }
 
@@ -153,17 +160,20 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureVMType, "standard", "The type of azure nodes. Candidate values are: vmss and standard")
 	flags.String(constants.FlagAzureLoadBalancerSku, "basic", "Sku of Load Balancer and Public IP. Candidate values are: basic and standard")
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
+	// Pipeline
+	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
+	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
+	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
+	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
+	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
 
-	addHAControlPlaneFlags(flags)
+	c.addHAControlPlaneFlags(flags)
 }
 
-func addHAControlPlaneFlags(flags *pflag.FlagSet) {
-	var (
-		f = &pflag.FlagSet{}
-		n phases.Runnable
-	)
-	n = &node.Node{}
-	n.RegisterFlags(f)
+func (c *ControlPlane) addHAControlPlaneFlags(flags *pflag.FlagSet) {
+	var f = &pflag.FlagSet{}
+
+	c.node.RegisterFlags(f)
 
 	f.VisitAll(func(flag *pflag.Flag) {
 		if flags.Lookup(flag.Name) == nil {
@@ -223,13 +233,97 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	case "single", "default":
 		// noop
 	case "ha":
+		if err := c.pipelineJoin(cmd); err != nil {
+			return err
+		}
+
 		if c.joinControlPlane {
-			c.node = &node.Node{}
 			return c.node.Validate(cmd)
 		}
 
 	default:
 		return errors.New("Not supported --" + constants.FlagClusterMode + ". Possible values: single, default or ha.")
+	}
+
+	return nil
+}
+
+func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
+	if pipeline.Enabled(cmd) {
+		// hostname
+		hostname, err := os.Hostname()
+		if err != nil {
+			return err
+		}
+
+		// ip
+		ips, err := network.IPv4Addresses()
+		if err != nil {
+			return err
+		}
+		ip, err := network.ContainsFirst(c.cidr, ips)
+		if err != nil {
+			return err
+		}
+
+		// Pipeline client
+		endpoint, token, orgID, clusterID, err := pipeline.CommandArgs(cmd)
+		if err != nil {
+			return err
+		}
+
+		p := pipeline.Client(os.Stdout, endpoint, token)
+
+		// elect leader
+		_, resp, err := p.ClustersApi.PostLeaderElection(context.Background(), orgID, clusterID, client.PostLeaderElectionRequest{
+			Hostname: hostname,
+			Ip:       ip.String(),
+		})
+
+		if err != nil && resp == nil {
+			return errors.Wrap(err, "failed to become leader")
+		}
+		if resp != nil && resp.StatusCode == http.StatusConflict {
+			// check if leadership is ours or not
+			var leader client.GetLeaderElectionResponse
+			leader, resp, err = p.ClustersApi.GetLeaderElection(context.Background(), orgID, clusterID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get leader")
+			}
+			if resp.StatusCode == http.StatusNotFound {
+				return errors.New("unexpected condition. leader not found and cloud not acquire leadership")
+			}
+			if resp.StatusCode == http.StatusOK {
+				if hostname == leader.Hostname && ip.String() == leader.Ip {
+					// we are the leaders, proceed with master installation
+					return nil
+				}
+			}
+			// somebody already took leadership
+
+			c.joinControlPlane = true
+
+			policy := backoff.NewExponential(
+				backoff.WithInterval(time.Second),
+				backoff.WithFactor(2),
+				backoff.WithMaxElapsedTime(time.Hour),
+				backoff.WithMaxInterval(30*time.Second),
+				backoff.WithMaxRetries(0),
+			)
+			b, cancel := policy.Start(context.Background())
+			defer cancel()
+
+			for backoff.Continue(b) {
+				// Wait for master to become ready
+				var ready client.PkeClusterReadinessResponse
+				ready, resp, err = p.ClustersApi.GetReadyPKENode(context.Background(), orgID, clusterID)
+				if resp != nil && resp.StatusCode == http.StatusOK && ready.Master.Ready {
+					return nil
+				}
+			}
+			// backoff timeout
+			return errors.New("timeout exceeded. waiting for master to become ready failed")
+		}
 	}
 
 	return nil
@@ -368,6 +462,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.azureRouteTableName, err = cmd.Flags().GetString(constants.FlagAzureRouteTableName)
+	if err != nil {
+		return
+	}
+	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
 
 	return
 }

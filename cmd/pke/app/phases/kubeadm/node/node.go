@@ -183,7 +183,7 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 	}
 
 	if n.apiServerHostPort == "" && n.kubeadmToken == "" && n.caCertHash == "" {
-		n.apiServerHostPort, n.kubeadmToken, n.caCertHash, err = pipelineJoinArgs(cmd)
+		n.apiServerHostPort, n.kubeadmToken, n.caCertHash, err = pipeline.NodeJoinArgs(os.Stdout, cmd)
 		if err != nil {
 			return
 		}

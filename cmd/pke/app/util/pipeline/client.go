@@ -15,6 +15,7 @@
 package pipeline
 
 import (
+	"context"
 	"io"
 	"time"
 
@@ -90,4 +91,27 @@ func ValidArgs(endpoint, token string, orgID, clusterID int32) error {
 		constants.FlagPipelineOrganizationID: orgID,
 		constants.FlagPipelineClusterID:      clusterID,
 	})
+}
+
+func NodeJoinArgs(out io.Writer, cmd *cobra.Command) (apiServerHostPort, kubeadmToken, caCertHash string, err error) {
+	if !Enabled(cmd) {
+		return
+	}
+	endpoint, token, orgID, clusterID, err := CommandArgs(cmd)
+	if err != nil {
+		return
+	}
+
+	// Pipeline client.
+	c := Client(out, endpoint, token)
+
+	var b client.GetClusterBootstrapResponse
+	b, _, err = c.ClustersApi.GetClusterBootstrap(context.Background(), orgID, clusterID)
+	if err != nil {
+		return
+	}
+	apiServerHostPort = b.MasterAddress
+	kubeadmToken = b.Token
+	caCertHash = b.DiscoveryTokenCaCertHash
+	return
 }
