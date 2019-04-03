@@ -24,7 +24,7 @@ pke install single [flags]
       --kubernetes-cluster-name string                    Kubernetes cluster name (default "pke")
       --kubernetes-controller-manager-signing-ca string   Kubernetes Controller Manager signing cert
       --kubernetes-infrastructure-cidr string             network CIDR for the actual machine (default "192.168.64.0/20")
-      --kubernetes-join-control-plane                     Join and another control plane node
+      --kubernetes-join-control-plane                     Join an another control plane node
       --kubernetes-master-mode string                     Kubernetes cluster mode (default "default")
       --kubernetes-network-provider string                Kubernetes network provider (default "weave")
       --kubernetes-node-token string                      PKE join token

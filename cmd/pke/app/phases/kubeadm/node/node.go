@@ -15,13 +15,11 @@
 package node
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/banzaicloud/pipeline/client"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
@@ -141,7 +139,7 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 	}
 
 	if n.apiServerHostPort == "" && n.kubeadmToken == "" && n.caCertHash == "" {
-		n.apiServerHostPort, n.kubeadmToken, n.caCertHash, err = pipelineJoinArgs(cmd)
+		n.apiServerHostPort, n.kubeadmToken, n.caCertHash, err = pipeline.NodeJoinArgs(os.Stdout, cmd)
 		if err != nil {
 			return
 		}
@@ -153,29 +151,6 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 	}
 	n.nodepool, err = cmd.Flags().GetString(constants.FlagPipelineNodepool)
 
-	return
-}
-
-func pipelineJoinArgs(cmd *cobra.Command) (apiServerHostPort, kubeadmToken, caCertHash string, err error) {
-	if !pipeline.Enabled(cmd) {
-		return
-	}
-	endpoint, token, orgID, clusterID, err := pipeline.CommandArgs(cmd)
-	if err != nil {
-		return
-	}
-
-	// Pipeline client.
-	c := pipeline.Client(os.Stdout, endpoint, token)
-
-	var b client.GetClusterBootstrapResponse
-	b, _, err = c.ClustersApi.GetClusterBootstrap(context.Background(), orgID, clusterID)
-	if err != nil {
-		return
-	}
-	apiServerHostPort = b.MasterAddress
-	kubeadmToken = b.Token
-	caCertHash = b.DiscoveryTokenCaCertHash
 	return
 }
 
