@@ -1,5 +1,7 @@
 $enable_serial_logging = false
- 
+
+raise "vagrant-vbguest plugin must be installed" unless Vagrant.has_plugin? "vagrant-vbguest"
+
 Vagrant.configure("2") do |config|
     # Sync time with the local host
     config.vm.provider 'virtualbox' do |vb|
