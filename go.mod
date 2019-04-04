@@ -8,6 +8,7 @@ require (
 	github.com/banzaicloud/pipeline v0.0.0-20190402103326-d01205919224
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/ghodss/yaml v1.0.0
+	github.com/goph/emperror v0.17.1
 	github.com/lestrrat-go/backoff v0.0.0-20190107202757-0bc2a4274cd0
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.3
