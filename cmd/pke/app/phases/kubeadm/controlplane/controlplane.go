@@ -94,7 +94,9 @@ type ControlPlane struct {
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &ControlPlane{})
+	return phases.NewCommand(out, &ControlPlane{
+		node: &node.Node{},
+	})
 }
 
 func NewDefault(kubernetesVersion, imageRepository string) *ControlPlane {
