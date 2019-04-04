@@ -43,6 +43,8 @@ const (
 	kubernetesCAKey         = "/etc/kubernetes/pki/ca.key"
 	frontProxyCACert        = "/etc/kubernetes/pki/front-proxy-ca.crt"
 	frontProxyCAKey         = "/etc/kubernetes/pki/front-proxy-ca.key"
+	saPub                   = "/etc/kubernetes/pki/sa.pub"
+	saKey                   = "/etc/kubernetes/pki/sa.key"
 )
 
 var _ phases.Runnable = (*Certificates)(nil)
@@ -157,7 +159,17 @@ func (c *Certificates) Run(out io.Writer) error {
 	}
 
 	// /etc/kubernetes/pki/front-proxy-ca.key
-	return write(out, frontProxyCAKey, secret.Values["frontProxyCaKey"])
+	if err = write(out, frontProxyCAKey, secret.Values["frontProxyCaKey"]); err != nil {
+		return err
+	}
+
+	// /etc/kubernetes/pki/sa.pub
+	if err = write(out, saPub, secret.Values["saPub"]); err != nil {
+		return err
+	}
+
+	// /etc/kubernetes/pki/sa.key
+	return write(out, saKey, secret.Values["saKey"])
 }
 
 func write(out io.Writer, filename string, value interface{}) error {
