@@ -334,29 +334,36 @@ func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
 }
 
 func (c *ControlPlane) appendAdvertiseAddressAsLoopback() error {
-
 	addr := strings.Split(c.apiServerHostPort, ":")[0]
 
 	f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	if _, err = fmt.Fprintf(f, "127.0.0.1 %s\n", addr); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (c *ControlPlane) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
 
-	if c.clusterMode == "ha" && c.joinControlPlane {
+	if c.clusterMode == "ha" {
+		// additional master node
+		if c.joinControlPlane {
+			_, _ = fmt.Fprintf(out, "[%s] installing additional master node\n", c.Use())
+			return c.node.Run(out)
+		}
+
+		// initial master node
+		_, _ = fmt.Fprintf(out, "[%s] installing initial master node\n", c.Use())
 		if err := c.appendAdvertiseAddressAsLoopback(); err != nil {
 			return emperror.Wrap(err, "failed to write to /etc/hosts")
 		}
-		return c.node.Run(out)
 	}
 
 	if err := c.installMaster(out); err != nil {
