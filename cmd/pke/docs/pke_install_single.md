@@ -13,6 +13,14 @@ pke install single [flags]
 ### Options
 
 ```
+      --azure-loadbalancer-sku string                     Sku of Load Balancer and Public IP. Candidate values are: basic and standard (default "basic")
+      --azure-route-table-name string                     The name of the route table attached to the subnet that the cluster is deployed in (default "kubernetes-routes")
+      --azure-security-group-name string                  The name of the security group attached to the cluster's subnet
+      --azure-subnet-name string                          The name of the subnet that the cluster is deployed in
+      --azure-tenant-id string                            The AAD Tenant ID for the Subscription that the cluster is deployed in
+      --azure-vm-type string                              The type of azure nodes. Candidate values are: vmss and standard (default "standard")
+      --azure-vnet-name string                            The name of the VNet that the cluster is deployed in
+      --azure-vnet-resource-group string                  The name of the resource group that the Vnet is deployed in
   -h, --help                                              help for single
       --image-repository string                           Prefix for image repository (default "banzaicloud")
       --kubelet-certificate-authority string              Path to a cert file for the certificate authority. Used for kubelet server certificate verify. (default "/etc/kubernetes/pki/ca.crt")
@@ -24,7 +32,7 @@ pke install single [flags]
       --kubernetes-cluster-name string                    Kubernetes cluster name (default "pke")
       --kubernetes-controller-manager-signing-ca string   Kubernetes Controller Manager signing cert
       --kubernetes-infrastructure-cidr string             network CIDR for the actual machine (default "192.168.64.0/20")
-      --kubernetes-join-control-plane                     Join and another control plane node
+      --kubernetes-join-control-plane                     Join an another control plane node
       --kubernetes-master-mode string                     Kubernetes cluster mode (default "default")
       --kubernetes-network-provider string                Kubernetes network provider (default "weave")
       --kubernetes-node-token string                      PKE join token

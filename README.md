@@ -57,6 +57,7 @@ You can create PKE clusters on any of the cloud providers, Vagrant, virtual mach
 
 - [PKE in Vagrant](/docs/vagrant.md)
 - [PKE on AWS](/docs/aws.md)
+- [PKE on Azure](/docs/azure.md)
 - [PKE with Pipeline](https://beta.banzaicloud.io/)
 
 ### Contributing
