@@ -118,9 +118,9 @@ controlPlane:
 nodeRegistration:
   criSocket: "unix:///run/containerd/containerd.sock"
   kubeletExtraArgs:
-  {{if .Nodepool }}
+{{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
-  {{if .CloudProvider }}
+{{if .CloudProvider }}
     cloud-provider: "{{ .CloudProvider }}"{{end}}
     read-only-port: "0"
     anonymous-auth: "false"
@@ -156,9 +156,9 @@ apiEndpoint:
 nodeRegistration:
   criSocket: "unix:///run/containerd/containerd.sock"
   kubeletExtraArgs:
-  {{if .Nodepool }}
+{{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
-  {{if .CloudProvider }}
+{{if .CloudProvider }}
     cloud-provider: "{{ .CloudProvider }}"{{end}}
     read-only-port: "0"
     anonymous-auth: "false"

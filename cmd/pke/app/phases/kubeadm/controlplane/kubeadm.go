@@ -196,9 +196,9 @@ apiServer:
     oidc-username-claim: "email"
     oidc-username-prefix: "oidc:"
     oidc-groups-claim: "groups"{{end}}
-{{if eq .CloudProvider "aws" }}
-    cloud-provider: aws
-    cloud-config: /etc/kubernetes/aws.conf{{end}}
+{{ if .CloudProvider }}
+    cloud-provider: "{{ .CloudProvider }}"
+    cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
   extraVolumes:
     - name: admission-control-config-file
       hostPath: {{ .AdmissionConfig }}
@@ -209,10 +209,11 @@ apiServer:
       hostPath: /etc/kubernetes/admission-control/
       mountPath: /etc/kubernetes/admission-control/
       readOnly: true
-      pathType: Directory{{if eq .CloudProvider "aws" }}
+      pathType: Directory
+{{ if .CloudProvider }}
     - name: cloud-config
-      hostPath: /etc/kubernetes/aws.conf
-      mountPath: /etc/kubernetes/aws.conf
+      hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
+      mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 scheduler:
   extraArgs:
     profiling: "false"
@@ -220,14 +221,15 @@ controllerManager:
   extraArgs:
     profiling: "false"
     terminated-pod-gc-threshold: "10"
-    feature-gates: "RotateKubeletServerCertificate=true"{{if eq .CloudProvider "aws" }}
-    cloud-provider: aws
-    cloud-config: /etc/kubernetes/aws.conf{{end}}
+    feature-gates: "RotateKubeletServerCertificate=true"
     {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}
+{{ if .CloudProvider }}
+    cloud-provider: "{{ .CloudProvider }}"
+    cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf
   extraVolumes:
     - name: cloud-config
-      hostPath: /etc/kubernetes/aws.conf
-      mountPath: /etc/kubernetes/aws.conf{{end}}
+      hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
+      mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 etcd:
   local:
     extraArgs:
@@ -249,10 +251,10 @@ kind: InitConfiguration
 nodeRegistration:
   criSocket: "unix:///run/containerd/containerd.sock"
   kubeletExtraArgs:
-  {{if .Nodepool }}
+{{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
     # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker
-  {{if .CloudProvider }}
+{{if .CloudProvider }}
     cloud-provider: "{{ .CloudProvider }}"{{end}}
     read-only-port: "0"
     anonymous-auth: "false"
@@ -300,9 +302,9 @@ apiServerExtraArgs:
   oidc-username-claim: "email"
   oidc-username-prefix: "oidc:"
   oidc-groups-claim: "groups"{{end}}
-{{if eq .CloudProvider "aws" }}
-  cloud-provider: aws
-  cloud-config: /etc/kubernetes/aws.conf{{end}}
+{{ if .CloudProvider }}
+  cloud-provider: "{{ .CloudProvider }}"
+  cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 schedulerExtraArgs:
   profiling: "false"
 apiServerExtraVolumes:
@@ -315,21 +317,23 @@ apiServerExtraVolumes:
     hostPath: /etc/kubernetes/admission-control/
     mountPath: /etc/kubernetes/admission-control/
     writable: false
-    pathType: Directory{{if eq .CloudProvider "aws" }}
+    pathType: Directory
+{{ if .CloudProvider }}
   - name: cloud-config
-    hostPath: /etc/kubernetes/aws.conf
-    mountPath: /etc/kubernetes/aws.conf
-controllerManagerExtraVolumes:
-  - name: cloud-config
-    hostPath: /etc/kubernetes/aws.conf
-    mountPath: /etc/kubernetes/aws.conf{{end}}
+    hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
+    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 controllerManagerExtraArgs:
   profiling: "false"
   terminated-pod-gc-threshold: "10"
-  feature-gates: "RotateKubeletServerCertificate=true"{{if eq .CloudProvider "aws" }}
-  cloud-provider: aws
-  cloud-config: /etc/kubernetes/aws.conf{{end}}
+  feature-gates: "RotateKubeletServerCertificate=true"
   {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}
+{{ if .CloudProvider }}
+  cloud-provider: "{{ .CloudProvider }}"
+  cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf
+controllerManagerExtraVolumes:
+  - name: cloud-config
+    hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
+    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 etcd:
   local:
     extraArgs:
