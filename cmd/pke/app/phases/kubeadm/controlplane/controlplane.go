@@ -45,14 +45,16 @@ const (
 	use   = "kubernetes-controlplane"
 	short = "Kubernetes Control Plane installation"
 
-	cmdKubeadm                    = "/bin/kubeadm"
-	cmdKubectl                    = "/bin/kubectl"
-	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
-	kubeConfig                    = "/etc/kubernetes/admin.conf"
-	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
-	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
-	kubeadmAmazonConfig           = "/etc/kubernetes/aws.conf"
-	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
+	cmdKubeadm          = "/bin/kubeadm"
+	cmdKubectl          = "/bin/kubectl"
+	weaveNetUrl         = "https://cloud.weave.works/k8s/net"
+	kubeConfig          = "/etc/kubernetes/admin.conf"
+	kubeProxyConfig     = "/var/lib/kube-proxy/config.conf"
+	kubeadmConfig       = "/etc/kubernetes/kubeadm.conf"
+	kubeadmAmazonConfig = "/etc/kubernetes/aws.conf"
+	kubeadmAzureConfig  = "/etc/kubernetes/azure.conf"
+	urlAWSAZ            = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
+
 	kubernetesCASigningCert       = "/etc/kubernetes/pki/cm-signing-ca.crt"
 	admissionConfig               = "/etc/kubernetes/admission-control.yaml"
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
@@ -85,6 +87,14 @@ type ControlPlane struct {
 	imageRepository             string
 	withPluginPSP               bool
 	node                        *node.Node
+	azureTenantID               string
+	azureSubnetName             string
+	azureSecurityGroupName      string
+	azureVNetName               string
+	azureVNetResourceGroup      string
+	azureVMType                 string
+	azureLoadBalancerSku        string
+	azureRouteTableName         string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -134,6 +144,15 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
+	// Azure cloud
+	flags.String(constants.FlagAzureTenantID, "", "The AAD Tenant ID for the Subscription that the cluster is deployed in")
+	flags.String(constants.FlagAzureSubnetName, "", "The name of the subnet that the cluster is deployed in")
+	flags.String(constants.FlagAzureSecurityGroupName, "", "The name of the security group attached to the cluster's subnet")
+	flags.String(constants.FlagAzureVNetName, "", "The name of the VNet that the cluster is deployed in")
+	flags.String(constants.FlagAzureVNetResourceGroup, "", "The name of the resource group that the Vnet is deployed in")
+	flags.String(constants.FlagAzureVMType, "standard", "The type of azure nodes. Candidate values are: vmss and standard")
+	flags.String(constants.FlagAzureLoadBalancerSku, "basic", "Sku of Load Balancer and Public IP. Candidate values are: basic and standard")
+	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
 
 	addHAControlPlaneFlags(flags)
 }
@@ -170,6 +189,22 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 		constants.FlagImageRepository:   c.imageRepository,
 	}); err != nil {
 		return err
+	}
+
+	// Azure specific required flags
+	if c.cloudProvider == constants.CloudProviderAzure {
+		if err := validator.NotEmpty(map[string]interface{}{
+			constants.FlagAzureTenantID:          c.azureTenantID,
+			constants.FlagAzureSubnetName:        c.azureSubnetName,
+			constants.FlagAzureSecurityGroupName: c.azureSecurityGroupName,
+			constants.FlagAzureVNetName:          c.azureVNetName,
+			constants.FlagAzureVNetResourceGroup: c.azureVNetResourceGroup,
+			constants.FlagAzureVMType:            c.azureVMType,
+			constants.FlagAzureLoadBalancerSku:   c.azureLoadBalancerSku,
+			constants.FlagAzureRouteTableName:    c.azureRouteTableName,
+		}); err != nil {
+			return err
+		}
 	}
 
 	if c.networkProvider != "weave" {
@@ -218,7 +253,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		return err
 	}
 
-	if err := installPodNetwork(out, c.podNetworkCIDR, kubeConfig); err != nil {
+	if err := installPodNetwork(out, c.cloudProvider, c.podNetworkCIDR, kubeConfig); err != nil {
 		return err
 	}
 
@@ -305,6 +340,38 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.joinControlPlane, err = cmd.Flags().GetBool(constants.FlagControlPlaneJoin)
+	if err != nil {
+		return
+	}
+	c.azureTenantID, err = cmd.Flags().GetString(constants.FlagAzureTenantID)
+	if err != nil {
+		return
+	}
+	c.azureSubnetName, err = cmd.Flags().GetString(constants.FlagAzureSubnetName)
+	if err != nil {
+		return
+	}
+	c.azureSecurityGroupName, err = cmd.Flags().GetString(constants.FlagAzureSecurityGroupName)
+	if err != nil {
+		return
+	}
+	c.azureVNetName, err = cmd.Flags().GetString(constants.FlagAzureVNetName)
+	if err != nil {
+		return
+	}
+	c.azureVNetResourceGroup, err = cmd.Flags().GetString(constants.FlagAzureVNetResourceGroup)
+	if err != nil {
+		return
+	}
+	c.azureVMType, err = cmd.Flags().GetString(constants.FlagAzureVMType)
+	if err != nil {
+		return
+	}
+	c.azureLoadBalancerSku, err = cmd.Flags().GetString(constants.FlagAzureLoadBalancerSku)
+	if err != nil {
+		return
+	}
+	c.azureRouteTableName, err = cmd.Flags().GetString(constants.FlagAzureRouteTableName)
 
 	return
 }
@@ -356,6 +423,12 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		return err
 	}
 
+	// write kubeadm azure.conf
+	err = kubeadm.WriteKubeadmAzureConfig(out, kubeadmAzureConfig, c.cloudProvider, c.azureTenantID, c.azureSubnetName, c.azureSecurityGroupName, c.azureVNetName, c.azureVNetResourceGroup, c.azureVMType, c.azureLoadBalancerSku, c.azureRouteTableName)
+	if err != nil {
+		return err
+	}
+
 	// kubeadm init --config=/etc/kubernetes/kubeadm.conf
 	args := []string{
 		"init",
@@ -389,7 +462,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	return nil
 }
 
-func installPodNetwork(out io.Writer, podNetworkCIDR, kubeConfig string) error {
+func installPodNetwork(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig string) error {
 	// kubectl version
 	cmd := runner.Cmd(out, cmdKubectl, "version")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
@@ -408,7 +481,9 @@ func installPodNetwork(out io.Writer, podNetworkCIDR, kubeConfig string) error {
 	}
 	q := u.Query()
 	q.Set("k8s-version", ver)
-	q.Set("env.IPALLOC_RANGE", podNetworkCIDR)
+	if cloudProvider != constants.CloudProviderAzure {
+		q.Set("env.IPALLOC_RANGE", podNetworkCIDR)
+	}
 	u.RawQuery = q.Encode()
 
 	// kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')&env.IPALLOC_RANGE=10.200.0.0/16"

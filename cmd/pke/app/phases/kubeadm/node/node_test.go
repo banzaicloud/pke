@@ -29,13 +29,13 @@ func TestWriteKubeadmConfig(t *testing.T) {
 	t.Log(filename)
 
 	n := &Node{
-		"1.14.0",
-		"1.2.3.1:1234",
-		"1.2.3.4:1234",
-		"my.token",
-		"sha256:xxx",
-		constants.CloudProviderAmazon,
-		"pool2",
+		kubernetesVersion: "1.14.0",
+		advertiseAddress:  "1.2.3.1:1234",
+		apiServerHostPort: "1.2.3.4:1234",
+		kubeadmToken:      "my.token",
+		caCertHash:        "sha256:xxx",
+		cloudProvider:     constants.CloudProviderAmazon,
+		nodepool:          "pool2",
 	}
 
 	err := n.writeKubeadmConfig(os.Stdout, filename)

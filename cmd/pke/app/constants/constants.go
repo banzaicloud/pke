@@ -90,12 +90,32 @@ const (
 
 	// CloudProviderAmazon
 	CloudProviderAmazon = "aws"
+	// CloudProviderAzure
+	CloudProviderAzure = "azure"
 
 	// FlagImageRepository prefix for image repository.
 	FlagImageRepository = "image-repository"
 
 	// FlagAdmissionPluginPodSecurityPolicy enable admission plugin PodSecurityPolicy.
 	FlagAdmissionPluginPodSecurityPolicy = "with-plugin-psp"
+
+	// Azure specific flags
+	// FlagAzureTenantID the AAD Tenant ID for the Subscription that the cluster is deployed in.
+	FlagAzureTenantID = "azure-tenant-id"
+	// FlagAzureSubnetName the name of the subnet that the cluster is deployed in.
+	FlagAzureSubnetName = "azure-subnet-name"
+	// FlagAzureSecurityGroupName the name of the security group attached to the cluster's subnet.
+	FlagAzureSecurityGroupName = "azure-security-group-name"
+	// FlagAzureVNetName the name of the VNet that the cluster is deployed in.
+	FlagAzureVNetName = "azure-vnet-name"
+	// FlagAzureVNetResourceGroup the name of the resource group that the Vnet is deployed in.
+	FlagAzureVNetResourceGroup = "azure-vnet-resource-group"
+	// FlagAzureVMType the type of azure nodes. Candidate values are: vmss and standard.
+	FlagAzureVMType = "azure-vm-type"
+	// FlagAzureLoadBalancerSku sku of Load Balancer and Public IP. Candidate values are: basic and standard.
+	FlagAzureLoadBalancerSku = "azure-loadbalancer-sku"
+	// FlagAzureRouteTableName the name of the route table attached to the subnet that the cluster is deployed in.
+	FlagAzureRouteTableName = "azure-route-table-name"
 )
 
 var (
