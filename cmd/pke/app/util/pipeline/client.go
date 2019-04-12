@@ -29,7 +29,7 @@ import (
 func Client(out io.Writer, endpoint, token string) *pipeline.APIClient {
 	config := pipeline.NewConfiguration()
 	config.BasePath = endpoint
-	config.UserAgent = "banzai-cli/1.0.0/go"
+	config.UserAgent = "pke/1.0.0/go"
 	config.HTTPClient = oauth2.NewClient(nil, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	))
