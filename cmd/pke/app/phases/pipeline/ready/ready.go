@@ -22,11 +22,11 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/banzaicloud/pipeline/client"
+	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/network"
-	"github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
+	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -80,16 +80,16 @@ func (r *Ready) RegisterFlags(flags *pflag.FlagSet) {
 
 func (r *Ready) Validate(cmd *cobra.Command) error {
 	// Run is optional, only validate if Pipeline credentials are present.
-	if !pipeline.Enabled(cmd) {
+	if !pipelineutil.Enabled(cmd) {
 		return nil
 	}
 
 	var err error
-	if r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID, err = pipeline.CommandArgs(cmd); err != nil {
+	if r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID, err = pipelineutil.CommandArgs(cmd); err != nil {
 		return err
 	}
 
-	if err = pipeline.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
+	if err = pipelineutil.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
 		return err
 	}
 
@@ -114,7 +114,7 @@ func (r *Ready) Validate(cmd *cobra.Command) error {
 func (r *Ready) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", r.Use())
 
-	if err := pipeline.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
+	if err := pipelineutil.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
 		_, _ = fmt.Fprintf(out, "[WARNING][%s] Skipping phase due to missing Pipeline API endpoint credentials. %s\n", use, err)
 		return nil
 	}
@@ -136,8 +136,8 @@ func (r *Ready) Run(out io.Writer) error {
 	}
 
 	// post node ready
-	c := pipeline.Client(out, r.pipelineAPIEndpoint, r.pipelineAPIToken)
-	req := client.PostReadyPkeNodeRequest{
+	c := pipelineutil.Client(out, r.pipelineAPIEndpoint, r.pipelineAPIToken)
+	req := pipeline.PostReadyPkeNodeRequest{
 		Name:     hostname,
 		NodePool: r.pipelineNodepool,
 		Ip:       ip.String(),

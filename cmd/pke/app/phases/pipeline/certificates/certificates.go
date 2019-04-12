@@ -21,11 +21,11 @@ import (
 	"os"
 
 	"github.com/antihax/optional"
-	"github.com/banzaicloud/pipeline/client"
+	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
-	"github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
+	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -74,41 +74,41 @@ func (c *Certificates) RegisterFlags(flags *pflag.FlagSet) {
 }
 
 func (c *Certificates) Validate(cmd *cobra.Command) error {
-	if !pipeline.Enabled(cmd) {
+	if !pipelineutil.Enabled(cmd) {
 		// TODO: Warning
 		return nil
 	}
 
 	var err error
-	c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID, err = pipeline.CommandArgs(cmd)
+	c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID, err = pipelineutil.CommandArgs(cmd)
 	if err != nil {
 		return err
 	}
 
-	return pipeline.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID)
+	return pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID)
 }
 
 func (c *Certificates) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
 
-	if err := pipeline.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID); err != nil {
+	if err := pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID); err != nil {
 		_, _ = fmt.Fprintf(out, "[WARNING] Skipping %s phase due to missing Pipeline API endpoint. err: %v\n", use, err)
 		return nil
 	}
 
 	var err error
-	req := &client.GetSecretsOpts{
+	req := &pipeline.GetSecretsOpts{
 		Type_:  optional.NewString("pkecert"),
 		Values: optional.NewBool(true),
 		Tags:   optional.NewInterface([]string{fmt.Sprintf("clusterID:%d", c.pipelineClusterID)}),
 	}
-	pc := pipeline.Client(out, c.pipelineAPIEndpoint, c.pipelineAPIToken)
+	pc := pipelineutil.Client(out, c.pipelineAPIEndpoint, c.pipelineAPIToken)
 	secrets, _, err := pc.SecretsApi.GetSecrets(context.Background(), c.pipelineOrganizationID, req)
 	if err != nil {
 		return err
 	}
 	if n := len(secrets); n <= 0 || n > 1 {
-		ids := func(secrets []client.SecretItem) []string {
+		ids := func(secrets []pipeline.SecretItem) []string {
 			ids := make([]string, len(secrets))
 			for k, s := range secrets {
 				ids[k] = s.Id

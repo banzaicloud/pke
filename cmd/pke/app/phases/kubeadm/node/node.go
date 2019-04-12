@@ -22,13 +22,13 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/banzaicloud/pipeline/client"
+	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
-	"github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
+	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/spf13/cobra"
@@ -235,18 +235,18 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 }
 
 func pipelineJoinArgs(cmd *cobra.Command) (apiServerHostPort, kubeadmToken, caCertHash string, err error) {
-	if !pipeline.Enabled(cmd) {
+	if !pipelineutil.Enabled(cmd) {
 		return
 	}
-	endpoint, token, orgID, clusterID, err := pipeline.CommandArgs(cmd)
+	endpoint, token, orgID, clusterID, err := pipelineutil.CommandArgs(cmd)
 	if err != nil {
 		return
 	}
 
 	// Pipeline client.
-	c := pipeline.Client(os.Stdout, endpoint, token)
+	c := pipelineutil.Client(os.Stdout, endpoint, token)
 
-	var b client.GetClusterBootstrapResponse
+	var b pipeline.GetClusterBootstrapResponse
 	b, _, err = c.ClustersApi.GetClusterBootstrap(context.Background(), orgID, clusterID)
 	if err != nil {
 		return
