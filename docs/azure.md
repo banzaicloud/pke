@@ -30,6 +30,7 @@ export PUBLIC_IP=$RG-pip
 export APISERVER_PROBE=$RG-apiserver-probe
 export APISERVER_RULE=$RG-apiserver-rule
 export ROUTES=$RG-routes
+export IMAGE=OpenLogic:CentOS-CI:7-CI:7.6.20190306
 ```
 
 First, you will need to create a Resource Group.
