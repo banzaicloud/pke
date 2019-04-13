@@ -282,7 +282,7 @@ export ROUTES=$RG-routes
 Install PKE.
 
 ```bash
-curl -v https://banzaicloud.com/downloads/pke/pke-0.2.3 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.3.0 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
