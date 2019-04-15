@@ -45,7 +45,7 @@ const (
 	// FlagPipelineNodepool name of the nodepool the node belongs to.
 	FlagPipelineNodepool = "pipeline-nodepool"
 
-	// FlagAPIServerHostPort Kubernetes advertise address API server and Etcd uses this.
+	// FlagAdvertiseAddress Kubernetes advertise address API server and Etcd uses this.
 	FlagAdvertiseAddress = "kubernetes-advertise-address"
 	// FlagAPIServerHostPort Kubernetes API Server in host port format.
 	FlagAPIServerHostPort = "kubernetes-api-server"
@@ -88,9 +88,9 @@ const (
 	// FlagControlPlaneJoin worker command should install control plane node.
 	FlagControlPlaneJoin = "kubernetes-join-control-plane"
 
-	// CloudProviderAmazon
+	// CloudProviderAmazon Amazon Web Services
 	CloudProviderAmazon = "aws"
-	// CloudProviderAzure
+	// CloudProviderAzure Azure Cloud Services
 	CloudProviderAzure = "azure"
 
 	// FlagImageRepository prefix for image repository.

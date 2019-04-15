@@ -66,13 +66,9 @@ func (r *Runtime) Validate(cmd *cobra.Command) error {
 	}
 	r.kubernetesVersion = ver.String()
 
-	if err := validator.NotEmpty(map[string]interface{}{
+	return validator.NotEmpty(map[string]interface{}{
 		constants.FlagKubernetesVersion: r.kubernetesVersion,
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (r *Runtime) Run(out io.Writer) error {

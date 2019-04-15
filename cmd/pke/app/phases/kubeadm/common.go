@@ -16,7 +16,6 @@ package kubeadm
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -49,7 +48,7 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
 			return err
 		}
 		if resp.StatusCode != http.StatusOK {
-			return errors.New(fmt.Sprintf("failed to get azure availability zone. http status code: %d", resp.StatusCode))
+			return errors.Errorf("failed to get azure availability zone. http status code: %d", resp.StatusCode)
 		}
 		defer func() { _ = resp.Body.Close() }()
 

@@ -257,11 +257,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		return err
 	}
 
-	if err := taintRemoveNoSchedule(out, c.clusterMode, kubeConfig); err != nil {
-		return err
-	}
-
-	return nil
+	return taintRemoveNoSchedule(out, c.clusterMode, kubeConfig)
 }
 
 func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error) {
@@ -489,11 +485,7 @@ func installPodNetwork(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig 
 	// kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')&env.IPALLOC_RANGE=10.200.0.0/16"
 	cmd = runner.Cmd(out, cmdKubectl, "apply", "-f", u.String())
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	if err = cmd.CombinedOutputAsync(); err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.CombinedOutputAsync()
 }
 
 func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) error {
@@ -508,7 +500,7 @@ func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) err
 			return err
 		}
 		if resp.StatusCode != http.StatusOK {
-			return errors.New(fmt.Sprintf("failed to get aws availability zone. http status code: %d", resp.StatusCode))
+			return errors.Errorf("failed to get aws availability zone. http status code: %d", resp.StatusCode)
 		}
 		defer func() { _ = resp.Body.Close() }()
 

@@ -135,6 +135,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 }
 
 func kubeadmConfigV1Beta1() string {
+	// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
 	return `apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
 {{ if .APIServerAdvertiseAddress}}

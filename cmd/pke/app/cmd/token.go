@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewCmdVersion provides the version information of banzai-cloud-pke.
+// NewCmdToken provides the version information of banzai-cloud-pke.
 func NewCmdToken(out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "token",

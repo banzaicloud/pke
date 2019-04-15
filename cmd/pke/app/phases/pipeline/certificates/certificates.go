@@ -116,7 +116,7 @@ func (c *Certificates) Run(out io.Writer) error {
 			return ids
 		}(secrets)
 
-		return errors.New(fmt.Sprintf("multiple or none PKE certificates are returned for cluster: %q", ids))
+		return errors.Errorf("multiple or none PKE certificates are returned for cluster: %q", ids)
 	}
 
 	secret := secrets[0]
@@ -157,11 +157,7 @@ func (c *Certificates) Run(out io.Writer) error {
 	}
 
 	// /etc/kubernetes/pki/front-proxy-ca.key
-	if err = write(out, frontProxyCAKey, secret.Values["frontProxyCaKey"]); err != nil {
-		return err
-	}
-
-	return nil
+	return write(out, frontProxyCAKey, secret.Values["frontProxyCaKey"])
 }
 
 func write(out io.Writer, filename string, value interface{}) error {
@@ -170,5 +166,5 @@ func write(out io.Writer, filename string, value interface{}) error {
 		return file.Overwrite(filename, v)
 	}
 
-	return errors.New(fmt.Sprintf("unexpected interface type. expected string, got: %T", value))
+	return errors.Errorf("unexpected interface type. expected string, got: %T", value)
 }

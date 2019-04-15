@@ -68,7 +68,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	case 14:
 		conf = kubeadmConfigV1Beta1()
 	default:
-		return errors.New(fmt.Sprintf("unsupported Kubernetes version %q for kubeadm", n.kubernetesVersion))
+		return errors.Errorf("unsupported Kubernetes version %q for kubeadm", n.kubernetesVersion)
 	}
 
 	tmpl, err := template.New("kubeadm-config").Parse(conf)
