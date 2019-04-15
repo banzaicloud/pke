@@ -14,11 +14,14 @@ BUILD_DATE ?= $(shell date +%FT%T%z)
 GIT_TREE_STATE ?= $(shell if [[ -z `git status --porcelain 2>/dev/null` ]]; then echo "clean"; else echo "dirty"; fi )
 LDFLAGS += -X main.Version=${VERSION} -X main.CommitHash=${COMMIT_HASH} -X main.BuildDate=${BUILD_DATE} -X main.GitTreeState=${GIT_TREE_STATE}
 
+PIPELINE_VERSION = 0.17.0
+
 # Dependency versions
 GOTESTSUM_VERSION = 0.3.3
 GOLANGCI_VERSION = 1.15.0
 LICENSEI_VERSION = 0.1.0
 GORELEASER_VERSION = 0.98.0
+OPENAPI_GENERATOR_VERSION = PR1869
 
 GOLANG_VERSION = 1.12
 
@@ -87,6 +90,17 @@ license-check: bin/licensei ## Run license check
 .PHONY: license-cache
 license-cache: bin/licensei ## Generate license cache
 	bin/licensei cache
+
+.PHONY: generate-pipeline-client
+generate-pipeline-client: ## Generate client from Pipeline OpenAPI spec
+	curl https://raw.githubusercontent.com/banzaicloud/pipeline/${PIPELINE_VERSION}/docs/openapi/pipeline.yaml | sed "s/version: .*/version: ${PIPELINE_VERSION}/" > pipeline-openapi.yaml
+	rm -rf .gen/pipeline
+	docker run --rm -v ${PWD}:/local banzaicloud/openapi-generator-cli:${OPENAPI_GENERATOR_VERSION} generate \
+	--additional-properties packageName=pipeline \
+	--additional-properties withGoCodegenComment=true \
+	-i /local/pipeline-openapi.yaml \
+	-g go \
+	-o /local/.gen/pipeline
 
 bin/goreleaser: bin/goreleaser-${GORELEASER_VERSION}
 	@ln -sf goreleaser-${GORELEASER_VERSION} bin/goreleaser

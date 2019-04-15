@@ -18,7 +18,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/banzaicloud/pipeline/client"
+	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/spf13/cobra"
@@ -26,10 +26,10 @@ import (
 )
 
 // Client initializes Pipeline API client
-func Client(out io.Writer, endpoint, token string) *client.APIClient {
-	config := client.NewConfiguration()
+func Client(out io.Writer, endpoint, token string) *pipeline.APIClient {
+	config := pipeline.NewConfiguration()
 	config.BasePath = endpoint
-	config.UserAgent = "banzai-cli/1.0.0/go"
+	config.UserAgent = "pke/1.0.0/go"
 	config.HTTPClient = oauth2.NewClient(nil, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	))
@@ -39,7 +39,7 @@ func Client(out io.Writer, endpoint, token string) *client.APIClient {
 		output:       out,
 	}
 
-	return client.NewAPIClient(config)
+	return pipeline.NewAPIClient(config)
 }
 
 // CommandArgs extracts args needed for Pipeline API client.

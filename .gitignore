@@ -7,6 +7,11 @@
 **/.vagrant*
 .DS_Store
 
+# pipeline openapi files
+/pipeline-openapi.yaml
+/.gen/pipeline/.travis.yml
+/.gen/pipeline/git_push.sh
+
 # IDE integration
 /.vscode/*
 !/.vscode/tasks.json
