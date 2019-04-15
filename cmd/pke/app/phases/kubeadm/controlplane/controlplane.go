@@ -45,22 +45,22 @@ const (
 	use   = "kubernetes-controlplane"
 	short = "Kubernetes Control Plane installation"
 
-	cmdKubeadm          = "/bin/kubeadm"
-	cmdKubectl          = "/bin/kubectl"
-	weaveNetUrl         = "https://cloud.weave.works/k8s/net"
-	kubeConfig          = "/etc/kubernetes/admin.conf"
-	kubeProxyConfig     = "/var/lib/kube-proxy/config.conf"
-	kubeadmConfig       = "/etc/kubernetes/kubeadm.conf"
-	kubeadmAmazonConfig = "/etc/kubernetes/aws.conf"
-	kubeadmAzureConfig  = "/etc/kubernetes/azure.conf"
-	urlAWSAZ            = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
-
+	cmdKubeadm                    = "/bin/kubeadm"
+	cmdKubectl                    = "/bin/kubectl"
+	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
+	kubeConfig                    = "/etc/kubernetes/admin.conf"
+	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
+	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
+	kubeadmAmazonConfig           = "/etc/kubernetes/aws.conf"
+	kubeadmAzureConfig            = "/etc/kubernetes/azure.conf"
+	storageClassConfig            = "/etc/kubernetes/storage-class.yaml"
 	kubernetesCASigningCert       = "/etc/kubernetes/pki/cm-signing-ca.crt"
 	admissionConfig               = "/etc/kubernetes/admission-control.yaml"
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
 	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
 	certificateAutoApprover       = "/etc/kubernetes/admission-control/deploy-auto-approver.yaml"
 	encryptionProviderConfig      = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
+	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 	cniDir                        = "/etc/cni/net.d"
 	etcdDir                       = "/var/lib/etcd"
 )
@@ -453,6 +453,11 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	err = deleteKubeDNSReplicaSet(out)
 	if err != nil {
 		_, _ = fmt.Fprintf(out, "[%s] kube-dns replica set is not started yet, skipping\n", use)
+	}
+
+	// apply default storage class
+	if err := applyDefaultStorageClass(out, c.cloudProvider); err != nil {
+		return err
 	}
 
 	return nil
