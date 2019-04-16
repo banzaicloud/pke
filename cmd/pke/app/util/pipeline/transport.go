@@ -23,16 +23,16 @@ import (
 	"time"
 )
 
-type transportLogger struct {
-	roundTripper http.RoundTripper
-	output       io.Writer
+type TransportLogger struct {
+	RoundTripper http.RoundTripper
+	Output       io.Writer
 }
 
-func (t *transportLogger) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *TransportLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := context.WithValue(req.Context(), "requestTS", time.Now())
 	req = req.WithContext(ctx)
 
-	_, _ = fmt.Fprintf(t.output, "%s --> %s %q\n", req.Proto, req.Method, req.URL)
+	_, _ = fmt.Fprintf(t.Output, "%s --> %s %q\n", req.Proto, req.Method, req.URL)
 
 	resp, err := t.transport().RoundTrip(req)
 	if err != nil {
@@ -41,23 +41,22 @@ func (t *transportLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	ctx = resp.Request.Context()
 	if ts, ok := ctx.Value("requestTS").(time.Time); ok {
-		_, _ = fmt.Fprintf(t.output, "%s <-- %d %q %s\n", resp.Proto, resp.StatusCode, resp.Request.URL, time.Now().Sub(ts))
+		_, _ = fmt.Fprintf(t.Output, "%s <-- %d %q %s\n", resp.Proto, resp.StatusCode, resp.Request.URL, time.Now().Sub(ts))
 	} else {
-		_, _ = fmt.Fprintf(t.output, "%s <-- %d %q\n", resp.Proto, resp.StatusCode, resp.Request.URL)
-		if resp.StatusCode/100 != 2 {
-			if b, err := httputil.DumpResponse(resp, true); err != nil {
-				_, _ = fmt.Fprintf(t.output, "%s\n", b)
-			}
-
+		_, _ = fmt.Fprintf(t.Output, "%s <-- %d %q\n", resp.Proto, resp.StatusCode, resp.Request.URL)
+	}
+	if resp != nil && resp.StatusCode/100 != 2 {
+		if b, err := httputil.DumpResponse(resp, true); err == nil {
+			_, _ = fmt.Fprintf(t.Output, "%s\n", b)
 		}
 	}
 
 	return resp, err
 
 }
-func (t *transportLogger) transport() http.RoundTripper {
-	if t.roundTripper != nil {
-		return t.roundTripper
+func (t *TransportLogger) transport() http.RoundTripper {
+	if t.RoundTripper != nil {
+		return t.RoundTripper
 	}
 
 	return http.DefaultTransport

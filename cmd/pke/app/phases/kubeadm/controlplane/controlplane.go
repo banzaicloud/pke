@@ -17,10 +17,12 @@ package controlplane
 import (
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,6 +32,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/PuerkitoBio/rehttp"
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
@@ -355,6 +358,13 @@ func (c *ControlPlane) Run(out io.Writer) error {
 	if c.clusterMode == "ha" {
 		// additional master node
 		if c.joinControlPlane {
+			// make sure api server stabilized operation and not restarting
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+			if err := ensureAPIServerConnection(out, ctx, 5, c.apiServerHostPort); err != nil {
+				return err
+			}
+			// install additional master node
 			_, _ = fmt.Fprintf(out, "[%s] installing additional master node\n", c.Use())
 			return c.node.Run(out)
 		}
@@ -382,6 +392,58 @@ func (c *ControlPlane) Run(out io.Writer) error {
 	}
 
 	return taintRemoveNoSchedule(out, c.clusterMode, kubeConfig)
+}
+
+func ensureAPIServerConnection(out io.Writer, ctx context.Context, successTries int, apiServerHostPort string) error {
+	host, port, err := kubeadm.SplitHostPort(apiServerHostPort, "6443")
+	if err != nil {
+		return err
+	}
+	apiServerHostPort = net.JoinHostPort(host, port)
+
+	insecureTLS := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	tl := &pipelineutil.TransportLogger{
+		RoundTripper: insecureTLS,
+		Output:       out,
+	}
+
+	tr := rehttp.NewTransport(
+		tl,
+		rehttp.RetryAll(
+			rehttp.RetryMaxRetries(4),
+			rehttp.RetryHTTPMethods(http.MethodGet),
+			rehttp.RetryStatusInterval(400, 600),
+		),
+		rehttp.ExpJitterDelay(2*time.Second, 30*time.Second),
+	)
+
+	c := &http.Client{Transport: tr}
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	u := "https://" + apiServerHostPort + "/version"
+	for {
+		select {
+		case <-ticker.C:
+			resp, err := c.Get(u)
+			if err != nil {
+				return err
+			}
+			_ = resp.Body.Close()
+			if resp.StatusCode/100 == 2 {
+				successTries--
+				if successTries == 0 {
+					return nil
+				}
+			} else {
+				successTries++
+			}
+		case <-ctx.Done():
+			return errors.Wrapf(ctx.Err(), "api server connection cloud not be stabilized")
+		}
+	}
 }
 
 func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error) {

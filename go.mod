@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/Masterminds/semver v1.4.2
+	github.com/PuerkitoBio/rehttp v0.0.0-20180310210549-11cf6ea5d3e9
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/ghodss/yaml v1.0.0

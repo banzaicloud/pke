@@ -15,9 +15,11 @@
 package controlplane
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/stretchr/testify/require"
@@ -63,4 +65,12 @@ func TestWriteKubeadmAmazonConfig(t *testing.T) {
 	b, err := ioutil.ReadFile(filename)
 	require.NoError(t, err)
 	t.Logf("%s\n", b)
+}
+
+func TestEnsureAPIServerConnection(t *testing.T) {
+	t.SkipNow()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	err := ensureAPIServerConnection(os.Stdout, ctx, 5, "192.168.64.11")
+	require.NoError(t, err)
 }
