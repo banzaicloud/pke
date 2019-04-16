@@ -105,7 +105,7 @@ func NodeJoinArgs(out io.Writer, cmd *cobra.Command) (apiServerHostPort, kubeadm
 	// Pipeline client.
 	c := Client(out, endpoint, token)
 
-	var b client.GetClusterBootstrapResponse
+	var b pipeline.GetClusterBootstrapResponse
 	b, _, err = c.ClustersApi.GetClusterBootstrap(context.Background(), orgID, clusterID)
 	if err != nil {
 		return

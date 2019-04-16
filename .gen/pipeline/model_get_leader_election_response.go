@@ -11,8 +11,7 @@
 
 package pipeline
 
-type HelmChartDetailsResponse struct {
-	Name string `json:"name,omitempty"`
-	Repo string `json:"repo,omitempty"`
-	Versions []HelmChartDetailsResponseVersions `json:"versions,omitempty"`
+type GetLeaderElectionResponse struct {
+	Hostname string `json:"hostname"`
+	Ip string `json:"ip,omitempty"`
 }

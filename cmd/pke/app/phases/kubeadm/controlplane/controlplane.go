@@ -30,7 +30,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/banzaicloud/pipeline/client"
+	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
@@ -38,7 +38,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/network"
-	"github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
+	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/goph/emperror"
@@ -253,7 +253,7 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 }
 
 func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
-	if pipeline.Enabled(cmd) {
+	if pipelineutil.Enabled(cmd) {
 		// hostname
 		hostname, err := os.Hostname()
 		if err != nil {
@@ -271,15 +271,15 @@ func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
 		}
 
 		// Pipeline client
-		endpoint, token, orgID, clusterID, err := pipeline.CommandArgs(cmd)
+		endpoint, token, orgID, clusterID, err := pipelineutil.CommandArgs(cmd)
 		if err != nil {
 			return err
 		}
 
-		p := pipeline.Client(os.Stdout, endpoint, token)
+		p := pipelineutil.Client(os.Stdout, endpoint, token)
 
 		// elect leader
-		_, resp, err := p.ClustersApi.PostLeaderElection(context.Background(), orgID, clusterID, client.PostLeaderElectionRequest{
+		_, resp, err := p.ClustersApi.PostLeaderElection(context.Background(), orgID, clusterID, pipeline.PostLeaderElectionRequest{
 			Hostname: hostname,
 			Ip:       ip.String(),
 		})
@@ -289,7 +289,7 @@ func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
 		}
 		if resp != nil && resp.StatusCode == http.StatusConflict {
 			// check if leadership is ours or not
-			var leader client.GetLeaderElectionResponse
+			var leader pipeline.GetLeaderElectionResponse
 			leader, resp, err = p.ClustersApi.GetLeaderElection(context.Background(), orgID, clusterID)
 			if err != nil {
 				return errors.Wrap(err, "failed to get leader")
@@ -319,7 +319,7 @@ func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
 
 			for backoff.Continue(b) {
 				// Wait for master to become ready
-				var ready client.PkeClusterReadinessResponse
+				var ready pipeline.PkeClusterReadinessResponse
 				ready, resp, err = p.ClustersApi.GetReadyPKENode(context.Background(), orgID, clusterID)
 				if resp != nil && resp.StatusCode == http.StatusOK && ready.Master.Ready {
 					return nil
