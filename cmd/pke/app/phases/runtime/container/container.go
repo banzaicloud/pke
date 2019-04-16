@@ -60,13 +60,9 @@ func (r *Runtime) Validate(cmd *cobra.Command) error {
 		return err
 	}
 
-	if err := validator.NotEmpty(map[string]interface{}{
+	return validator.NotEmpty(map[string]interface{}{
 		constants.FlagImageRepository: r.imageRepository,
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }
 
 func (r *Runtime) Run(out io.Writer) error {

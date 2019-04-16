@@ -99,7 +99,7 @@ func (i *Image) Run(out io.Writer) error {
 		return err
 	}
 	// kubeadm config images pull --kubernetes-version 1.14.0 --cri-socket unix:///run/containerd/containerd.sock
-	err = runner.Cmd(
+	return runner.Cmd(
 		out,
 		cmdKubeadm,
 		"config",
@@ -107,9 +107,4 @@ func (i *Image) Run(out io.Writer) error {
 		"pull",
 		"--config="+kubeadmConfig,
 	).CombinedOutputAsync()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

@@ -135,6 +135,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 }
 
 func kubeadmConfigV1Beta1() string {
+	// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
 	return `apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
 {{ if .APIServerAdvertiseAddress}}
@@ -163,7 +164,7 @@ nodeRegistration:
 ---
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-clusterName: {{ .ClusterName }}
+clusterName: "{{ .ClusterName }}"
 imageRepository: {{ .ImageRepository }}
 useHyperKubeImage: true
 networking:
@@ -220,6 +221,7 @@ scheduler:
     profiling: "false"
 controllerManager:
   extraArgs:
+    cluster-name: "{{ .ClusterName }}"
     profiling: "false"
     terminated-pod-gc-threshold: "10"
     feature-gates: "RotateKubeletServerCertificate=true"
@@ -270,7 +272,7 @@ nodeRegistration:
 ---
 apiVersion: kubeadm.k8s.io/v1alpha3
 kind: ClusterConfiguration
-clusterName: {{ .ClusterName }}
+clusterName: "{{ .ClusterName }}"
 imageRepository: {{ .ImageRepository }}
 unifiedControlPlaneImage: {{ .ImageRepository }}/hyperkube:v{{ .KubernetesVersion }}
 networking:
@@ -324,6 +326,7 @@ apiServerExtraVolumes:
     hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
     mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 controllerManagerExtraArgs:
+  cluster-name: "{{ .ClusterName }}"
   profiling: "false"
   terminated-pod-gc-threshold: "10"
   feature-gates: "RotateKubeletServerCertificate=true"

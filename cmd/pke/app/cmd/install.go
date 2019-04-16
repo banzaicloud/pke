@@ -29,7 +29,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewCmdVersion provides the version information of banzai-cloud-pke.
+// NewCmdInstall provides the version information of banzai-cloud-pke.
 func NewCmdInstall(out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install",

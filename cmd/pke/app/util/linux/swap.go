@@ -34,9 +34,5 @@ func SwapOff(out io.Writer) error {
 	}
 
 	// sed -i '/swap/s/^/#/' /etc/fstab
-	if err := runner.Cmd(out, sed, "-i", "/swap/s/^/#/", fstab).Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return runner.Cmd(out, sed, "-i", "/swap/s/^/#/", fstab).Run()
 }

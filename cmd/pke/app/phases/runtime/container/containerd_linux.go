@@ -99,11 +99,7 @@ func installCentOS7(out io.Writer, imageRepository string) error {
 	_ = linux.SystemctlDisableAndStop(out, "kubelet")
 
 	// systemctl daemon-reload
-	if err := linux.SystemctlReload(out); err != nil {
-		return err
-	}
-
-	return nil
+	return linux.SystemctlReload(out)
 }
 
 func installContainerD(out io.Writer, imageRepository string) error {

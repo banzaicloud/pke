@@ -296,11 +296,7 @@ func (n *Node) install(out io.Writer) error {
 		return err
 	}
 
-	if err := linux.SystemctlEnableAndStart(out, "kubelet"); err != nil {
-		return err
-	}
-
-	return nil
+	return linux.SystemctlEnableAndStart(out, "kubelet")
 }
 
 func writeKubeProxyConfig(out io.Writer, filename string) error {

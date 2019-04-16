@@ -15,7 +15,6 @@
 package network
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/pkg/errors"
@@ -37,5 +36,5 @@ func ContainsFirst(cidr string, ips []net.IP) (net.IP, error) {
 		}
 	}
 
-	return nil, errors.New(fmt.Sprintf("cidr %q does not contain ip %q", cidr, ips))
+	return nil, errors.Errorf("cidr %q does not contain ip %q", cidr, ips)
 }
