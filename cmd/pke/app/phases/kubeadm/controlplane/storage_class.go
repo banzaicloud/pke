@@ -88,7 +88,7 @@ func writeStorageClassAzure(out io.Writer, filename string) error {
 	conf := `kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: aure-disk
+  name: azure-disk
   annotations:
     storageclass.kubernetes.io/is-default-class: "true"
 provisioner: kubernetes.io/azure-disk
