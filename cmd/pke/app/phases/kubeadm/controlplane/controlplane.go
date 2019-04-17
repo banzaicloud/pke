@@ -404,10 +404,7 @@ func ensureAPIServerConnection(out io.Writer, ctx context.Context, successTries 
 	insecureTLS := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	tl := &transport.Logger{
-		RoundTripper: insecureTLS,
-		Output:       out,
-	}
+	tl := transport.NewLogger(out, insecureTLS)
 	c := &http.Client{
 		Transport: transport.NewRetryTransport(tl),
 	}

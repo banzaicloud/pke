@@ -36,10 +36,7 @@ func Client(out io.Writer, endpoint, token string) *pipeline.APIClient {
 		&oauth2.Token{AccessToken: token},
 	))
 	config.HTTPClient.Timeout = 30 * time.Second
-	tl := &transport.Logger{
-		RoundTripper: config.HTTPClient.Transport,
-		Output:       out,
-	}
+	tl := transport.NewLogger(out, config.HTTPClient.Transport)
 	config.HTTPClient.Transport = transport.NewRetryTransport(tl)
 
 	return pipeline.NewAPIClient(config)
