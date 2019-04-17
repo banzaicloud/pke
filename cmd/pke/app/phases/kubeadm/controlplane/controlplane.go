@@ -32,7 +32,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/PuerkitoBio/rehttp"
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
@@ -43,6 +42,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/network"
 	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/transport"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/goph/emperror"
 	"github.com/lestrrat-go/backoff"
@@ -404,22 +404,13 @@ func ensureAPIServerConnection(out io.Writer, ctx context.Context, successTries 
 	insecureTLS := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	tl := &pipelineutil.TransportLogger{
+	tl := &transport.Logger{
 		RoundTripper: insecureTLS,
 		Output:       out,
 	}
-
-	tr := rehttp.NewTransport(
-		tl,
-		rehttp.RetryAll(
-			rehttp.RetryMaxRetries(4),
-			rehttp.RetryHTTPMethods(http.MethodGet),
-			rehttp.RetryStatusInterval(400, 600),
-		),
-		rehttp.ExpJitterDelay(2*time.Second, 30*time.Second),
-	)
-
-	c := &http.Client{Transport: tr}
+	c := &http.Client{
+		Transport: transport.NewRetryTransport(tl),
+	}
 
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()

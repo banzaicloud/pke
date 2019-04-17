@@ -17,12 +17,11 @@ package pipeline
 import (
 	"context"
 	"io"
-	"net/http"
 	"time"
 
-	"github.com/PuerkitoBio/rehttp"
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/transport"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -37,27 +36,11 @@ func Client(out io.Writer, endpoint, token string) *pipeline.APIClient {
 		&oauth2.Token{AccessToken: token},
 	))
 	config.HTTPClient.Timeout = 30 * time.Second
-	tl := &TransportLogger{
+	tl := &transport.Logger{
 		RoundTripper: config.HTTPClient.Transport,
 		Output:       out,
 	}
-	tr := rehttp.NewTransport(
-		tl,
-		rehttp.RetryAny(
-			rehttp.RetryAll(
-				rehttp.RetryMaxRetries(5),
-				rehttp.RetryHTTPMethods(http.MethodGet),
-				rehttp.RetryStatusInterval(400, 600),
-			),
-			rehttp.RetryAll(
-				rehttp.RetryMaxRetries(5),
-				rehttp.RetryHTTPMethods(http.MethodPost),
-				rehttp.RetryStatusInterval(500, 600),
-			),
-		),
-		rehttp.ExpJitterDelay(2*time.Second, 30*time.Second),
-	)
-	config.HTTPClient.Transport = tr
+	config.HTTPClient.Transport = transport.NewRetryTransport(tl)
 
 	return pipeline.NewAPIClient(config)
 }

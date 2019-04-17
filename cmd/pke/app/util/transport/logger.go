@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package transport
 
 import (
 	"context"
@@ -23,12 +23,14 @@ import (
 	"time"
 )
 
-type TransportLogger struct {
+type Logger struct {
 	RoundTripper http.RoundTripper
 	Output       io.Writer
 }
 
-func (t *TransportLogger) RoundTrip(req *http.Request) (*http.Response, error) {
+var _ http.RoundTripper = (*Logger)(nil)
+
+func (t *Logger) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := context.WithValue(req.Context(), "requestTS", time.Now())
 	req = req.WithContext(ctx)
 
@@ -54,7 +56,7 @@ func (t *TransportLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, err
 
 }
-func (t *TransportLogger) transport() http.RoundTripper {
+func (t *Logger) transport() http.RoundTripper {
 	if t.RoundTripper != nil {
 		return t.RoundTripper
 	}
