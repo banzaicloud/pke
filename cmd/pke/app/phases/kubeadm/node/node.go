@@ -244,7 +244,7 @@ func (n *Node) install(out io.Writer) error {
 	}
 
 	// write kubeadm azure.conf
-	err = kubeadm.WriteKubeadmAzureConfig(out, kubeadmAzureConfig, n.cloudProvider, n.azureTenantID, n.azureSubnetName, n.azureSecurityGroupName, n.azureVNetName, n.azureVNetResourceGroup, n.azureVMType, n.azureLoadBalancerSku, n.azureRouteTableName)
+	err = kubeadm.WriteKubeadmAzureConfig(out, kubeadmAzureConfig, n.cloudProvider, n.azureTenantID, n.azureSubnetName, n.azureSecurityGroupName, n.azureVNetName, n.azureVNetResourceGroup, n.azureVMType, n.azureLoadBalancerSku, n.azureRouteTableName, true)
 	if err != nil {
 		return err
 	}

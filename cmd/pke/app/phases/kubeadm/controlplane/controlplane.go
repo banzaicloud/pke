@@ -78,34 +78,35 @@ const (
 var _ phases.Runnable = (*ControlPlane)(nil)
 
 type ControlPlane struct {
-	kubernetesVersion           string
-	networkProvider             string
-	advertiseAddress            string
-	apiServerHostPort           string
-	clusterName                 string
-	serviceCIDR                 string
-	podNetworkCIDR              string
-	cloudProvider               string
-	nodepool                    string
-	controllerManagerSigningCA  string
-	clusterMode                 string
-	joinControlPlane            bool
-	apiServerCertSANs           []string
-	kubeletCertificateAuthority string
-	oidcIssuerURL               string
-	oidcClientID                string
-	imageRepository             string
-	withPluginPSP               bool
-	node                        *node.Node
-	azureTenantID               string
-	azureSubnetName             string
-	azureSecurityGroupName      string
-	azureVNetName               string
-	azureVNetResourceGroup      string
-	azureVMType                 string
-	azureLoadBalancerSku        string
-	azureRouteTableName         string
-	cidr                        string
+	kubernetesVersion                string
+	networkProvider                  string
+	advertiseAddress                 string
+	apiServerHostPort                string
+	clusterName                      string
+	serviceCIDR                      string
+	podNetworkCIDR                   string
+	cloudProvider                    string
+	nodepool                         string
+	controllerManagerSigningCA       string
+	clusterMode                      string
+	joinControlPlane                 bool
+	apiServerCertSANs                []string
+	kubeletCertificateAuthority      string
+	oidcIssuerURL                    string
+	oidcClientID                     string
+	imageRepository                  string
+	withPluginPSP                    bool
+	node                             *node.Node
+	azureTenantID                    string
+	azureSubnetName                  string
+	azureSecurityGroupName           string
+	azureVNetName                    string
+	azureVNetResourceGroup           string
+	azureVMType                      string
+	azureLoadBalancerSku             string
+	azureRouteTableName              string
+	azureExcludeMasterFromStandardLB bool
+	cidr                             string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -237,7 +238,9 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	}
 
 	switch c.clusterMode {
-	case "single", "default":
+	case "single":
+		c.azureExcludeMasterFromStandardLB = false
+	case "default":
 		// noop
 	case "ha":
 		if err := c.pipelineJoin(cmd); err != nil {
@@ -598,7 +601,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// write kubeadm azure.conf
-	err = kubeadm.WriteKubeadmAzureConfig(out, kubeadmAzureConfig, c.cloudProvider, c.azureTenantID, c.azureSubnetName, c.azureSecurityGroupName, c.azureVNetName, c.azureVNetResourceGroup, c.azureVMType, c.azureLoadBalancerSku, c.azureRouteTableName)
+	err = kubeadm.WriteKubeadmAzureConfig(out, kubeadmAzureConfig, c.cloudProvider, c.azureTenantID, c.azureSubnetName, c.azureSecurityGroupName, c.azureVNetName, c.azureVNetResourceGroup, c.azureVMType, c.azureLoadBalancerSku, c.azureRouteTableName, c.azureExcludeMasterFromStandardLB)
 	if err != nil {
 		return err
 	}

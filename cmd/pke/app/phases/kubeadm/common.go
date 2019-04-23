@@ -31,7 +31,7 @@ const (
 	urlAzureAZ = "http://169.254.169.254/metadata/instance?api-version=2018-10-01"
 )
 
-func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, subnetName, securityGroupName, vnetName, vnetResourceGroup, vmType, loadBalancerSku, routeTableName string) error {
+func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, subnetName, securityGroupName, vnetName, vnetResourceGroup, vmType, loadBalancerSku, routeTableName string, excludeMasterFromStandardLB bool) error {
 	if cloudProvider == constants.CloudProviderAzure {
 		if http.DefaultClient.Timeout < 10*time.Second {
 			http.DefaultClient.Timeout = 10 * time.Second
@@ -92,7 +92,8 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
     "routeTableName": "{{ .RouteTableName }}",
     "cloudProviderBackoff": false,
     "useManagedIdentityExtension": true,
-    "useInstanceMetadata": true
+    "useInstanceMetadata": true,
+    "excludeMasterFromStandardLB": {{ .ExcludeMasterFromStandardLB }}
 }`
 
 		tmpl, err := template.New("azure-config").Parse(conf)
@@ -107,33 +108,35 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
 		defer func() { _ = w.Close() }()
 
 		type data struct {
-			Cloud             string
-			TenantId          string
-			SubscriptionId    string
-			ResourceGroup     string
-			Location          string
-			SubnetName        string
-			SecurityGroupName string
-			VNetName          string
-			VNetResourceGroup string
-			VMType            string
-			LoadBalancerSku   string
-			RouteTableName    string
+			Cloud                       string
+			TenantId                    string
+			SubscriptionId              string
+			ResourceGroup               string
+			Location                    string
+			SubnetName                  string
+			SecurityGroupName           string
+			VNetName                    string
+			VNetResourceGroup           string
+			VMType                      string
+			LoadBalancerSku             string
+			RouteTableName              string
+			ExcludeMasterFromStandardLB bool
 		}
 
 		d := data{
-			Cloud:             r.Compute.AZEnvironment,
-			TenantId:          tenantID,
-			SubscriptionId:    r.Compute.SubscriptionId,
-			ResourceGroup:     r.Compute.ResourceGroupName,
-			Location:          r.Compute.Location,
-			SubnetName:        subnetName,
-			SecurityGroupName: securityGroupName,
-			VNetName:          vnetName,
-			VNetResourceGroup: vnetResourceGroup,
-			VMType:            vmType,
-			LoadBalancerSku:   loadBalancerSku,
-			RouteTableName:    routeTableName,
+			Cloud:                       r.Compute.AZEnvironment,
+			TenantId:                    tenantID,
+			SubscriptionId:              r.Compute.SubscriptionId,
+			ResourceGroup:               r.Compute.ResourceGroupName,
+			Location:                    r.Compute.Location,
+			SubnetName:                  subnetName,
+			SecurityGroupName:           securityGroupName,
+			VNetName:                    vnetName,
+			VNetResourceGroup:           vnetResourceGroup,
+			VMType:                      vmType,
+			LoadBalancerSku:             loadBalancerSku,
+			RouteTableName:              routeTableName,
+			ExcludeMasterFromStandardLB: excludeMasterFromStandardLB,
 		}
 
 		return tmpl.Execute(w, d)
