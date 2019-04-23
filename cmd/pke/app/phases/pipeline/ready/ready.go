@@ -152,9 +152,9 @@ func (r *Ready) Run(out io.Writer) error {
 		req.Config = base64.StdEncoding.EncodeToString(b)
 	}
 
-	_, resp, err := c.ClustersApi.PostReadyPKENode(context.Background(), r.pipelineOrganizationID, r.pipelineClusterID, req)
+	_, _, err = c.ClustersApi.PostReadyPKENode(context.Background(), r.pipelineOrganizationID, r.pipelineClusterID, req)
 	if err != nil {
-		return errors.Wrapf(err, "post node ready call failed. http status code: %d", resp.StatusCode)
+		return errors.Wrapf(err, "post node ready call failed.")
 	}
 
 	return nil
