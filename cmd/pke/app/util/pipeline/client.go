@@ -15,11 +15,13 @@
 package pipeline
 
 import (
+	"context"
 	"io"
 	"time"
 
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/transport"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -34,10 +36,8 @@ func Client(out io.Writer, endpoint, token string) *pipeline.APIClient {
 		&oauth2.Token{AccessToken: token},
 	))
 	config.HTTPClient.Timeout = 30 * time.Second
-	config.HTTPClient.Transport = &transportLogger{
-		roundTripper: config.HTTPClient.Transport,
-		output:       out,
-	}
+	tl := transport.NewLogger(out, config.HTTPClient.Transport)
+	config.HTTPClient.Transport = transport.NewRetryTransport(tl)
 
 	return pipeline.NewAPIClient(config)
 }
@@ -90,4 +90,27 @@ func ValidArgs(endpoint, token string, orgID, clusterID int32) error {
 		constants.FlagPipelineOrganizationID: orgID,
 		constants.FlagPipelineClusterID:      clusterID,
 	})
+}
+
+func NodeJoinArgs(out io.Writer, cmd *cobra.Command) (apiServerHostPort, kubeadmToken, caCertHash string, err error) {
+	if !Enabled(cmd) {
+		return
+	}
+	endpoint, token, orgID, clusterID, err := CommandArgs(cmd)
+	if err != nil {
+		return
+	}
+
+	// Pipeline client.
+	c := Client(out, endpoint, token)
+
+	var b pipeline.GetClusterBootstrapResponse
+	b, _, err = c.ClustersApi.GetClusterBootstrap(context.Background(), orgID, clusterID)
+	if err != nil {
+		return
+	}
+	apiServerHostPort = b.MasterAddress
+	kubeadmToken = b.Token
+	caCertHash = b.DiscoveryTokenCaCertHash
+	return
 }

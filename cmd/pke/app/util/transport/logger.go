@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pipeline
+package transport
 
 import (
 	"context"
@@ -23,12 +23,21 @@ import (
 	"time"
 )
 
-type transportLogger struct {
+type Logger struct {
 	roundTripper http.RoundTripper
 	output       io.Writer
 }
 
-func (t *transportLogger) RoundTrip(req *http.Request) (*http.Response, error) {
+var _ http.RoundTripper = (*Logger)(nil)
+
+func NewLogger(out io.Writer, rt http.RoundTripper) *Logger {
+	return &Logger{
+		roundTripper: rt,
+		output:       out,
+	}
+}
+
+func (t *Logger) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := context.WithValue(req.Context(), "requestTS", time.Now())
 	req = req.WithContext(ctx)
 
@@ -44,18 +53,17 @@ func (t *transportLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 		_, _ = fmt.Fprintf(t.output, "%s <-- %d %q %s\n", resp.Proto, resp.StatusCode, resp.Request.URL, time.Now().Sub(ts))
 	} else {
 		_, _ = fmt.Fprintf(t.output, "%s <-- %d %q\n", resp.Proto, resp.StatusCode, resp.Request.URL)
-		if resp.StatusCode/100 != 2 {
-			if b, err := httputil.DumpResponse(resp, true); err != nil {
-				_, _ = fmt.Fprintf(t.output, "%s\n", b)
-			}
-
+	}
+	if resp != nil && resp.StatusCode/100 != 2 {
+		if b, err := httputil.DumpResponse(resp, true); err == nil {
+			_, _ = fmt.Fprintf(t.output, "%s\n", b)
 		}
 	}
 
 	return resp, err
 
 }
-func (t *transportLogger) transport() http.RoundTripper {
+func (t *Logger) transport() http.RoundTripper {
 	if t.roundTripper != nil {
 		return t.roundTripper
 	}

@@ -15,27 +15,37 @@
 package controlplane
 
 import (
+	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/node"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/network"
+	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/transport"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
+	"github.com/goph/emperror"
+	"github.com/lestrrat-go/backoff"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -95,16 +105,20 @@ type ControlPlane struct {
 	azureVMType                 string
 	azureLoadBalancerSku        string
 	azureRouteTableName         string
+	cidr                        string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &ControlPlane{})
+	return phases.NewCommand(out, &ControlPlane{
+		node: &node.Node{},
+	})
 }
 
 func NewDefault(kubernetesVersion, imageRepository string) *ControlPlane {
 	return &ControlPlane{
 		kubernetesVersion: kubernetesVersion,
 		imageRepository:   imageRepository,
+		node:              &node.Node{},
 	}
 }
 
@@ -153,17 +167,20 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureVMType, "standard", "The type of azure nodes. Candidate values are: vmss and standard")
 	flags.String(constants.FlagAzureLoadBalancerSku, "basic", "Sku of Load Balancer and Public IP. Candidate values are: basic and standard")
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
+	// Pipeline
+	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
+	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
+	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
+	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
+	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
 
-	addHAControlPlaneFlags(flags)
+	c.addHAControlPlaneFlags(flags)
 }
 
-func addHAControlPlaneFlags(flags *pflag.FlagSet) {
-	var (
-		f = &pflag.FlagSet{}
-		n phases.Runnable
-	)
-	n = &node.Node{}
-	n.RegisterFlags(f)
+func (c *ControlPlane) addHAControlPlaneFlags(flags *pflag.FlagSet) {
+	var f = &pflag.FlagSet{}
+
+	c.node.RegisterFlags(f)
 
 	f.VisitAll(func(flag *pflag.Flag) {
 		if flags.Lookup(flag.Name) == nil {
@@ -223,8 +240,11 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	case "single", "default":
 		// noop
 	case "ha":
+		if err := c.pipelineJoin(cmd); err != nil {
+			return err
+		}
+
 		if c.joinControlPlane {
-			c.node = &node.Node{}
 			return c.node.Validate(cmd)
 		}
 
@@ -235,11 +255,125 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	return nil
 }
 
+func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
+	if pipelineutil.Enabled(cmd) {
+		// hostname
+		hostname, err := os.Hostname()
+		if err != nil {
+			return err
+		}
+
+		// ip
+		ips, err := network.IPv4Addresses()
+		if err != nil {
+			return err
+		}
+		ip, err := network.ContainsFirst(c.cidr, ips)
+		if err != nil {
+			return err
+		}
+
+		// Pipeline client
+		endpoint, token, orgID, clusterID, err := pipelineutil.CommandArgs(cmd)
+		if err != nil {
+			return err
+		}
+
+		p := pipelineutil.Client(os.Stdout, endpoint, token)
+
+		// elect leader
+		_, resp, err := p.ClustersApi.PostLeaderElection(context.Background(), orgID, clusterID, pipeline.PostLeaderElectionRequest{
+			Hostname: hostname,
+			Ip:       ip.String(),
+		})
+
+		if err != nil && resp == nil {
+			return errors.Wrap(err, "failed to become leader")
+		}
+		if resp != nil && resp.StatusCode == http.StatusConflict {
+			// check if leadership is ours or not
+			var leader pipeline.GetLeaderElectionResponse
+			leader, resp, err = p.ClustersApi.GetLeaderElection(context.Background(), orgID, clusterID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get leader")
+			}
+			if resp.StatusCode == http.StatusNotFound {
+				return errors.New("unexpected condition. leader not found and cloud not acquire leadership")
+			}
+			if resp.StatusCode == http.StatusOK {
+				if hostname == leader.Hostname && ip.String() == leader.Ip {
+					// we are the leaders, proceed with master installation
+					return nil
+				}
+			}
+			// somebody already took leadership
+
+			c.joinControlPlane = true
+
+			policy := backoff.NewExponential(
+				backoff.WithInterval(time.Second),
+				backoff.WithFactor(2),
+				backoff.WithMaxElapsedTime(time.Hour),
+				backoff.WithMaxInterval(30*time.Second),
+				backoff.WithMaxRetries(0),
+			)
+			b, cancel := policy.Start(context.Background())
+			defer cancel()
+
+			for backoff.Continue(b) {
+				// Wait for master to become ready
+				var ready pipeline.PkeClusterReadinessResponse
+				ready, resp, err = p.ClustersApi.GetReadyPKENode(context.Background(), orgID, clusterID)
+				if resp != nil && resp.StatusCode == http.StatusOK && ready.Master.Ready {
+					return nil
+				}
+			}
+			// backoff timeout
+			return errors.New("timeout exceeded. waiting for master to become ready failed")
+		}
+	}
+
+	return nil
+}
+
+func (c *ControlPlane) appendAdvertiseAddressAsLoopback() error {
+	addr := strings.Split(c.apiServerHostPort, ":")[0]
+
+	f, err := os.OpenFile("/etc/hosts", os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = f.Close() }()
+
+	if _, err = fmt.Fprintf(f, "127.0.0.1 %s\n", addr); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *ControlPlane) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
 
-	if c.clusterMode == "ha" && c.joinControlPlane {
-		return c.node.Run(out)
+	if c.clusterMode == "ha" {
+		// additional master node
+		if c.joinControlPlane {
+			// make sure api server stabilized operation and not restarting
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+			if err := ensureAPIServerConnection(out, ctx, 5, c.apiServerHostPort); err != nil {
+				return err
+			}
+			// install additional master node
+			_, _ = fmt.Fprintf(out, "[%s] installing additional master node\n", c.Use())
+			return c.node.Run(out)
+		}
+
+		// initial master node
+		_, _ = fmt.Fprintf(out, "[%s] installing initial master node\n", c.Use())
+		if err := c.appendAdvertiseAddressAsLoopback(); err != nil {
+			return emperror.Wrap(err, "failed to write to /etc/hosts")
+		}
 	}
 
 	if err := c.installMaster(out); err != nil {
@@ -258,6 +392,46 @@ func (c *ControlPlane) Run(out io.Writer) error {
 	}
 
 	return taintRemoveNoSchedule(out, c.clusterMode, kubeConfig)
+}
+
+func ensureAPIServerConnection(out io.Writer, ctx context.Context, successTries int, apiServerHostPort string) error {
+	host, port, err := kubeadm.SplitHostPort(apiServerHostPort, "6443")
+	if err != nil {
+		return err
+	}
+	apiServerHostPort = net.JoinHostPort(host, port)
+
+	insecureTLS := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	tl := transport.NewLogger(out, insecureTLS)
+	c := &http.Client{
+		Transport: transport.NewRetryTransport(tl),
+	}
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+	u := "https://" + apiServerHostPort + "/version"
+	for {
+		select {
+		case <-ticker.C:
+			resp, err := c.Get(u)
+			if err != nil {
+				return err
+			}
+			_ = resp.Body.Close()
+			if resp.StatusCode/100 == 2 {
+				successTries--
+				if successTries == 0 {
+					return nil
+				}
+			} else {
+				successTries++
+			}
+		case <-ctx.Done():
+			return errors.Wrapf(ctx.Err(), "api server connection cloud not be established")
+		}
+	}
 }
 
 func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error) {
@@ -368,6 +542,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.azureRouteTableName, err = cmd.Flags().GetString(constants.FlagAzureRouteTableName)
+	if err != nil {
+		return
+	}
+	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
 
 	return
 }

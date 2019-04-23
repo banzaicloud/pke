@@ -3,7 +3,7 @@
  *
  * Pipeline v0.3.0 swagger
  *
- * API version: 0.17.0
+ * API version: master
  * Contact: info@banzaicloud.com
  */
 
@@ -24,5 +24,5 @@ type GetDeploymentResponse struct {
 	// deployment notes in base64 encoded format
 	Notes string `json:"notes,omitempty"`
 	// current values of the deployment
-	Values map[string]map[string]interface{} `json:"values,omitempty"`
+	Values map[string]interface{} `json:"values,omitempty"`
 }

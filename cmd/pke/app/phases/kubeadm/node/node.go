@@ -15,14 +15,12 @@
 package node
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"text/template"
 
-	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
@@ -182,8 +180,8 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 		return
 	}
 
-	if n.apiServerHostPort == "" && n.kubeadmToken == "" && n.caCertHash == "" {
-		n.apiServerHostPort, n.kubeadmToken, n.caCertHash, err = pipelineJoinArgs(cmd)
+	if n.kubeadmToken == "" && n.caCertHash == "" {
+		n.apiServerHostPort, n.kubeadmToken, n.caCertHash, err = pipelineutil.NodeJoinArgs(os.Stdout, cmd)
 		if err != nil {
 			return
 		}
@@ -231,29 +229,6 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 	}
 	n.azureRouteTableName, err = cmd.Flags().GetString(constants.FlagAzureRouteTableName)
 
-	return
-}
-
-func pipelineJoinArgs(cmd *cobra.Command) (apiServerHostPort, kubeadmToken, caCertHash string, err error) {
-	if !pipelineutil.Enabled(cmd) {
-		return
-	}
-	endpoint, token, orgID, clusterID, err := pipelineutil.CommandArgs(cmd)
-	if err != nil {
-		return
-	}
-
-	// Pipeline client.
-	c := pipelineutil.Client(os.Stdout, endpoint, token)
-
-	var b pipeline.GetClusterBootstrapResponse
-	b, _, err = c.ClustersApi.GetClusterBootstrap(context.Background(), orgID, clusterID)
-	if err != nil {
-		return
-	}
-	apiServerHostPort = b.MasterAddress
-	kubeadmToken = b.Token
-	caCertHash = b.DiscoveryTokenCaCertHash
 	return
 }
 
