@@ -429,7 +429,7 @@ func ensureAPIServerConnection(out io.Writer, ctx context.Context, successTries 
 				successTries++
 			}
 		case <-ctx.Done():
-			return errors.Wrapf(ctx.Err(), "api server connection cloud not be stabilized")
+			return errors.Wrapf(ctx.Err(), "api server connection cloud not be established")
 		}
 	}
 }
