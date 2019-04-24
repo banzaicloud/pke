@@ -19,12 +19,12 @@ We will use some shell variables to simplify following the guide. Set them to yo
 ```bash
 export LOCATION=westeurope
 export RG=pke-azure
+export CLUSTER_NAME=$RG
 export VNET=$RG-vnet
 export SUBNET=$RG-subnet
 export NSG=$RG-nsg
-export LB=$RG-lb
-export BE_POOL=$LB-be-pool
-export FE_POOL=$LB-fe-pool
+export BE_POOL=$CLUSTER_NAME-be-pool
+export FE_POOL=$CLUSTER_NAME-fe-pool
 export INFRA_CIDR=10.240.0.0/24
 export PUBLIC_IP=$RG-pip
 export APISERVER_PROBE=$RG-apiserver-probe
@@ -104,7 +104,7 @@ az network public-ip create -n $PUBLIC_IP -g $RG \
     --sku Standard \
     --location $LOCATION
 az network lb create -g $RG \
-  -n $LB \
+  -n $CLUSTER_NAME \
   --sku Standard \
   --location $LOCATION \
   --backend-pool-name $BE_POOL \
@@ -123,7 +123,7 @@ Create the load balancer health probe as a pre-requesite for the lb rule that fo
 
 ```bash
 az network lb probe create -g $RG \
-  --lb-name $LB \
+  --lb-name $CLUSTER_NAME \
   --name $APISERVER_PROBE \
   --port 6443 \
   --protocol tcp
@@ -135,7 +135,7 @@ Create the external load balancer network resource.
 az network lb rule create -g $RG \
   -n $APISERVER_RULE \
   --protocol tcp \
-  --lb-name $LB \
+  --lb-name $CLUSTER_NAME \
   --frontend-ip-name $FE_POOL \
   --frontend-port 6443 \
   --backend-pool-name $BE_POOL \
@@ -168,7 +168,7 @@ az network nic create -g $RG \
         --vnet $VNET \
         --subnet $SUBNET \
         --ip-forwarding \
-        --lb-name $LB \
+        --lb-name $CLUSTER_NAME \
         --lb-address-pools $BE_POOL
 
 az vm create -g $RG \
@@ -195,7 +195,7 @@ Since this installation is manual, we need to access the machines through SSH. N
 ```bash
 az network lb inbound-nat-rule create -g $RG \
     -n ssh \
-    --lb-name $LB \
+    --lb-name $CLUSTER_NAME \
     --protocol Tcp \
     --frontend-port 50000 \
     --backend-port 22 \
@@ -211,7 +211,7 @@ export CONTROLLER_IP_CONFIG=$(az network nic ip-config list \
 az network nic ip-config inbound-nat-rule add \
     --inbound-nat-rule ssh \
     -g $RG \
-    --lb-name $LB \
+    --lb-name $CLUSTER_NAME \
     --nic-name controller-0-nic \
     --ip-config-name $CONTROLLER_IP_CONFIG
 ```
@@ -282,6 +282,8 @@ export ROUTES=$RG-routes
 
 Install PKE.
 
+> `--kubernetes-cluster-name` is used for load balancer naming.
+
 ```bash
 curl -v https://banzaicloud.com/downloads/pke/pke-0.2.3 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
@@ -296,6 +298,8 @@ pke install master --kubernetes-cloud-provider=azure \
 --azure-vm-type=standard \
 --azure-loadbalancer-sku=standard \
 --azure-route-table-name=$ROUTES \
+--kubernetes-master-mode=single \
+--kubernetes-cluster-name=$CLUSTER_NAME \
 --kubernetes-advertise-address=$PRIVATEIP:6443 \
 --kubernetes-api-server=$PRIVATEIP:6443 \
 --kubernetes-infrastructure-cidr=$INFRA_CIDR \
@@ -336,6 +340,8 @@ export ROUTES=$RG-routes
 
 Install PKE.
 
+> `--kubernetes-cluster-name` is used for load balancer naming.
+
 ```bash
 curl -v https://banzaicloud.com/downloads/pke/pke-0.3.0 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
@@ -350,6 +356,7 @@ pke install master --kubernetes-cloud-provider=azure \
 --azure-vm-type=standard \
 --azure-loadbalancer-sku=standard \
 --azure-route-table-name=$ROUTES \
+--kubernetes-cluster-name=$CLUSTER_NAME \
 --kubernetes-advertise-address=$PRIVATEIP:6443 \
 --kubernetes-api-server=$PRIVATEIP:6443 \
 --kubernetes-infrastructure-cidr=$INFRA_CIDR \
