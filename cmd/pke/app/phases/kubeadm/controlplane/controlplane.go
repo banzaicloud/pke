@@ -611,7 +611,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		"init",
 		"--config=" + kubeadmConfig,
 	}
-	err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
+	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
@@ -671,7 +671,8 @@ func installPodNetwork(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig 
 	// kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')&env.IPALLOC_RANGE=10.200.0.0/16"
 	cmd = runner.Cmd(out, cmdKubectl, "apply", "-f", u.String())
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
+	return err
 }
 
 func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) error {
@@ -800,7 +801,7 @@ func waitForAPIServer(out io.Writer) error {
 			// kubectl get cs. ensures kube-apiserver is restarted.
 			cmd := runner.Cmd(out, cmdKubectl, "get", "cs")
 			cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-			err := cmd.CombinedOutputAsync()
+			_, err := cmd.CombinedOutputAsync()
 			if err == nil {
 				return nil
 			}
@@ -819,7 +820,8 @@ func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error 
 	// kubectl taint node -l node-role.kubernetes.io/master node-role.kubernetes.io/master:NoSchedule-
 	cmd := runner.Cmd(out, cmdKubectl, "taint", "node", "-l node-role.kubernetes.io/master", "node-role.kubernetes.io/master:NoSchedule-")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err := cmd.CombinedOutputAsync()
+	return err
 }
 
 func writeCertificateAutoApprover(out io.Writer) error {
@@ -920,7 +922,8 @@ spec:
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
+	return err
 }
 
 func writePodSecurityPolicyConfig(out io.Writer) error {
@@ -1197,7 +1200,8 @@ spec:
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
+	return err
 }
 
 func writeEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, encryptionSecret string) error {
@@ -1268,5 +1272,6 @@ resources:
 func deleteKubeDNSReplicaSet(out io.Writer) error {
 	cmd := runner.Cmd(out, cmdKubectl, "delete", "rs", "-n", "kube-system", "k8s-app=kube-dns")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err := cmd.CombinedOutputAsync()
+	return err
 }

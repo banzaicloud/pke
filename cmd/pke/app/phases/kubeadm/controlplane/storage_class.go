@@ -40,7 +40,7 @@ func applyDefaultStorageClass(out io.Writer, cloudProvider string) error {
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", storageClassConfig)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	err = cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
 	if err != nil {
 		return err
 	}

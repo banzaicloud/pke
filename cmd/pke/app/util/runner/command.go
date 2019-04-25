@@ -49,33 +49,36 @@ func (c *Command) CombinedOutput() ([]byte, error) {
 	return out, err
 }
 
-func (c *Command) CombinedOutputAsync() error {
+func (c *Command) CombinedOutputAsync() (string, error) {
+	lastLine := ""
+
 	c.ts = time.Now()
 	stdout, err := c.Cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return lastLine, err
 	}
 	stderr, err := c.Cmd.StderrPipe()
 	if err != nil {
-		return err
+		return lastLine, err
 	}
 	go func() {
 		combined := io.MultiReader(stdout, stderr)
 		scanner := bufio.NewScanner(combined)
 		for scanner.Scan() {
 			m := scanner.Text()
+			lastLine = m
 			_, _ = fmt.Fprintln(c.w, m)
 		}
 	}()
 
 	err = c.Start()
 	if err != nil {
-		return err
+		return lastLine, err
 	}
 
 	err = c.Wait()
 
-	return err
+	return lastLine, err
 }
 
 func (c *Command) Output() ([]byte, error) {
