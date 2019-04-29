@@ -24,7 +24,11 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
 
-func applyDefaultStorageClass(out io.Writer, cloudProvider string) error {
+func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider string) error {
+	if disableDefaultStorageClass {
+		return nil
+	}
+
 	var err error
 	switch cloudProvider {
 	case constants.CloudProviderAmazon:

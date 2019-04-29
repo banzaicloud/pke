@@ -107,6 +107,7 @@ type ControlPlane struct {
 	azureRouteTableName              string
 	azureExcludeMasterFromStandardLB bool
 	cidr                             string
+	disableDefaultStorageClass       bool
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -174,6 +175,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
+	// Storage class
+	flags.Bool(constants.FlagDisableDefaultStorageClass, false, "Disable default storage class")
 
 	c.addHAControlPlaneFlags(flags)
 }
@@ -549,6 +552,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
+	if err != nil {
+		return
+	}
+	c.disableDefaultStorageClass, err = cmd.Flags().GetBool(constants.FlagDisableDefaultStorageClass)
 
 	return
 }
@@ -637,7 +644,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// apply default storage class
-	if err := applyDefaultStorageClass(out, c.cloudProvider); err != nil {
+	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider); err != nil {
 		return err
 	}
 

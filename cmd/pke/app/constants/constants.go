@@ -116,6 +116,9 @@ const (
 	FlagAzureLoadBalancerSku = "azure-loadbalancer-sku"
 	// FlagAzureRouteTableName the name of the route table attached to the subnet that the cluster is deployed in.
 	FlagAzureRouteTableName = "azure-route-table-name"
+
+	// FlagDisableDefaultStorageClass adds default storage class.
+	FlagDisableDefaultStorageClass = "disable-default-storage-class"
 )
 
 var (
