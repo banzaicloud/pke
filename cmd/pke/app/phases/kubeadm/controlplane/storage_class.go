@@ -96,6 +96,7 @@ metadata:
   annotations:
     storageclass.kubernetes.io/is-default-class: "true"
 provisioner: kubernetes.io/azure-disk
+volumeBindingMode: WaitForFirstConsumer
 parameters:
   storageaccounttype: {{ .StorageAccountType }}
   kind: {{ .Kind }}
