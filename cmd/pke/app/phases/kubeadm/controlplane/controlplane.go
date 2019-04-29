@@ -176,7 +176,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
 	// Storage class
-	flags.Bool(constants.FlagDisableDefaultStorageClass, false, "Disable default storage class")
+	flags.Bool(constants.FlagDisableDefaultStorageClass, false, "Do not deploy a default storage class")
 
 	c.addHAControlPlaneFlags(flags)
 }

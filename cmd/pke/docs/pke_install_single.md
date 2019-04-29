@@ -21,7 +21,7 @@ pke install single [flags]
       --azure-vm-type string                              The type of azure nodes. Candidate values are: vmss and standard (default "standard")
       --azure-vnet-name string                            The name of the VNet that the cluster is deployed in
       --azure-vnet-resource-group string                  The name of the resource group that the Vnet is deployed in
-      --disable-default-storage-class                     Disable default storage class
+      --disable-default-storage-class                     Do not deploy a default storage class
   -h, --help                                              help for single
       --image-repository string                           Prefix for image repository (default "banzaicloud")
       --kubelet-certificate-authority string              Path to a cert file for the certificate authority. Used for kubelet server certificate verify. (default "/etc/kubernetes/pki/ca.crt")
