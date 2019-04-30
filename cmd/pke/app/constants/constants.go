@@ -116,6 +116,10 @@ const (
 	FlagAzureLoadBalancerSku = "azure-loadbalancer-sku"
 	// FlagAzureRouteTableName the name of the route table attached to the subnet that the cluster is deployed in.
 	FlagAzureRouteTableName = "azure-route-table-name"
+	// FlagAzureStorageAccountType Azure storage account Sku tier.
+	FlagAzureStorageAccountType = "azure-storage-account-type"
+	// FlagAzureStorageKind possible values are shared, dedicated, and managed (default).
+	FlagAzureStorageKind = "azure-storage-kind"
 
 	// FlagDisableDefaultStorageClass adds default storage class.
 	FlagDisableDefaultStorageClass = "disable-default-storage-class"
