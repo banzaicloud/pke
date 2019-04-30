@@ -29,25 +29,21 @@ func NewRetryTransport(rt http.RoundTripper) *rehttp.Transport {
 		rt,
 		rehttp.RetryAny(
 			rehttp.RetryAll(
-				rehttp.RetryMaxRetries(5),
 				rehttp.RetryHTTPMethods(http.MethodGet),
 				rehttp.RetryStatusInterval(400, 600),
 			),
 			rehttp.RetryAll(
-				rehttp.RetryMaxRetries(5),
 				rehttp.RetryHTTPMethods(http.MethodPost),
 				rehttp.RetryStatusInterval(500, 600),
 			),
 			rehttp.RetryAll(
-				rehttp.RetryMaxRetries(10),
 				rehttp.RetryTemporaryErr(),
 			),
 			rehttp.RetryAll(
-				rehttp.RetryMaxRetries(10),
 				RetryConnectionRefusedErr(),
 			),
 		),
-		rehttp.ExpJitterDelay(2*time.Second, 30*time.Second),
+		rehttp.ExpJitterDelay(2*time.Second, 60*time.Second),
 	)
 }
 
