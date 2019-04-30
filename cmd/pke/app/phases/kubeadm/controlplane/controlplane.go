@@ -172,7 +172,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureLoadBalancerSku, "basic", "Sku of Load Balancer and Public IP. Candidate values are: basic and standard")
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
 	flags.String(constants.FlagAzureStorageAccountType, "Standard_LRS", "Azure storage account Sku tier")
-	flags.String(constants.FlagAzureStorageKind, "dedicated", "Possible values are shared, dedicated (default), and managed")
+	flags.String(constants.FlagAzureStorageKind, "dedicated", "Possible values are shared, dedicated, and managed")
 	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
@@ -525,6 +525,20 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
+	err = c.azureParameters(cmd)
+	if err != nil {
+		return
+	}
+	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
+	if err != nil {
+		return
+	}
+	c.disableDefaultStorageClass, err = cmd.Flags().GetBool(constants.FlagDisableDefaultStorageClass)
+
+	return
+}
+
+func (c *ControlPlane) azureParameters(cmd *cobra.Command) (err error) {
 	c.azureTenantID, err = cmd.Flags().GetString(constants.FlagAzureTenantID)
 	if err != nil {
 		return
@@ -562,14 +576,6 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.azureStorageKind, err = cmd.Flags().GetString(constants.FlagAzureStorageKind)
-	if err != nil {
-		return
-	}
-	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
-	if err != nil {
-		return
-	}
-	c.disableDefaultStorageClass, err = cmd.Flags().GetBool(constants.FlagDisableDefaultStorageClass)
 
 	return
 }
