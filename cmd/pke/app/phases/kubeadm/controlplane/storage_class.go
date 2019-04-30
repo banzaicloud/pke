@@ -24,7 +24,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
 
-func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider string) error {
+func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider, azureStorageAccountType, azuerStorageKind string) error {
 	if disableDefaultStorageClass {
 		return nil
 	}
@@ -34,7 +34,7 @@ func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cl
 	case constants.CloudProviderAmazon:
 		err = writeStorageClassAmazon(out, storageClassConfig)
 	case constants.CloudProviderAzure:
-		err = writeStorageClassAzure(out, storageClassConfig)
+		err = writeStorageClassAzure(out, storageClassConfig, azureStorageAccountType, azuerStorageKind)
 	default:
 		err = writeStorageClassLocalPathStorage(out, storageClassConfig)
 	}
@@ -86,7 +86,7 @@ parameters:
 	return tmpl.Execute(w, d)
 }
 
-func writeStorageClassAzure(out io.Writer, filename string) error {
+func writeStorageClassAzure(out io.Writer, filename string, storageAccountType, kind string) error {
 	_, _ = fmt.Fprintf(out, "[%s] creating Azure default storage class\n", use)
 	// https://kubernetes.io/docs/concepts/storage/storage-classes/#new-azure-disk-storage-class-starting-from-v1-7-2
 	conf := `kind: StorageClass
@@ -95,6 +95,8 @@ metadata:
   name: azure-disk
   annotations:
     storageclass.kubernetes.io/is-default-class: "true"
+  labels:
+    kubernetes.io/cluster-service: "true"
 provisioner: kubernetes.io/azure-disk
 volumeBindingMode: WaitForFirstConsumer
 parameters:
@@ -120,8 +122,8 @@ parameters:
 	}
 
 	d := data{
-		StorageAccountType: "Standard_LRS",
-		Kind:               "dedicated",
+		StorageAccountType: storageAccountType,
+		Kind:               kind,
 	}
 
 	return tmpl.Execute(w, d)

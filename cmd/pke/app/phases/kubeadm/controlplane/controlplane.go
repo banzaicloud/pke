@@ -105,6 +105,8 @@ type ControlPlane struct {
 	azureVMType                      string
 	azureLoadBalancerSku             string
 	azureRouteTableName              string
+	azureStorageAccountType          string
+	azureStorageKind                 string
 	azureExcludeMasterFromStandardLB bool
 	cidr                             string
 	disableDefaultStorageClass       bool
@@ -169,6 +171,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureVMType, "standard", "The type of azure nodes. Candidate values are: vmss and standard")
 	flags.String(constants.FlagAzureLoadBalancerSku, "basic", "Sku of Load Balancer and Public IP. Candidate values are: basic and standard")
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
+	flags.String(constants.FlagAzureStorageAccountType, "Standard_LRS", "Azure storage account Sku tier")
+	flags.String(constants.FlagAzureStorageKind, "dedicated", "Possible values are shared, dedicated, and managed")
 	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
@@ -215,14 +219,16 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	// Azure specific required flags
 	if c.cloudProvider == constants.CloudProviderAzure {
 		if err := validator.NotEmpty(map[string]interface{}{
-			constants.FlagAzureTenantID:          c.azureTenantID,
-			constants.FlagAzureSubnetName:        c.azureSubnetName,
-			constants.FlagAzureSecurityGroupName: c.azureSecurityGroupName,
-			constants.FlagAzureVNetName:          c.azureVNetName,
-			constants.FlagAzureVNetResourceGroup: c.azureVNetResourceGroup,
-			constants.FlagAzureVMType:            c.azureVMType,
-			constants.FlagAzureLoadBalancerSku:   c.azureLoadBalancerSku,
-			constants.FlagAzureRouteTableName:    c.azureRouteTableName,
+			constants.FlagAzureTenantID:           c.azureTenantID,
+			constants.FlagAzureSubnetName:         c.azureSubnetName,
+			constants.FlagAzureSecurityGroupName:  c.azureSecurityGroupName,
+			constants.FlagAzureVNetName:           c.azureVNetName,
+			constants.FlagAzureVNetResourceGroup:  c.azureVNetResourceGroup,
+			constants.FlagAzureVMType:             c.azureVMType,
+			constants.FlagAzureLoadBalancerSku:    c.azureLoadBalancerSku,
+			constants.FlagAzureRouteTableName:     c.azureRouteTableName,
+			constants.FlagAzureStorageAccountType: c.azureStorageAccountType,
+			constants.FlagAzureStorageKind:        c.azureStorageKind,
 		}); err != nil {
 			return err
 		}
@@ -519,6 +525,20 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
+	err = c.azureParameters(cmd)
+	if err != nil {
+		return
+	}
+	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
+	if err != nil {
+		return
+	}
+	c.disableDefaultStorageClass, err = cmd.Flags().GetBool(constants.FlagDisableDefaultStorageClass)
+
+	return
+}
+
+func (c *ControlPlane) azureParameters(cmd *cobra.Command) (err error) {
 	c.azureTenantID, err = cmd.Flags().GetString(constants.FlagAzureTenantID)
 	if err != nil {
 		return
@@ -551,11 +571,11 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
-	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
+	c.azureStorageAccountType, err = cmd.Flags().GetString(constants.FlagAzureStorageAccountType)
 	if err != nil {
 		return
 	}
-	c.disableDefaultStorageClass, err = cmd.Flags().GetBool(constants.FlagDisableDefaultStorageClass)
+	c.azureStorageKind, err = cmd.Flags().GetString(constants.FlagAzureStorageKind)
 
 	return
 }
@@ -644,7 +664,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// apply default storage class
-	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider); err != nil {
+	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider, c.azureStorageAccountType, c.azureStorageKind); err != nil {
 		return err
 	}
 

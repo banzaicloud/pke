@@ -16,6 +16,8 @@ pke install single kubernetes-controlplane [flags]
       --azure-loadbalancer-sku string                     Sku of Load Balancer and Public IP. Candidate values are: basic and standard (default "basic")
       --azure-route-table-name string                     The name of the route table attached to the subnet that the cluster is deployed in (default "kubernetes-routes")
       --azure-security-group-name string                  The name of the security group attached to the cluster's subnet
+      --azure-storage-account-type string                 Azure storage account Sku tier (default "Standard_LRS")
+      --azure-storage-kind string                         Possible values are shared, dedicated, and managed (default "dedicated")
       --azure-subnet-name string                          The name of the subnet that the cluster is deployed in
       --azure-tenant-id string                            The AAD Tenant ID for the Subscription that the cluster is deployed in
       --azure-vm-type string                              The type of azure nodes. Candidate values are: vmss and standard (default "standard")

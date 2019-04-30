@@ -35,7 +35,8 @@ func Client(out io.Writer, endpoint, token string) *pipeline.APIClient {
 	config.HTTPClient = oauth2.NewClient(nil, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	))
-	config.HTTPClient.Timeout = 30 * time.Second
+	// Since transport.NewRetryTransport is added, this timeout will affect only the cumulated retry calls.
+	config.HTTPClient.Timeout = 24 * time.Hour
 	tl := transport.NewLogger(out, config.HTTPClient.Transport)
 	config.HTTPClient.Transport = transport.NewRetryTransport(tl)
 
