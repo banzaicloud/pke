@@ -285,7 +285,7 @@ Install PKE.
 > `--kubernetes-cluster-name` is used for load balancer naming.
 
 ```bash
-curl -v https://banzaicloud.com/downloads/pke/pke-0.4.4 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.4.5 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 

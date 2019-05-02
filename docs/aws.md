@@ -94,7 +94,7 @@ aws ec2 run-instances --image-id ami-3548444c \
 Once you single master instance booted up, SSH into it with the key file configured. Run the following commands as root:
 
 ```
-curl -v https://banzaicloud.com/downloads/pke/pke-0.4.4 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.4.5 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -129,7 +129,7 @@ export INTERNAL_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
 export MAC=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
 export VPC_CIDR=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/vpc-ipv4-cidr-block/)
 
-curl -v https://banzaicloud.com/downloads/pke/pke-0.4.4 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.4.5 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -162,7 +162,7 @@ pke token create
 To install a worker node, run the following commands. Take note that you'd need to set the TOKEN and CERTHASH variables from above.
 
 ```
-curl -v https://banzaicloud.com/downloads/pke/pke-0.4.4 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.4.5 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
