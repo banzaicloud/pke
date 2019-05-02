@@ -259,6 +259,7 @@ nodeRegistration:
     # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker
 {{if .CloudProvider }}
     cloud-provider: "{{ .CloudProvider }}"{{end}}
+    {{if eq .CloudProvider "azure" }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
     read-only-port: "0"
     anonymous-auth: "false"
     streaming-connection-idle-timeout: "5m"
