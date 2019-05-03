@@ -65,6 +65,7 @@ type Node struct {
 	azureVMType            string
 	azureLoadBalancerSku   string
 	azureRouteTableName    string
+	taints                 []string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -109,6 +110,8 @@ func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureVMType, "standard", "The type of azure nodes. Candidate values are: vmss and standard")
 	flags.String(constants.FlagAzureLoadBalancerSku, "basic", "Sku of Load Balancer and Public IP. Candidate values are: basic and standard")
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
+	// Taints
+	flags.StringSlice(constants.FlagTaints, nil, "Specifies the taints the Node should be registered with")
 }
 
 func (n *Node) Validate(cmd *cobra.Command) error {
@@ -228,6 +231,10 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 		return
 	}
 	n.azureRouteTableName, err = cmd.Flags().GetString(constants.FlagAzureRouteTableName)
+	if err != nil {
+		return
+	}
+	n.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
 
 	return
 }

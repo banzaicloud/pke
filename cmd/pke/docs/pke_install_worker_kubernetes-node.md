@@ -33,6 +33,7 @@ pke install worker kubernetes-node [flags]
       --pipeline-org-id int32                       Organization ID to use with Pipeline API
   -t, --pipeline-token string                       Token for accessing Pipeline API
   -u, --pipeline-url string                         Pipeline API server url
+      --taints strings                              Specifies the taints the Node should be registered with
 ```
 
 ### SEE ALSO
