@@ -123,6 +123,9 @@ const (
 
 	// FlagDisableDefaultStorageClass adds default storage class.
 	FlagDisableDefaultStorageClass = "disable-default-storage-class"
+
+	// FlagTaints specifies the taints the Node should be registered with.
+	FlagTaints = "taints"
 )
 
 var (

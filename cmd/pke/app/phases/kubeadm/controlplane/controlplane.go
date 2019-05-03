@@ -110,6 +110,7 @@ type ControlPlane struct {
 	azureExcludeMasterFromStandardLB bool
 	cidr                             string
 	disableDefaultStorageClass       bool
+	taints                           []string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -181,6 +182,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
 	// Storage class
 	flags.Bool(constants.FlagDisableDefaultStorageClass, false, "Do not deploy a default storage class")
+	// Taints
+	flags.StringSlice(constants.FlagTaints, []string{"node-role.kubernetes.io/master:NoSchedule"}, "Specifies the taints the Node should be registered with")
 
 	c.addHAControlPlaneFlags(flags)
 }
@@ -534,6 +537,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.disableDefaultStorageClass, err = cmd.Flags().GetBool(constants.FlagDisableDefaultStorageClass)
+	if err != nil {
+		return
+	}
+	c.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
 
 	return
 }

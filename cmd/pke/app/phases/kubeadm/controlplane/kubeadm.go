@@ -24,6 +24,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
 	"github.com/pkg/errors"
 )
 
@@ -88,6 +89,11 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	}
 	defer func() { _ = w.Close() }()
 
+	taints, err := kubernetes.ParseTaints(c.taints)
+	if err != nil {
+		return err
+	}
+
 	type data struct {
 		APIServerAdvertiseAddress   string
 		APIServerBindPort           string
@@ -107,6 +113,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ImageRepository             string
 		EncryptionProviderPrefix    string
 		WithPluginPSP               bool
+		Taints                      []kubernetes.Taint
 	}
 
 	d := data{
@@ -128,6 +135,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ImageRepository:             c.imageRepository,
 		EncryptionProviderPrefix:    encryptionProviderPrefix,
 		WithPluginPSP:               c.withPluginPSP,
+		Taints:                      taints,
 	}
 
 	return tmpl.Execute(w, d)
@@ -144,6 +152,10 @@ localAPIEndpoint:
   bindPort: {{ .APIServerBindPort }}{{end}}
 nodeRegistration:
   criSocket: "unix:///run/containerd/containerd.sock"
+  taints:{{if not .Taints}} []{{end}}{{range .Taints}}
+    - key: "{{.Key}}"
+      value: "{{.Value}}"
+      effect: "{{.Effect}}"{{end}}
   kubeletExtraArgs:
   {{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
@@ -253,6 +265,10 @@ kind: InitConfiguration
   bindPort: {{ .APIServerBindPort }}{{end}}
 nodeRegistration:
   criSocket: "unix:///run/containerd/containerd.sock"
+  taints:{{if not .Taints}} []{{end}}{{range .Taints}}
+    - key: "{{.Key}}"
+      value: "{{.Value}}"
+      effect: "{{.Effect}}"{{end}}
   kubeletExtraArgs:
 {{if .Nodepool }}
     node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}

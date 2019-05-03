@@ -43,6 +43,7 @@ func TestWriteKubeadmConfig(t *testing.T) {
 		controllerManagerSigningCA:  "/etc/kubernetes/pki/cm-signing-ca.crt",
 		apiServerCertSANs:           []string{"almafa", "vadkorte"},
 		withPluginPSP:               true,
+		taints:                      []string{"node-role.kubernetes.io/master:NoSchedule"},
 	}
 
 	err := c.WriteKubeadmConfig(os.Stdout, filename)
