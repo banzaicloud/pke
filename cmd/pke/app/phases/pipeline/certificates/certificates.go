@@ -52,6 +52,7 @@ var _ phases.Runnable = (*Certificates)(nil)
 type Certificates struct {
 	pipelineAPIEndpoint    string
 	pipelineAPIToken       string
+	pipelineAPIInsecure    bool
 	pipelineOrganizationID int32
 	pipelineClusterID      int32
 }
@@ -71,6 +72,7 @@ func (c *Certificates) Short() string {
 func (c *Certificates) RegisterFlags(flags *pflag.FlagSet) {
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
+	flags.Bool(constants.FlagPipelineAPIInsecure, false, "If the Pipeline API should not verify the API's certificate")
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 }
@@ -82,18 +84,18 @@ func (c *Certificates) Validate(cmd *cobra.Command) error {
 	}
 
 	var err error
-	c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID, err = pipelineutil.CommandArgs(cmd)
+	c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID, err = pipelineutil.CommandArgs(cmd)
 	if err != nil {
 		return err
 	}
 
-	return pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID)
+	return pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID)
 }
 
 func (c *Certificates) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
 
-	if err := pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineOrganizationID, c.pipelineClusterID); err != nil {
+	if err := pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID); err != nil {
 		_, _ = fmt.Fprintf(out, "[WARNING] Skipping %s phase due to missing Pipeline API endpoint. err: %v\n", use, err)
 		return nil
 	}
@@ -104,7 +106,7 @@ func (c *Certificates) Run(out io.Writer) error {
 		Values: optional.NewBool(true),
 		Tags:   optional.NewInterface([]string{fmt.Sprintf("clusterID:%d", c.pipelineClusterID)}),
 	}
-	pc := pipelineutil.Client(out, c.pipelineAPIEndpoint, c.pipelineAPIToken)
+	pc := pipelineutil.Client(out, c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure)
 	secrets, _, err := pc.SecretsApi.GetSecrets(context.Background(), c.pipelineOrganizationID, req)
 	if err != nil {
 		return err

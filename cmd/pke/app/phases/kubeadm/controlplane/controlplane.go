@@ -177,6 +177,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
+	flags.Bool(constants.FlagPipelineAPIInsecure, false, "If the Pipeline API should not verify the API's certificate")
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
@@ -289,12 +290,12 @@ func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
 		}
 
 		// Pipeline client
-		endpoint, token, orgID, clusterID, err := pipelineutil.CommandArgs(cmd)
+		endpoint, token, insecure, orgID, clusterID, err := pipelineutil.CommandArgs(cmd)
 		if err != nil {
 			return err
 		}
 
-		p := pipelineutil.Client(os.Stdout, endpoint, token)
+		p := pipelineutil.Client(os.Stdout, endpoint, token, insecure)
 
 		// elect leader
 		_, resp, err := p.ClustersApi.PostLeaderElection(context.Background(), orgID, clusterID, pipeline.PostLeaderElectionRequest{
