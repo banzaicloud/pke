@@ -52,6 +52,7 @@ type Ready struct {
 	cidr                   string
 	pipelineAPIEndpoint    string
 	pipelineAPIToken       string
+	pipelineAPIInsecure    bool
 	pipelineOrganizationID int32
 	pipelineClusterID      int32
 	pipelineNodepool       string
@@ -72,6 +73,7 @@ func (r *Ready) Short() string {
 func (r *Ready) RegisterFlags(flags *pflag.FlagSet) {
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
+	flags.Bool(constants.FlagPipelineAPIInsecure, false, "If the Pipeline API should not verify the API's certificate")
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	flags.String(constants.FlagPipelineNodepool, "", "name of the nodepool the node belongs to")
@@ -85,11 +87,11 @@ func (r *Ready) Validate(cmd *cobra.Command) error {
 	}
 
 	var err error
-	if r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID, err = pipelineutil.CommandArgs(cmd); err != nil {
+	if r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineAPIInsecure, r.pipelineOrganizationID, r.pipelineClusterID, err = pipelineutil.CommandArgs(cmd); err != nil {
 		return err
 	}
 
-	if err = pipelineutil.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
+	if err = pipelineutil.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineAPIInsecure, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
 		return err
 	}
 
@@ -114,7 +116,7 @@ func (r *Ready) Validate(cmd *cobra.Command) error {
 func (r *Ready) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", r.Use())
 
-	if err := pipelineutil.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
+	if err := pipelineutil.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineAPIInsecure, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
 		_, _ = fmt.Fprintf(out, "[WARNING][%s] Skipping phase due to missing Pipeline API endpoint credentials. %s\n", use, err)
 		return nil
 	}
@@ -136,7 +138,7 @@ func (r *Ready) Run(out io.Writer) error {
 	}
 
 	// post node ready
-	c := pipelineutil.Client(out, r.pipelineAPIEndpoint, r.pipelineAPIToken)
+	c := pipelineutil.Client(out, r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineAPIInsecure)
 	req := pipeline.PostReadyPkeNodeRequest{
 		Name:     hostname,
 		NodePool: r.pipelineNodepool,

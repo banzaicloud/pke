@@ -37,6 +37,9 @@ const (
 	// FlagPipelineAPITokenShort token for accessing Pipeline API.
 	FlagPipelineAPITokenShort = "t"
 
+	// FlagPipelineAPIInsecure if the Pipeline API should not verify the API's certificate.
+	FlagPipelineAPIInsecure = "pipeline-insecure"
+
 	// FlagPipelineOrganizationID organization id in Pipeline.
 	FlagPipelineOrganizationID = "pipeline-org-id"
 	// FlagPipelineClusterID cluster id in Pipeline.
