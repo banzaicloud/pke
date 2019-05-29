@@ -34,20 +34,23 @@ func Client(out io.Writer, endpoint, token string, insecure bool) *pipeline.APIC
 	config := pipeline.NewConfiguration()
 	config.BasePath = endpoint
 	config.UserAgent = "pke/1.0.0/go"
-	config.HTTPClient = oauth2.NewClient(nil, oauth2.StaticTokenSource(
+
+	httpClient := http.Client{
+		Timeout: 24 * time.Hour,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: insecure,
+			},
+		},
+	}
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, &httpClient)
+
+	config.HTTPClient = oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	))
 
-	if insecure {
-		config.HTTPClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}
-	}
-
 	// Since transport.NewRetryTransport is added, this timeout will affect only the cumulated retry calls.
-	config.HTTPClient.Timeout = 24 * time.Hour
 	tl := transport.NewLogger(out, config.HTTPClient.Transport)
 	config.HTTPClient.Transport = transport.NewRetryTransport(tl)
 
