@@ -24,6 +24,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
 	"github.com/pkg/errors"
 )
@@ -113,7 +114,10 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ImageRepository             string
 		EncryptionProviderPrefix    string
 		WithPluginPSP               bool
+		WithAuditLog                bool
 		Taints                      []kubernetes.Taint
+		AuditLogFile                string
+		AuditPolicyFile             string
 	}
 
 	d := data{
@@ -135,7 +139,10 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ImageRepository:             c.imageRepository,
 		EncryptionProviderPrefix:    encryptionProviderPrefix,
 		WithPluginPSP:               c.withPluginPSP,
+		WithAuditLog:                c.withAuditLog,
 		Taints:                      taints,
+		AuditLogFile:                auditLogFile,
+		AuditPolicyFile:             auditPolicyFile,
 	}
 
 	return tmpl.Execute(w, d)
@@ -196,10 +203,11 @@ apiServer:
     enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
     disable-admission-plugins: ""
     admission-control-config-file: "{{ .AdmissionConfig }}"
-    audit-log-path: "/var/log/audit/apiserver.log"
+    audit-log-path: "{{ .AuditLogFile }}"
     audit-log-maxage: "30"
     audit-log-maxbackup: "10"
     audit-log-maxsize: "100"
+    audit-policy-file: "{{ .AuditPolicyFile }}"
     service-account-lookup: "true"
     kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
     tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
@@ -214,6 +222,15 @@ apiServer:
     cloud-provider: "{{ .CloudProvider }}"
     cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
   extraVolumes:
+    - name: audit-log-file
+      hostPath: {{ .AuditLogFile }}
+      mountPath: {{ .AuditLogFile }}
+      pathType: FileOrCreate
+    - name: audit-policy-file
+      hostPath: {{ .AuditPolicyFile }}
+      mountPath: {{ .AuditPolicyFile }}
+      readOnly: true
+      pathType: File
     - name: admission-control-config-file
       hostPath: {{ .AdmissionConfig }}
       mountPath: {{ .AdmissionConfig }}
@@ -308,10 +325,11 @@ apiServerExtraArgs:
   enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
   disable-admission-plugins: ""
   admission-control-config-file: "{{ .AdmissionConfig }}"
-  audit-log-path: "/var/log/audit/apiserver.log"
+  audit-log-path: "{{ .AuditLogFile }}"
   audit-log-maxage: "30"
   audit-log-maxbackup: "10"
   audit-log-maxsize: "100"
+  audit-policy-file: "{{ .AuditPolicyFile }}"
   service-account-lookup: "true"
   kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
   tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
@@ -328,6 +346,15 @@ apiServerExtraArgs:
 schedulerExtraArgs:
   profiling: "false"
 apiServerExtraVolumes:
+  - name: audit-log-file
+    hostPath: {{ .AuditLogFile }}
+    mountPath: {{ .AuditLogFile }}
+    pathType: FileOrCreate
+  - name: audit-policy-file
+    hostPath: {{ .AuditPolicyFile }}
+    mountPath: {{ .AuditPolicyFile }}
+    readOnly: true
+    pathType: FileOrCreate
   - name: admission-control-config-file
     hostPath: {{ .AdmissionConfig }}
     mountPath: {{ .AdmissionConfig }}
@@ -364,4 +391,203 @@ apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 serverTLSBootstrap: true
 `
+}
+
+func writeAuditPolicyFile(out io.Writer) error {
+	filename := auditPolicyFile
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	conf := `apiVersion: audit.k8s.io/v1beta1
+kind: Policy
+rules:
+  - level: None
+    resources:
+      - group: ""
+        resources:
+          - endpoints
+          - services
+          - services/status
+    users:
+      - 'system:kube-proxy'
+      - 'system:apiserver'
+    verbs:
+      - watch
+
+  - level: None
+    resources:
+      - group: ""
+        resources:
+          - nodes
+          - nodes/status
+    userGroups:
+      - 'system:nodes'
+    verbs:
+      - get
+
+  - level: None
+    namespaces:
+      - kube-system
+    resources:
+      - group: ""
+        resources:
+          - endpoints
+    users:
+      - 'system:kube-controller-manager'
+      - 'system:kube-scheduler'
+      - 'system:serviceaccount:kube-system:endpoint-controller'
+      - 'system:serviceaccount:kube-system:local-path-provisioner-service-account'
+      - 'system:apiserver'
+    verbs:
+      - get
+      - update
+
+  - level: None
+    resources:
+      - group: ""
+        resources:
+          - namespaces
+          - namespaces/status
+          - namespaces/finalize
+    users:
+      - 'system:apiserver'
+    verbs:
+      - get
+
+  - level: None
+    resources:
+      - group: metrics.k8s.io
+    users:
+      - 'system:kube-controller-manager'
+    verbs:
+      - get
+      - list
+
+  - level: None
+    nonResourceURLs:
+      - '/healthz*'
+      - /version
+      - '/swagger*'
+
+  - level: None
+    resources:
+      - group: ""
+        resources:
+          - events
+
+  - level: Request
+    omitStages:
+      - RequestReceived
+    resources:
+      - group: ""
+        resources:
+          - nodes/status
+          - pods/status
+    users:
+      - kubelet
+      - 'system:node-problem-detector'
+      - 'system:serviceaccount:kube-system:node-problem-detector'
+    verbs:
+      - update
+      - patch
+
+  - level: Request
+    omitStages:
+      - RequestReceived
+    resources:
+      - group: ""
+        resources:
+          - nodes/status
+          - pods/status
+    userGroups:
+      - 'system:nodes'
+    verbs:
+      - update
+      - patch
+
+  - level: Request
+    omitStages:
+      - RequestReceived
+    users:
+      - 'system:serviceaccount:kube-system:namespace-controller'
+    verbs:
+      - deletecollection
+
+  - level: Metadata
+    omitStages:
+      - RequestReceived
+    resources:
+      - group: ""
+        resources:
+          - secrets
+          - configmaps
+      - group: authentication.k8s.io
+        resources:
+          - tokenreviews
+
+  - level: Request
+    omitStages:
+      - RequestReceived
+    resources:
+      - group: ""
+      - group: admissionregistration.k8s.io
+      - group: apiextensions.k8s.io
+      - group: apiregistration.k8s.io
+      - group: apps
+      - group: authentication.k8s.io
+      - group: authorization.k8s.io
+      - group: autoscaling
+      - group: batch
+      - group: certificates.k8s.io
+      - group: extensions
+      - group: metrics.k8s.io
+      - group: networking.k8s.io
+      - group: policy
+      - group: rbac.authorization.k8s.io
+      - group: scheduling.k8s.io
+      - group: settings.k8s.io
+      - group: storage.k8s.io
+    verbs:
+      - get
+      - list
+      - watch
+
+  - level: RequestResponse
+    omitStages:
+      - RequestReceived
+    resources:
+      - group: ""
+      - group: admissionregistration.k8s.io
+      - group: apiextensions.k8s.io
+      - group: apiregistration.k8s.io
+      - group: apps
+      - group: authentication.k8s.io
+      - group: authorization.k8s.io
+      - group: autoscaling
+      - group: batch
+      - group: certificates.k8s.io
+      - group: extensions
+      - group: metrics.k8s.io
+      - group: networking.k8s.io
+      - group: policy
+      - group: rbac.authorization.k8s.io
+      - group: scheduling.k8s.io
+      - group: settings.k8s.io
+      - group: storage.k8s.io
+
+  - level: Metadata
+    omitStages:
+      - RequestReceived
+`
+
+	err = file.Overwrite(filename, conf)
+	if err != nil {
+		return err
+	}
+	return nil
 }

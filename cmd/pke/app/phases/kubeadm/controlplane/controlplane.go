@@ -73,6 +73,8 @@ const (
 	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 	cniDir                        = "/etc/cni/net.d"
 	etcdDir                       = "/var/lib/etcd"
+	auditPolicyFile               = "/etc/kubernetes/pod-security-policy.yaml"
+	auditLogFile                  = "/var/log/audit/apiserver.log"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -96,6 +98,7 @@ type ControlPlane struct {
 	oidcClientID                     string
 	imageRepository                  string
 	withPluginPSP                    bool
+	withAuditLog                     bool
 	node                             *node.Node
 	azureTenantID                    string
 	azureSubnetName                  string
@@ -163,6 +166,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
+	// AuditLog enable
+	flags.Bool(constants.FlagAuditLog, false, "Enable apiserver auditl og")
 	// Azure cloud
 	flags.String(constants.FlagAzureTenantID, "", "The AAD Tenant ID for the Subscription that the cluster is deployed in")
 	flags.String(constants.FlagAzureSubnetName, "", "The name of the subnet that the cluster is deployed in")
@@ -525,6 +530,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
+	c.withAuditLog, err = cmd.Flags().GetBool(constants.FlagAuditLog)
+	if err != nil {
+		return
+	}
 	c.joinControlPlane, err = cmd.Flags().GetBool(constants.FlagControlPlaneJoin)
 	if err != nil {
 		return
@@ -608,6 +617,11 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if c.withAuditLog {
+		if err := writeAuditPolicyFile(out); err != nil {
+			return err
+		}
+	}
 
 	err = writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
 	if err != nil {
@@ -661,8 +675,10 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		return err
 	}
 	// apply PSP
-	if err := writePodSecurityPolicyConfig(out); err != nil {
-		return err
+	if c.withPluginPSP {
+		if err := writePodSecurityPolicyConfig(out); err != nil {
+			return err
+		}
 	}
 
 	// if replica set started before default PSP is applied, replica set will hang. force re-create.

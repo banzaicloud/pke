@@ -102,6 +102,9 @@ const (
 	// FlagAdmissionPluginPodSecurityPolicy enable admission plugin PodSecurityPolicy.
 	FlagAdmissionPluginPodSecurityPolicy = "with-plugin-psp"
 
+	// FlagAuditLog enable audit log.
+	FlagAuditLog = "with-audit-log"
+
 	// Azure specific flags
 	// FlagAzureTenantID the AAD Tenant ID for the Subscription that the cluster is deployed in.
 	FlagAzureTenantID = "azure-tenant-id"
