@@ -207,7 +207,7 @@ apiServer:
     audit-log-maxage: "30"
     audit-log-maxbackup: "10"
     audit-log-maxsize: "100"
-    audit-policy-file: "{{ .AuditPolicyFile }}"
+    {{ if .WithAuditLog }}audit-policy-file: "{{ .AuditPolicyFile }}"{{ end }}
     service-account-lookup: "true"
     kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
     tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
@@ -222,6 +222,7 @@ apiServer:
     cloud-provider: "{{ .CloudProvider }}"
     cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
   extraVolumes:
+{{ if .WithAuditLog }}
     - name: audit-log-file
       hostPath: {{ .AuditLogFile }}
       mountPath: {{ .AuditLogFile }}
@@ -230,7 +231,7 @@ apiServer:
       hostPath: {{ .AuditPolicyFile }}
       mountPath: {{ .AuditPolicyFile }}
       readOnly: true
-      pathType: File
+      pathType: File{{ end }}
     - name: admission-control-config-file
       hostPath: {{ .AdmissionConfig }}
       mountPath: {{ .AdmissionConfig }}
@@ -329,7 +330,7 @@ apiServerExtraArgs:
   audit-log-maxage: "30"
   audit-log-maxbackup: "10"
   audit-log-maxsize: "100"
-  audit-policy-file: "{{ .AuditPolicyFile }}"
+  {{ if .WithAuditLog }}audit-policy-file: "{{ .AuditPolicyFile }}"{{ end }}
   service-account-lookup: "true"
   kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
   tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
@@ -346,6 +347,7 @@ apiServerExtraArgs:
 schedulerExtraArgs:
   profiling: "false"
 apiServerExtraVolumes:
+{{ if .WithAuditLog }}
   - name: audit-log-file
     hostPath: {{ .AuditLogFile }}
     mountPath: {{ .AuditLogFile }}
@@ -354,7 +356,7 @@ apiServerExtraVolumes:
     hostPath: {{ .AuditPolicyFile }}
     mountPath: {{ .AuditPolicyFile }}
     readOnly: true
-    pathType: FileOrCreate
+    pathType: FileOrCreate{{ end }}
   - name: admission-control-config-file
     hostPath: {{ .AdmissionConfig }}
     mountPath: {{ .AdmissionConfig }}
