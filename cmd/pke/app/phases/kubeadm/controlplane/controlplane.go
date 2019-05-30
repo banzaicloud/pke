@@ -167,7 +167,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
 	// AuditLog enable
-	flags.Bool(constants.FlagAuditLog, false, "Enable apiserver auditl og")
+	flags.Bool(constants.FlagAuditLog, false, "Enable apiserver audit log")
 	// Azure cloud
 	flags.String(constants.FlagAzureTenantID, "", "The AAD Tenant ID for the Subscription that the cluster is deployed in")
 	flags.String(constants.FlagAzureSubnetName, "", "The name of the subnet that the cluster is deployed in")
