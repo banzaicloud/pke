@@ -116,7 +116,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		WithPluginPSP               bool
 		WithAuditLog                bool
 		Taints                      []kubernetes.Taint
-		AuditLogFile                string
+		AuditLogDir                 string
 		AuditPolicyFile             string
 	}
 
@@ -141,7 +141,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		WithPluginPSP:               c.withPluginPSP,
 		WithAuditLog:                c.withAuditLog,
 		Taints:                      taints,
-		AuditLogFile:                auditLogFile,
+		AuditLogDir:                 auditLogDir,
 		AuditPolicyFile:             auditPolicyFile,
 	}
 
@@ -203,7 +203,7 @@ apiServer:
     enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
     disable-admission-plugins: ""
     admission-control-config-file: "{{ .AdmissionConfig }}"
-    audit-log-path: "{{ .AuditLogFile }}"
+    audit-log-path: "{{ .AuditLogDir }}/apiserver.log"
     audit-log-maxage: "30"
     audit-log-maxbackup: "10"
     audit-log-maxsize: "100"
@@ -223,10 +223,10 @@ apiServer:
     cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
   extraVolumes:
 {{ if .WithAuditLog }}
-    - name: audit-log-file
-      hostPath: {{ .AuditLogFile }}
-      mountPath: {{ .AuditLogFile }}
-      pathType: FileOrCreate
+    - name: audit-log-dir
+      hostPath: {{ .AuditLogDir }}
+      mountPath: {{ .AuditLogDir }}
+      pathType: DirectoryOrCreate
     - name: audit-policy-file
       hostPath: {{ .AuditPolicyFile }}
       mountPath: {{ .AuditPolicyFile }}
@@ -326,7 +326,7 @@ apiServerExtraArgs:
   enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
   disable-admission-plugins: ""
   admission-control-config-file: "{{ .AdmissionConfig }}"
-  audit-log-path: "{{ .AuditLogFile }}"
+  audit-log-path: "{{ .AuditLogDir }}/apiserver.log"
   audit-log-maxage: "30"
   audit-log-maxbackup: "10"
   audit-log-maxsize: "100"
@@ -348,10 +348,10 @@ schedulerExtraArgs:
   profiling: "false"
 apiServerExtraVolumes:
 {{ if .WithAuditLog }}
-  - name: audit-log-file
-    hostPath: {{ .AuditLogFile }}
-    mountPath: {{ .AuditLogFile }}
-    pathType: FileOrCreate
+  - name: audit-log-dir
+    hostPath: {{ .AuditLogDir }}
+    mountPath: {{ .AuditLogDir }}
+    pathType: DirectoryOrCreate
   - name: audit-policy-file
     hostPath: {{ .AuditPolicyFile }}
     mountPath: {{ .AuditPolicyFile }}

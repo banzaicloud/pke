@@ -73,8 +73,8 @@ const (
 	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 	cniDir                        = "/etc/cni/net.d"
 	etcdDir                       = "/var/lib/etcd"
-	auditPolicyFile               = "/etc/kubernetes/pod-security-policy.yaml"
-	auditLogFile                  = "/var/log/audit/apiserver.log"
+	auditPolicyFile               = "/etc/kubernetes/audit-policy-file.yaml"
+	auditLogDir                   = "/var/log/audit/apiserver"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
