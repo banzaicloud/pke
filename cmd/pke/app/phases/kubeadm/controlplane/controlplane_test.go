@@ -44,6 +44,7 @@ func TestWriteKubeadmConfig(t *testing.T) {
 		apiServerCertSANs:           []string{"almafa", "vadkorte"},
 		withPluginPSP:               true,
 		taints:                      []string{"node-role.kubernetes.io/master:NoSchedule"},
+		withAuditLog:                true,
 	}
 
 	err := c.WriteKubeadmConfig(os.Stdout, filename)

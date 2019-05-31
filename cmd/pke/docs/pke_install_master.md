@@ -51,6 +51,7 @@ pke install master [flags]
   -u, --pipeline-url string                               Pipeline API server url
       --taints strings                                    Specifies the taints the Node should be registered with (default [node-role.kubernetes.io/master:NoSchedule])
       --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
+      --with-audit-log                                    Enable apiserver audit log
 ```
 
 ### SEE ALSO
