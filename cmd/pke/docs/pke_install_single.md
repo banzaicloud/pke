@@ -24,13 +24,18 @@ pke install single [flags]
       --azure-vnet-name string                            The name of the VNet that the cluster is deployed in
       --azure-vnet-resource-group string                  The name of the resource group that the Vnet is deployed in
       --disable-default-storage-class                     Do not deploy a default storage class
+      --etcd-ca-file string                               An SSL Certificate Authority file used to secure etcd communication
+      --etcd-cert-file string                             An SSL certification file used to secure etcd communication
+      --etcd-endpoints strings                            Endpoints of etcd members
+      --etcd-key-file string                              An SSL key file used to secure etcd communication
+      --etcd-prefix string                                The prefix to prepend to all resource paths in etcd
   -h, --help                                              help for single
       --image-repository string                           Prefix for image repository (default "banzaicloud")
       --kubelet-certificate-authority string              Path to a cert file for the certificate authority. Used for kubelet server certificate verify. (default "/etc/kubernetes/pki/ca.crt")
       --kubernetes-advertise-address string               Kubernetes API Server advertise address
       --kubernetes-api-server string                      Kubernetes API Server host port
       --kubernetes-api-server-ca-cert-hash string         CA cert hash
-      --kubernetes-api-server-cert-sans stringArray       sets extra Subject Alternative Names for the API Server signing cert
+      --kubernetes-api-server-cert-sans strings           sets extra Subject Alternative Names for the API Server signing cert
       --kubernetes-cloud-provider string                  cloud provider. example: aws
       --kubernetes-cluster-name string                    Kubernetes cluster name (default "pke")
       --kubernetes-controller-manager-signing-ca string   Kubernetes Controller Manager signing cert
@@ -45,11 +50,13 @@ pke install single [flags]
       --kubernetes-service-cidr string                    range of IP address for service VIPs (default "10.10.0.0/16")
       --kubernetes-version string                         Kubernetes version (default "1.14.0")
       --pipeline-cluster-id int32                         Cluster ID to use with Pipeline API
+      --pipeline-insecure                                 If the Pipeline API should not verify the API's certificate
       --pipeline-nodepool string                          name of the nodepool the node belongs to
       --pipeline-org-id int32                             Organization ID to use with Pipeline API
   -t, --pipeline-token string                             Token for accessing Pipeline API
   -u, --pipeline-url string                               Pipeline API server url
       --taints strings                                    Specifies the taints the Node should be registered with (default [node-role.kubernetes.io/master:NoSchedule])
+      --with-audit-log                                    Enable apiserver audit log
       --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
 ```
 

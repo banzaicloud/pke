@@ -114,6 +114,11 @@ type ControlPlane struct {
 	cidr                             string
 	disableDefaultStorageClass       bool
 	taints                           []string
+	etcdEndpoints                    []string
+	etcdCAFile                       string
+	etcdCertFile                     string
+	etcdKeyFile                      string
+	etcdPrefix                       string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -150,7 +155,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes cluster name
 	flags.String(constants.FlagClusterName, "pke", "Kubernetes cluster name")
 	// Kubernetes certificates
-	flags.StringArray(constants.FlagAPIServerCertSANs, []string{}, "sets extra Subject Alternative Names for the API Server signing cert")
+	flags.StringSlice(constants.FlagAPIServerCertSANs, []string{}, "sets extra Subject Alternative Names for the API Server signing cert")
 	flags.String(constants.FlagControllerManagerSigningCA, "", "Kubernetes Controller Manager signing cert")
 	flags.String(constants.FlagKubeletCertificateAuthority, "/etc/kubernetes/pki/ca.crt", "Path to a cert file for the certificate authority. Used for kubelet server certificate verify.")
 	// Kubernetes cluster mode
@@ -190,6 +195,12 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Bool(constants.FlagDisableDefaultStorageClass, false, "Do not deploy a default storage class")
 	// Taints
 	flags.StringSlice(constants.FlagTaints, []string{"node-role.kubernetes.io/master:NoSchedule"}, "Specifies the taints the Node should be registered with")
+	// External Etcd
+	flags.StringSlice(constants.FlagExternalEtcdEndpoints, []string{}, "Endpoints of etcd members")
+	flags.String(constants.FlagExternalEtcdCAFile, "", "An SSL Certificate Authority file used to secure etcd communication")
+	flags.String(constants.FlagExternalEtcdCertFile, "", "An SSL certification file used to secure etcd communication")
+	flags.String(constants.FlagExternalEtcdKeyFile, "", "An SSL key file used to secure etcd communication")
+	flags.String(constants.FlagExternalEtcdPrefix, "", "The prefix to prepend to all resource paths in etcd")
 
 	c.addHAControlPlaneFlags(flags)
 }
@@ -502,7 +513,7 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
-	c.apiServerCertSANs, err = cmd.Flags().GetStringArray(constants.FlagAPIServerCertSANs)
+	c.apiServerCertSANs, err = cmd.Flags().GetStringSlice(constants.FlagAPIServerCertSANs)
 	if err != nil {
 		return
 	}
@@ -551,6 +562,26 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
+	if err != nil {
+		return
+	}
+	c.etcdEndpoints, err = cmd.Flags().GetStringSlice(constants.FlagExternalEtcdEndpoints)
+	if err != nil {
+		return
+	}
+	c.etcdCAFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdCAFile)
+	if err != nil {
+		return
+	}
+	c.etcdCertFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdCertFile)
+	if err != nil {
+		return
+	}
+	c.etcdKeyFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdKeyFile)
+	if err != nil {
+		return
+	}
+	c.etcdPrefix, err = cmd.Flags().GetString(constants.FlagExternalEtcdPrefix)
 
 	return
 }

@@ -16,6 +16,7 @@ pke install single pipeline-ready [flags]
   -h, --help                                    help for pipeline-ready
       --kubernetes-infrastructure-cidr string   network CIDR for the actual machine (default "192.168.64.0/20")
       --pipeline-cluster-id int32               Cluster ID to use with Pipeline API
+      --pipeline-insecure                       If the Pipeline API should not verify the API's certificate
       --pipeline-nodepool string                name of the nodepool the node belongs to
       --pipeline-org-id int32                   Organization ID to use with Pipeline API
   -t, --pipeline-token string                   Token for accessing Pipeline API

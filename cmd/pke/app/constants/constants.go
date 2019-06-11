@@ -132,6 +132,18 @@ const (
 
 	// FlagTaints specifies the taints the Node should be registered with.
 	FlagTaints = "taints"
+
+	// Etcd specific flags
+	// FlagExternalEtcdEndpoints endpoints of etcd members.
+	FlagExternalEtcdEndpoints = "etcd-endpoints"
+	// FlagExternalEtcdCAFile is an SSL Certificate Authority file used to secure etcd communication.
+	FlagExternalEtcdCAFile = "etcd-ca-file"
+	// FlagExternalEtcdCertFile is an SSL certification file used to secure etcd communication.
+	FlagExternalEtcdCertFile = "etcd-cert-file"
+	// FlagExternalEtcdKeyFile is an SSL key file used to secure etcd communication.
+	FlagExternalEtcdKeyFile = "etcd-key-file"
+	// FlagExternalEtcdPrefix the prefix to prepend to all resource paths in etcd.
+	FlagExternalEtcdPrefix = "etcd-prefix"
 )
 
 var (

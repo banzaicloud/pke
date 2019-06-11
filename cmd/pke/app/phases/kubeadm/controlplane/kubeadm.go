@@ -118,6 +118,11 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		Taints                      []kubernetes.Taint
 		AuditLogDir                 string
 		AuditPolicyFile             string
+		EtcdEndpoints               []string
+		EtcdCAFile                  string
+		EtcdCertFile                string
+		EtcdKeyFile                 string
+		EtcdPrefix                  string
 	}
 
 	d := data{
@@ -143,10 +148,14 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		Taints:                      taints,
 		AuditLogDir:                 auditLogDir,
 		AuditPolicyFile:             auditPolicyFile,
+		EtcdEndpoints:               c.etcdEndpoints,
+		EtcdCAFile:                  c.etcdCAFile,
+		EtcdCertFile:                c.etcdCertFile,
+		EtcdKeyFile:                 c.etcdKeyFile,
+		EtcdPrefix:                  c.etcdPrefix,
 	}
 
 	return tmpl.Execute(w, d)
-
 }
 
 func kubeadmConfigV1Beta1() string {
@@ -208,6 +217,7 @@ apiServer:
     audit-log-maxbackup: "10"
     audit-log-maxsize: "100"
     {{ if .WithAuditLog }}audit-policy-file: "{{ .AuditPolicyFile }}"{{ end }}
+    {{ if .EtcdPrefix }}etcd-prefix: "{{ .EtcdPrefix }}"{{end}}
     service-account-lookup: "true"
     kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
     tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
@@ -264,9 +274,19 @@ controllerManager:
       hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
       mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 etcd:
+{{ if .EtcdEndpoints }}
+  external:
+    endpoints:
+    {{range $k, $endpoint := .EtcdEndpoints }}  - "{{ $endpoint }}"
+    {{end}}
+    caFile: {{ .EtcdCAFile }}
+    certFile: {{ .EtcdCertFile }}
+    keyFile: {{ .EtcdKeyFile }}
+{{else}}
   local:
     extraArgs:
       peer-auto-tls: "false"
+{{end}}
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
@@ -331,6 +351,7 @@ apiServerExtraArgs:
   audit-log-maxbackup: "10"
   audit-log-maxsize: "100"
   {{ if .WithAuditLog }}audit-policy-file: "{{ .AuditPolicyFile }}"{{ end }}
+  {{ if .EtcdPrefix }}etcd-prefix: "{{ .EtcdPrefix }}"{{end}}
   service-account-lookup: "true"
   kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
   tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
@@ -385,9 +406,19 @@ controllerManagerExtraVolumes:
     hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
     mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 etcd:
+{{ if .EtcdEndpoints }}
+  external:
+    endpoints:
+    {{range $k, $endpoint := .EtcdEndpoints }}  - "{{ $endpoint }}"
+    {{end}}
+    caFile: {{ .EtcdCAFile }}
+    certFile: {{ .EtcdCertFile }}
+    keyFile: {{ .EtcdKeyFile }}
+{{else}}
   local:
     extraArgs:
       peer-auto-tls: "false"
+{{end}}
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration

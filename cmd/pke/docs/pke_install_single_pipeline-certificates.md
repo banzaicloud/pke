@@ -15,6 +15,7 @@ pke install single pipeline-certificates [flags]
 ```
   -h, --help                        help for pipeline-certificates
       --pipeline-cluster-id int32   Cluster ID to use with Pipeline API
+      --pipeline-insecure           If the Pipeline API should not verify the API's certificate
       --pipeline-org-id int32       Organization ID to use with Pipeline API
   -t, --pipeline-token string       Token for accessing Pipeline API
   -u, --pipeline-url string         Pipeline API server url
