@@ -24,6 +24,7 @@ import (
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/pkg/errors"
@@ -55,6 +56,7 @@ type Certificates struct {
 	pipelineAPIInsecure    bool
 	pipelineOrganizationID int32
 	pipelineClusterID      int32
+	kubernetesVersion      string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -70,11 +72,14 @@ func (c *Certificates) Short() string {
 }
 
 func (c *Certificates) RegisterFlags(flags *pflag.FlagSet) {
+	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
 	flags.Bool(constants.FlagPipelineAPIInsecure, false, "If the Pipeline API should not verify the API's certificate")
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
+	// Kubernetes version
+	flags.String(constants.FlagKubernetesVersion, "1.14.0", "Kubernetes version")
 }
 
 func (c *Certificates) Validate(cmd *cobra.Command) error {
@@ -88,8 +93,13 @@ func (c *Certificates) Validate(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
+	err = pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID)
+	if err != nil {
+		return err
+	}
 
-	return pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID)
+	c.kubernetesVersion, err = cmd.Flags().GetString(constants.FlagKubernetesVersion)
+	return err
 }
 
 func (c *Certificates) Run(out io.Writer) error {
@@ -171,7 +181,15 @@ func (c *Certificates) Run(out io.Writer) error {
 	}
 
 	// /etc/kubernetes/pki/sa.key
-	return write(out, saKey, secret.Values["saKey"])
+	if err = write(out, saKey, secret.Values["saKey"]); err != nil {
+		return err
+	}
+
+	if key, ok := secret.Values["enc"].(string); ok {
+		return kubeadm.WriteEncryptionProviderConfig(out, kubeadm.EncryptionProviderConfig, c.kubernetesVersion, key)
+	}
+
+	return nil
 }
 
 func write(out io.Writer, filename string, value interface{}) error {
