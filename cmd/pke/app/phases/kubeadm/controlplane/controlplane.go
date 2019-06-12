@@ -16,7 +16,6 @@ package controlplane
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
@@ -69,12 +68,12 @@ const (
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
 	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
 	certificateAutoApprover       = "/etc/kubernetes/admission-control/deploy-auto-approver.yaml"
-	encryptionProviderConfig      = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 	cniDir                        = "/etc/cni/net.d"
 	etcdDir                       = "/var/lib/etcd"
 	auditPolicyFile               = "/etc/kubernetes/audit-policy-file.yaml"
 	auditLogDir                   = "/var/log/audit/apiserver"
+	encryptionSecretLength        = 32
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -119,6 +118,7 @@ type ControlPlane struct {
 	etcdCertFile                     string
 	etcdKeyFile                      string
 	etcdPrefix                       string
+	encryptionSecret                 string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -201,6 +201,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagExternalEtcdCertFile, "", "An SSL certification file used to secure etcd communication")
 	flags.String(constants.FlagExternalEtcdKeyFile, "", "An SSL key file used to secure etcd communication")
 	flags.String(constants.FlagExternalEtcdPrefix, "", "The prefix to prepend to all resource paths in etcd")
+	flags.String(constants.FlagEncryptionSecret, "", "Use this key to encrypt secrets (32 byte base64 encoded)")
 
 	c.addHAControlPlaneFlags(flags)
 }
@@ -565,25 +566,8 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
-	c.etcdEndpoints, err = cmd.Flags().GetStringSlice(constants.FlagExternalEtcdEndpoints)
-	if err != nil {
-		return
-	}
-	c.etcdCAFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdCAFile)
-	if err != nil {
-		return
-	}
-	c.etcdCertFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdCertFile)
-	if err != nil {
-		return
-	}
-	c.etcdKeyFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdKeyFile)
-	if err != nil {
-		return
-	}
-	c.etcdPrefix, err = cmd.Flags().GetString(constants.FlagExternalEtcdPrefix)
 
-	return
+	return c.etcdParameters(cmd)
 }
 
 func (c *ControlPlane) azureParameters(cmd *cobra.Command) (err error) {
@@ -628,6 +612,55 @@ func (c *ControlPlane) azureParameters(cmd *cobra.Command) (err error) {
 	return
 }
 
+func (c *ControlPlane) etcdParameters(cmd *cobra.Command) (err error) {
+	c.etcdEndpoints, err = cmd.Flags().GetStringSlice(constants.FlagExternalEtcdEndpoints)
+	if err != nil {
+		return
+	}
+	c.etcdCAFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdCAFile)
+	if err != nil {
+		return
+	}
+	c.etcdCertFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdCertFile)
+	if err != nil {
+		return
+	}
+	c.etcdKeyFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdKeyFile)
+	if err != nil {
+		return
+	}
+	c.etcdPrefix, err = cmd.Flags().GetString(constants.FlagExternalEtcdPrefix)
+	if err != nil {
+		return
+	}
+	c.encryptionSecret, err = cmd.Flags().GetString(constants.FlagEncryptionSecret)
+	if err != nil {
+		return
+	}
+
+	return validateEncryptionSecret(c.encryptionSecret)
+}
+
+func validateEncryptionSecret(encryptionSecret string) error {
+	if encryptionSecret != "" {
+		b, err := base64.StdEncoding.DecodeString(encryptionSecret)
+		if err != nil {
+			return errors.Wrapf(err, "Not valid --%s", constants.FlagEncryptionSecret)
+		}
+
+		if l := len(b); l != encryptionSecretLength {
+			return errors.New(fmt.Sprintf(
+				"Not valid --%s length. Expected length after base64 decode: %d, got: %d",
+				constants.FlagEncryptionSecret,
+				encryptionSecretLength,
+				l,
+			))
+		}
+	}
+
+	return nil
+}
+
 func (c *ControlPlane) installMaster(out io.Writer) error {
 	// create cni directory
 	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, cniDir)
@@ -669,7 +702,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		return err
 	}
 
-	err = writeEncryptionProviderConfig(out, encryptionProviderConfig, c.kubernetesVersion, "")
+	err = kubeadm.WriteEncryptionProviderConfig(out, kubeadm.EncryptionProviderConfig, c.kubernetesVersion, c.encryptionSecret)
 	if err != nil {
 		return err
 	}
@@ -1280,71 +1313,6 @@ spec:
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	return cmd.CombinedOutputAsync()
-}
-
-func writeEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, encryptionSecret string) error {
-	if encryptionSecret == "" {
-		// generate encryption secret
-		var rnd = make([]byte, 32)
-		_, err := rand.Read(rnd)
-		if err != nil {
-			return err
-		}
-
-		encryptionSecret = base64.StdEncoding.EncodeToString(rnd)
-	}
-
-	var (
-		kind       = "EncryptionConfiguration"
-		apiVersion = "apiserver.config.k8s.io/v1"
-	)
-	ver, err := semver.NewVersion(kubernetesVersion)
-	if err != nil {
-		return err
-	}
-	if ver.LessThan(semver.MustParse("1.13.0")) {
-		kind = "EncryptionConfig"
-		apiVersion = "v1"
-	}
-
-	conf := `kind: {{ .Kind }}
-apiVersion: {{ .APIVersion }}
-resources:
-  - resources:
-    - secrets
-    providers:
-    - aescbc:
-        keys:
-        - name: key1
-          secret: "{{ .EncryptionSecret }}"
-    - identity: {}
-`
-
-	tmpl, err := template.New("admission-config").Parse(conf)
-	if err != nil {
-		return err
-	}
-
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
-	type data struct {
-		Kind             string
-		APIVersion       string
-		EncryptionSecret string
-	}
-
-	d := data{
-		Kind:             kind,
-		APIVersion:       apiVersion,
-		EncryptionSecret: encryptionSecret,
-	}
-
-	return tmpl.Execute(w, d)
 }
 
 func deleteKubeDNSReplicaSet(out io.Writer) error {

@@ -24,6 +24,7 @@ pke install single [flags]
       --azure-vnet-name string                            The name of the VNet that the cluster is deployed in
       --azure-vnet-resource-group string                  The name of the resource group that the Vnet is deployed in
       --disable-default-storage-class                     Do not deploy a default storage class
+      --encryption-secret string                          Use this key to encrypt secrets (32 byte base64 encoded)
       --etcd-ca-file string                               An SSL Certificate Authority file used to secure etcd communication
       --etcd-cert-file string                             An SSL certification file used to secure etcd communication
       --etcd-endpoints strings                            Endpoints of etcd members

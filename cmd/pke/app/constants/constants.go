@@ -144,6 +144,8 @@ const (
 	FlagExternalEtcdKeyFile = "etcd-key-file"
 	// FlagExternalEtcdPrefix the prefix to prepend to all resource paths in etcd.
 	FlagExternalEtcdPrefix = "etcd-prefix"
+	// FlagEncryptionSecret use this key to encrypt secrets.
+	FlagEncryptionSecret = "encryption-secret"
 )
 
 var (
