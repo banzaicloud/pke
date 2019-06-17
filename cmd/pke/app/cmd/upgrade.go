@@ -17,24 +17,22 @@ package cmd
 import (
 	"io"
 
+	"github.com/banzaicloud/pke/cmd/pke/app/phases"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/version"
 	"github.com/spf13/cobra"
 )
 
-func NewPKECommand(in io.Reader, out io.Writer, gitVersion, gitCommit, gitTreeState, buildDate string) *cobra.Command {
+func NewCmdUpgrade(out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "pke",
-		Short:             "Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)",
-		SilenceUsage:      true,
-		DisableAutoGenTag: true,
+		Use:   "upgrade",
+		Short: "Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine",
+		Args:  cobra.NoArgs,
+		RunE:  phases.RunEAllSubcommands,
 	}
 
-	cmd.ResetFlags()
+	cmd.AddCommand(version.NewCommand(out))
 
-	cmd.AddCommand(NewCmdInstall(out))
-	cmd.AddCommand(NewCmdImage(out))
-	cmd.AddCommand(NewCmdToken(out))
-	cmd.AddCommand(NewCmdUpgrade(out))
-	cmd.AddCommand(NewCmdVersion(out, gitVersion, gitCommit, gitTreeState, buildDate))
+	phases.MakeRunnable(cmd)
 
 	return cmd
 }
