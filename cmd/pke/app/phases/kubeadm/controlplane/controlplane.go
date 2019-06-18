@@ -398,6 +398,9 @@ func (c *ControlPlane) Run(out io.Writer) error {
 				return err
 			}
 			// install additional master node
+			if err := writeMasterConfig(out, c.withAuditLog, c.kubernetesVersion, c.encryptionSecret); err != nil {
+				return err
+			}
 			_, _ = fmt.Fprintf(out, "[%s] installing additional master node\n", c.Use())
 			return c.node.Run(out)
 		}
@@ -681,29 +684,9 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if c.withAuditLog {
-		if err := writeAuditPolicyFile(out); err != nil {
-			return err
-		}
-	}
 
-	err = writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
-	if err != nil {
-		return err
-	}
-
-	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
-	if err != nil {
-		return err
-	}
-
-	err = writeKubeProxyConfig(out, kubeProxyConfig)
-	if err != nil {
-		return err
-	}
-
-	err = kubeadm.WriteEncryptionProviderConfig(out, kubeadm.EncryptionProviderConfig, c.kubernetesVersion, c.encryptionSecret)
-	if err != nil {
+	// write master config
+	if err := writeMasterConfig(out, c.withAuditLog, c.kubernetesVersion, c.encryptionSecret); err != nil {
 		return err
 	}
 
@@ -1319,4 +1302,35 @@ func deleteKubeDNSReplicaSet(out io.Writer) error {
 	cmd := runner.Cmd(out, cmdKubectl, "delete", "rs", "-n", "kube-system", "k8s-app=kube-dns")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	return cmd.CombinedOutputAsync()
+}
+
+func writeMasterConfig(out io.Writer, a bool, kubernetesVersion, encryptionSecret string) error {
+
+	if a {
+		if err := writeAuditPolicyFile(out); err != nil {
+			return emperror.Wrap(err, "writing audit policy file failed")
+		}
+	}
+
+	err := writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
+	if err != nil {
+		return emperror.Wrap(err, "writing admission config failed")
+	}
+
+	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
+	if err != nil {
+		return emperror.Wrap(err, "writing event limit config failed")
+	}
+
+	err = writeKubeProxyConfig(out, kubeProxyConfig)
+	if err != nil {
+		return emperror.Wrap(err, "writing kube proxy config failed")
+	}
+
+	err = kubeadm.WriteEncryptionProviderConfig(out, kubeadm.EncryptionProviderConfig, kubernetesVersion, encryptionSecret)
+	if err != nil {
+		return emperror.Wrap(err, "writing encryption provider config failed")
+	}
+
+	return nil
 }

@@ -18,10 +18,12 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"text/template"
 	"time"
 
@@ -155,6 +157,7 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
 // Provided secret will always overwrite existing configuration.
 // Pipeline sourced encryption secret uses this behaviour.
 func WriteEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, encryptionSecret string) error {
+
 	if encryptionSecret == "" {
 		// check existing configuration
 		if _, err := os.Stat(filename); err == nil {
@@ -198,6 +201,13 @@ resources:
 `
 
 	tmpl, err := template.New("admission-config").Parse(conf)
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Dir(filename)
+	_, _ = fmt.Fprintf(out, "creating directory: %q\n", dir)
+	err = os.MkdirAll(dir, 0750)
 	if err != nil {
 		return err
 	}
