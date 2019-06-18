@@ -40,6 +40,8 @@ const (
 	cmdKubeadm = "/bin/kubeadm"
 	cmdKubectl = "/bin/kubectl"
 	kubeConfig = "/etc/kubernetes/admin.conf"
+
+	MaximumAllowedMinorVersionUpgradeSkew = 1
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -127,9 +129,10 @@ func (c *ControlPlane) Run(out io.Writer) error {
 				ver,
 			))
 		}
-		if srvVer.Minor()+1 < ver.Minor() {
+		if srvVer.Minor()+MaximumAllowedMinorVersionUpgradeSkew < ver.Minor() {
 			return errors.New(fmt.Sprintf(
-				"only one minor version can be updated at a time. trying to upgrade from %d.%d to %d.%d",
+				"only %d minor version can be updated at a time. trying to upgrade from %d.%d to %d.%d",
+				MaximumAllowedMinorVersionUpgradeSkew,
 				srvVer.Major(),
 				srvVer.Minor(),
 				ver.Major(),
