@@ -16,9 +16,11 @@ package runner
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -59,13 +61,22 @@ func (c *Command) CombinedOutputAsync() error {
 	if err != nil {
 		return err
 	}
+	wait := make(chan bool, 2)
 	go func() {
-		combined := io.MultiReader(stdout, stderr)
-		scanner := bufio.NewScanner(combined)
+		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
 			m := scanner.Text()
-			_, _ = fmt.Fprintln(c.w, m)
+			_, _ = fmt.Fprintf(c.w, "out> %s\n", m)
 		}
+		wait <- true
+	}()
+	go func() {
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			m := scanner.Text()
+			_, _ = fmt.Fprintf(c.w, "err> %s\n", m)
+		}
+		wait <- true
 	}()
 
 	err = c.Start()
@@ -74,17 +85,28 @@ func (c *Command) CombinedOutputAsync() error {
 	}
 
 	err = c.Wait()
+	<-wait
 
 	return err
 }
 
 func (c *Command) Output() ([]byte, error) {
 	c.ts = time.Now()
+
+	// Capture error output
+	var stderr bytes.Buffer
+	c.Cmd.Stderr = &stderr
+
+	_, _ = fmt.Fprintf(c.w, "%s %s\n", c.name, c.arg)
 	out, err := c.Cmd.Output()
-	_, _ = fmt.Fprintf(c.w, "%s %s err: %v %s\n", c.name, c.arg, err, time.Now().Sub(c.ts))
 	if len(out) > 0 {
-		_, _ = fmt.Fprintln(c.w, string(out))
+		_, _ = fmt.Fprintf(c.w, "out> %s\n", strings.ReplaceAll(string(out), "\n", "\nout> "))
 	}
+	if stderr.Len() > 0 {
+		_, _ = fmt.Fprintf(c.w, "err> %s\n", strings.ReplaceAll(stderr.String(), "\n", "\nerr> "))
+	}
+	_, _ = fmt.Fprintf(c.w, "%s %s err: %v %s\n", c.name, c.arg, err, time.Now().Sub(c.ts))
+
 	return out, err
 }
 
