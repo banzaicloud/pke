@@ -1,4 +1,4 @@
-## pke upgrade kubernetes-version
+## pke upgrade master kubernetes-version
 
 Check Kubernetes version is supported or not
 
@@ -7,7 +7,7 @@ Check Kubernetes version is supported or not
 Check Kubernetes version is supported or not
 
 ```
-pke upgrade kubernetes-version [flags]
+pke upgrade master kubernetes-version [flags]
 ```
 
 ### Options
@@ -19,5 +19,5 @@ pke upgrade kubernetes-version [flags]
 
 ### SEE ALSO
 
-* [pke upgrade](pke_upgrade.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
+* [pke upgrade master](pke_upgrade_master.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) master machine
 

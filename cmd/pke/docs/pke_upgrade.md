@@ -13,12 +13,12 @@ pke upgrade [flags]
 ### Options
 
 ```
-  -h, --help                        help for upgrade
-      --kubernetes-version string   Kubernetes version (default "1.14.0")
+  -h, --help   help for upgrade
 ```
 
 ### SEE ALSO
 
 * [pke](pke.md)	 - Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)
-* [pke upgrade kubernetes-version](pke_upgrade_kubernetes-version.md)	 - Check Kubernetes version is supported or not
+* [pke upgrade master](pke_upgrade_master.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) master machine
+* [pke upgrade worker](pke_upgrade_worker.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) worker machine
 
