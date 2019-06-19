@@ -128,6 +128,8 @@ func (y *YumInstaller) InstallKubernetesPackages(out io.Writer, kubernetesVersio
 func (y *YumInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion string) error {
 	pkg := []string{
 		mapYumPackageVersion(kubeadm, kubernetesVersion),
+		mapYumPackageVersion(kubelet, kubernetesVersion),       // kubeadm dependency
+		mapYumPackageVersion(kubernetescni, kubernetesVersion), // kubeadm dependency
 		"--disableexcludes=kubernetes",
 	}
 	return YumInstall(out, pkg)
