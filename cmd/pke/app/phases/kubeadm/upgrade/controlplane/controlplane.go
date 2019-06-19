@@ -244,7 +244,9 @@ func kubectlVersion(out io.Writer) (clientVersion, serverVersion string, err err
 }
 
 func configmapVersion(out io.Writer) (version string, err error) {
-	o, err := runner.Cmd(ioutil.Discard, cmdKubectl, "-n", "kube-system", "get", "cm", "kubeadm-config", "-ojsonpath={.data.ClusterConfiguration}").Output()
+	cmd := runner.Cmd(ioutil.Discard, cmdKubectl, "-n", "kube-system", "get", "cm", "kubeadm-config", "-ojsonpath={.data.ClusterConfiguration}")
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	o, err := cmd.Output()
 	if err != nil {
 		return
 	}
