@@ -21,6 +21,6 @@ pke upgrade master [flags]
 ### SEE ALSO
 
 * [pke upgrade](pke_upgrade.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
-* [pke upgrade master kubernetes-controlplane](pke_upgrade_master_kubernetes-controlplane.md)	 - Kubernetes Control Plane installation
+* [pke upgrade master kubernetes-controlplane](pke_upgrade_master_kubernetes-controlplane.md)	 - Kubernetes Control Plane upgrade
 * [pke upgrade master kubernetes-version](pke_upgrade_master_kubernetes-version.md)	 - Check Kubernetes version is supported or not
 

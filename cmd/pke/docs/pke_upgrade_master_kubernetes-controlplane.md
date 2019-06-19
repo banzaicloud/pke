@@ -1,10 +1,10 @@
 ## pke upgrade master kubernetes-controlplane
 
-Kubernetes Control Plane installation
+Kubernetes Control Plane upgrade
 
 ### Synopsis
 
-Kubernetes Control Plane installation
+Kubernetes Control Plane upgrade
 
 ```
 pke upgrade master kubernetes-controlplane [flags]

@@ -20,6 +20,6 @@ pke upgrade worker [flags]
 ### SEE ALSO
 
 * [pke upgrade](pke_upgrade.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
-* [pke upgrade worker kubernetes-node](pke_upgrade_worker_kubernetes-node.md)	 - Kubernetes worker node installation
+* [pke upgrade worker kubernetes-node](pke_upgrade_worker_kubernetes-node.md)	 - Kubernetes worker node upgrade
 * [pke upgrade worker kubernetes-version](pke_upgrade_worker_kubernetes-version.md)	 - Check Kubernetes version is supported or not
 

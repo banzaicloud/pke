@@ -1,10 +1,10 @@
 ## pke upgrade worker kubernetes-node
 
-Kubernetes worker node installation
+Kubernetes worker node upgrade
 
 ### Synopsis
 
-Kubernetes worker node installation
+Kubernetes worker node upgrade
 
 ```
 pke upgrade worker kubernetes-node [flags]
@@ -13,7 +13,8 @@ pke upgrade worker kubernetes-node [flags]
 ### Options
 
 ```
-  -h, --help   help for kubernetes-node
+  -h, --help                        help for kubernetes-node
+      --kubernetes-version string   Kubernetes version (default "1.14.0")
 ```
 
 ### SEE ALSO

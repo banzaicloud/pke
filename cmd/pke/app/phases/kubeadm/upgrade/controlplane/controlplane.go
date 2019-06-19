@@ -15,19 +15,16 @@
 package controlplane
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
 
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/upgrade"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -35,13 +32,10 @@ import (
 
 const (
 	use   = "kubernetes-controlplane"
-	short = "Kubernetes Control Plane installation"
+	short = "Kubernetes Control Plane upgrade"
 
-	cmdKubeadm = "/bin/kubeadm"
-	cmdKubectl = "/bin/kubectl"
 	kubeConfig = "/etc/kubernetes/admin.conf"
-
-	MaximumAllowedMinorVersionUpgradeSkew = 1
+	cmdKubeadm = "/bin/kubeadm"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -90,68 +84,7 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 }
 
 func (c *ControlPlane) Run(out io.Writer) error {
-	// query current kubernetes version
-	clientVersion, serverVersion, err := kubectlVersion(out)
-	if err != nil {
-		return err
-	}
-	_, _ = fmt.Fprintf(out, "[%s] client version: %s\n", use, clientVersion)
-	_, _ = fmt.Fprintf(out, "[%s] server version: %s\n", use, serverVersion)
-
-	cmVer, err := configmapVersion(out)
-	if err != nil {
-		return err
-	}
-	_, _ = fmt.Fprintf(out, "[%s] configmap version: %s\n", use, cmVer)
-
-	// minor or patch update
-	srvVer, err := semver.NewVersion(serverVersion)
-	if err != nil {
-		return err
-	}
-	ver, err := semver.NewVersion(c.kubernetesVersion)
-	if err != nil {
-		return err
-	}
-	if srvVer.Major() != ver.Major() {
-		return errors.New(fmt.Sprintf(
-			"major version upgrade not supported. trying to upgrade from %d.x to %d.x",
-			srvVer.Major(),
-			ver.Major(),
-		))
-	}
-
-	if srvVer.Minor() != ver.Minor() {
-		if srvVer.Minor() > ver.Minor() {
-			return errors.New(fmt.Sprintf(
-				"downgrade not supported. trying to upgrade from %s to %s",
-				srvVer,
-				ver,
-			))
-		}
-		if srvVer.Minor()+MaximumAllowedMinorVersionUpgradeSkew < ver.Minor() {
-			return errors.New(fmt.Sprintf(
-				"only %d minor version can be updated at a time. trying to upgrade from %d.%d to %d.%d",
-				MaximumAllowedMinorVersionUpgradeSkew,
-				srvVer.Major(),
-				srvVer.Minor(),
-				ver.Major(),
-				ver.Minor(),
-			))
-		}
-		// Minor version bump
-		return c.upgradeMinor(out, srvVer, ver)
-	}
-
-	if srvVer.Patch() > ver.Patch() {
-		return errors.New(fmt.Sprintf(
-			"downgrade not supported. trying to upgrade from %s to %s",
-			srvVer,
-			ver,
-		))
-	}
-
-	return c.upgradePatch(out, srvVer, ver)
+	return upgrade.RunWithSkewCheck(out, use, c.kubernetesVersion, kubeConfig, c.upgradeMinor, c.upgradePatch)
 }
 
 func (c *ControlPlane) upgradeMinor(out io.Writer, from, to *semver.Version) error {
@@ -216,48 +149,4 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 	}
 
 	return nil
-}
-
-func kubectlVersion(out io.Writer) (clientVersion, serverVersion string, err error) {
-	cmd := runner.Cmd(ioutil.Discard, cmdKubectl, "version", "-o", "json")
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	ver, err := cmd.Output()
-	if err != nil {
-		return
-	}
-	serverVer := struct {
-		ClientVersion struct {
-			GitVersion string `json:"gitVersion"`
-		} `json:"clientVersion"`
-		ServerVersion struct {
-			GitVersion string `json:"gitVersion"`
-		} `json:"serverVersion"`
-	}{}
-	err = json.Unmarshal(ver, &serverVer)
-	if err != nil {
-		return
-	}
-
-	clientVersion = serverVer.ClientVersion.GitVersion
-	serverVersion = serverVer.ServerVersion.GitVersion
-	return
-}
-
-func configmapVersion(out io.Writer) (version string, err error) {
-	cmd := runner.Cmd(ioutil.Discard, cmdKubectl, "-n", "kube-system", "get", "cm", "kubeadm-config", "-ojsonpath={.data.ClusterConfiguration}")
-	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	o, err := cmd.Output()
-	if err != nil {
-		return
-	}
-
-	cmVer := struct {
-		KubernetesVersion string `yaml:"kubernetesVersion"`
-	}{}
-	err = yaml.Unmarshal(o, &cmVer)
-	if err != nil {
-		return
-	}
-
-	return cmVer.KubernetesVersion, nil
 }
