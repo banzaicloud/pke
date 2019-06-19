@@ -48,6 +48,10 @@ func YumInstall(out io.Writer, packages []string) error {
 	}
 
 	for _, pkg := range packages {
+		if pkg[:1] == "-" {
+			continue
+		}
+
 		name, ver, rel, arch, err := rpmQuery(out, pkg)
 		if err != nil {
 			return err
@@ -56,7 +60,7 @@ func YumInstall(out io.Writer, packages []string) error {
 			name+"-"+ver == pkg ||
 			name+"-"+ver+"-"+rel == pkg ||
 			name+"-"+ver+"-"+rel+"."+arch == pkg {
-			return nil
+			continue
 		}
 		return errors.New(fmt.Sprintf("expected packgae version after installation: %q, got: %q", pkg, name+"-"+ver+"-"+rel+"."+arch))
 	}
