@@ -66,7 +66,7 @@ func (c *Command) CombinedOutputAsync() error {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
 			m := scanner.Text()
-			_, _ = fmt.Fprintf(c.w, "out> %s\n", m)
+			_, _ = fmt.Fprintf(c.w, "  out> %s\n", m)
 		}
 		wait <- true
 	}()
@@ -74,7 +74,7 @@ func (c *Command) CombinedOutputAsync() error {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
 			m := scanner.Text()
-			_, _ = fmt.Fprintf(c.w, "err> %s\n", m)
+			_, _ = fmt.Fprintf(c.w, "  err> %s\n", m)
 		}
 		wait <- true
 	}()
@@ -100,10 +100,10 @@ func (c *Command) Output() ([]byte, error) {
 	_, _ = fmt.Fprintf(c.w, "%s %s\n", c.name, c.arg)
 	out, err := c.Cmd.Output()
 	if len(out) > 0 {
-		_, _ = fmt.Fprintf(c.w, "out> %s\n", strings.ReplaceAll(string(out), "\n", "\nout> "))
+		_, _ = fmt.Fprintf(c.w, "  out> %s\n", strings.ReplaceAll(string(out), "\n", "\n  out> "))
 	}
 	if stderr.Len() > 0 {
-		_, _ = fmt.Fprintf(c.w, "err> %s\n", strings.ReplaceAll(stderr.String(), "\n", "\nerr> "))
+		_, _ = fmt.Fprintf(c.w, "  err> %s\n", strings.ReplaceAll(stderr.String(), "\n", "\n  err> "))
 	}
 	_, _ = fmt.Fprintf(c.w, "%s %s err: %v %s\n", c.name, c.arg, err, time.Now().Sub(c.ts))
 
