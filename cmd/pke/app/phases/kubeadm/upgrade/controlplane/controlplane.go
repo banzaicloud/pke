@@ -157,12 +157,16 @@ func (c *ControlPlane) Run(out io.Writer) error {
 func (c *ControlPlane) upgradeMinor(out io.Writer, from, to *semver.Version) error {
 	_, _ = fmt.Fprintf(out, "[%s] upgrading node from %s to %s\n", use, from, to)
 
-	return nil
+	return c.upgradePatch(out, from, to)
 }
 
 func (c *ControlPlane) upgradePatch(out io.Writer, from, to *semver.Version) error {
 	_, _ = fmt.Fprintf(out, "[%s] patching node from %s to %s\n", use, from, to)
 
+	return c.upgrade(out, from, to)
+}
+
+func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 	var pm linux.KubernetesPackages
 	pm = linux.NewYumInstaller()
 	err := pm.InstallKubeadmPackage(out, to.String())
