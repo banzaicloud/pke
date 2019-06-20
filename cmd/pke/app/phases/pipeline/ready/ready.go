@@ -50,6 +50,7 @@ var _ phases.Runnable = (*Ready)(nil)
 type Ready struct {
 	role                   Role // accepted values: master, worker
 	cidr                   string
+	pipelineEnabled        bool
 	pipelineAPIEndpoint    string
 	pipelineAPIToken       string
 	pipelineAPIInsecure    bool
@@ -85,6 +86,7 @@ func (r *Ready) Validate(cmd *cobra.Command) error {
 	if !pipelineutil.Enabled(cmd) {
 		return nil
 	}
+	r.pipelineEnabled = true
 
 	var err error
 	if r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineAPIInsecure, r.pipelineOrganizationID, r.pipelineClusterID, err = pipelineutil.CommandArgs(cmd); err != nil {
@@ -114,6 +116,10 @@ func (r *Ready) Validate(cmd *cobra.Command) error {
 // Optional step.
 // Skipped if no Pipeline credentials are provided.
 func (r *Ready) Run(out io.Writer) error {
+	if !r.pipelineEnabled {
+		return nil
+	}
+
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", r.Use())
 
 	if err := pipelineutil.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineAPIInsecure, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {

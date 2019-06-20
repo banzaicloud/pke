@@ -51,6 +51,7 @@ const (
 var _ phases.Runnable = (*Certificates)(nil)
 
 type Certificates struct {
+	pipelineEnabled        bool
 	pipelineAPIEndpoint    string
 	pipelineAPIToken       string
 	pipelineAPIInsecure    bool
@@ -87,6 +88,7 @@ func (c *Certificates) Validate(cmd *cobra.Command) error {
 		// TODO: Warning
 		return nil
 	}
+	c.pipelineEnabled = true
 
 	var err error
 	c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID, err = pipelineutil.CommandArgs(cmd)
@@ -103,6 +105,10 @@ func (c *Certificates) Validate(cmd *cobra.Command) error {
 }
 
 func (c *Certificates) Run(out io.Writer) error {
+	if !c.pipelineEnabled {
+		return nil
+	}
+
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
 
 	if err := pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID); err != nil {
