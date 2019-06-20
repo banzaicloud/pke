@@ -49,7 +49,7 @@ pke install single [flags]
       --kubernetes-oidc-issuer-url string                 URL of the OIDC provider which allows the API server to discover public signing keys
       --kubernetes-pod-network-cidr string                range of IP addresses for the pod network (default "10.20.0.0/16")
       --kubernetes-service-cidr string                    range of IP address for service VIPs (default "10.10.0.0/16")
-      --kubernetes-version string                         Kubernetes version (default "1.14.0")
+      --kubernetes-version string                         Kubernetes version (default "1.14.3")
       --pipeline-cluster-id int32                         Cluster ID to use with Pipeline API
       --pipeline-insecure                                 If the Pipeline API should not verify the API's certificate
       --pipeline-nodepool string                          name of the nodepool the node belongs to
