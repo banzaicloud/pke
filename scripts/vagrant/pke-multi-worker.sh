@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -e
 
 KUBERNETES_VERSION=$1
 TOKEN="$2"
