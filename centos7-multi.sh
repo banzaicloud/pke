@@ -12,7 +12,7 @@ KUBERNETES_VERSION="${1:-v1.14.3}"
 echo ""
 echo "= node1 ========================================================================"
 vagrant up node1
-vagrant ssh node1 -c "sudo /scripts/pke-multi-master1.sh $KUBERNETES_VERSION"
+vagrant ssh node1 -c "sudo /scripts/pke-multi-master1.sh '$KUBERNETES_VERSION'"
 vagrant ssh node1 -c 'sudo cat /etc/kubernetes/admin.conf' > pke-multi-config.yaml
 vagrant ssh node1 -c "sudo /banzaicloud/pke token list -o json" > build/token.json
 

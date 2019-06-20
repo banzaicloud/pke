@@ -72,7 +72,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	switch ver.Minor() {
 	case 12, 13:
 		conf = kubeadmConfigV1Alpha3()
-	case 14:
+	case 14, 15:
 		conf = kubeadmConfigV1Beta1()
 	default:
 		return errors.New(fmt.Sprintf("unsupported Kubernetes version %q for kubeadm", c.kubernetesVersion))
