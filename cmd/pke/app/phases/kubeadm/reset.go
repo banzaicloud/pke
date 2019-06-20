@@ -27,7 +27,9 @@ const (
 
 func Reset(out io.Writer) error {
 	// kubeadm reset --force
-	_, _ = fmt.Fprintln(out, "Resetting kubeadm...")
+	_, _ = fmt.Fprintln(out, "")
+	_, _ = fmt.Fprintln(out, "================================================================================")
+	_, _ = fmt.Fprintln(out, "Resetting kubeadm changes...")
 	err := runner.Cmd(out, cmdKubeadm, "reset", "--force", "--cri-socket=unix:///run/containerd/containerd.sock").CombinedOutputAsync()
 	if err != nil {
 		return err
