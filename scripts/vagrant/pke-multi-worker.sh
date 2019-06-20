@@ -11,8 +11,6 @@ systemctl is-active kubelet || ( \
         chmod +x /usr/local/bin/pke
     ) && \
 
-    /banzaicloud/pke version -o yaml && \
-
     /banzaicloud/pke machine-image --kubernetes-version="$KUBERNETES_VERSION" && \
 
     /banzaicloud/pke install worker \
