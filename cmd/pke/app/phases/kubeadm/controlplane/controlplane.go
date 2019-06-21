@@ -15,6 +15,7 @@
 package controlplane
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
@@ -57,6 +58,7 @@ const (
 	cmdKubeadm                    = "/bin/kubeadm"
 	cmdKubectl                    = "/bin/kubectl"
 	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
+	calicoUrl                     = "https://docs.projectcalico.org/v3.7/manifests/calico.yaml"
 	kubeConfig                    = "/etc/kubernetes/admin.conf"
 	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
 	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
@@ -255,7 +257,9 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 		}
 	}
 
-	if c.networkProvider != "weave" {
+	switch c.networkProvider {
+	case "weave", "calico", "none":
+	default:
 		return errors.Wrapf(constants.ErrUnsupportedNetworkProvider, "network provider: %s", c.networkProvider)
 	}
 
@@ -423,8 +427,15 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		return err
 	}
 
-	if err := installPodNetwork(out, c.cloudProvider, c.podNetworkCIDR, kubeConfig); err != nil {
-		return err
+	switch c.networkProvider {
+	case "weave":
+		if err := installWeave(out, c.cloudProvider, c.podNetworkCIDR, kubeConfig); err != nil {
+			return err
+		}
+	case "calico":
+		if err := installCalico(out, c.podNetworkCIDR, kubeConfig); err != nil {
+			return err
+		}
 	}
 
 	return taintRemoveNoSchedule(out, c.clusterMode, kubeConfig)
@@ -742,7 +753,29 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	return nil
 }
 
-func installPodNetwork(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig string) error {
+func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string) error {
+	resp, err := http.Get(calicoUrl)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("failed to download Calico manifest: unhandled http status code: %d", resp.StatusCode)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return emperror.Wrap(err, "failed to download Calico manifest")
+	}
+	input := strings.ReplaceAll(buf.String(), "192.168.0.0/16", podNetworkCIDR)
+
+	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", "-")
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	cmd.Stdin = strings.NewReader(input)
+	return cmd.CombinedOutputAsync()
+}
+
+func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig string) error {
 	// kubectl version
 	cmd := runner.Cmd(out, cmdKubectl, "version")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
