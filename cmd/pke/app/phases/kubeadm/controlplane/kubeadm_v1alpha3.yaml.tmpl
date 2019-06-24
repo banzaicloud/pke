@@ -1,0 +1,129 @@
+apiVersion: kubeadm.k8s.io/v1alpha3
+kind: InitConfiguration
+{{ if .APIServerAdvertiseAddress}}
+apiEndpoint:
+  advertiseAddress: "{{ .APIServerAdvertiseAddress }}"
+  bindPort: {{ .APIServerBindPort }}{{end}}
+nodeRegistration:
+  criSocket: "unix:///run/containerd/containerd.sock"
+  taints:{{ if not .Taints }} []{{end}}{{range .Taints}}
+    - key: "{{.Key}}"
+      value: "{{.Value}}"
+      effect: "{{.Effect}}"{{end}}
+  kubeletExtraArgs:
+    {{ if .Nodepool }}
+    node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
+    # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker
+    {{ if .CloudProvider }}
+    cloud-provider: "{{ .CloudProvider }}"{{end}}
+    {{ if eq .CloudProvider "azure" }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
+    read-only-port: "0"
+    anonymous-auth: "false"
+    streaming-connection-idle-timeout: "5m"
+    protect-kernel-defaults: "true"
+    event-qps: "0"
+    client-ca-file: "/etc/kubernetes/pki/ca.crt"
+    feature-gates: "RotateKubeletServerCertificate=true"
+    rotate-certificates: "true"
+    tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+    authorization-mode: "Webhook"
+---
+apiVersion: kubeadm.k8s.io/v1alpha3
+kind: ClusterConfiguration
+clusterName: "{{ .ClusterName }}"
+imageRepository: {{ .ImageRepository }}
+unifiedControlPlaneImage: {{ .ImageRepository }}/hyperkube:v{{ .KubernetesVersion }}
+networking:
+  serviceSubnet: "{{ .ServiceCIDR }}"
+  podSubnet: "{{ .PodCIDR }}"
+  dnsDomain: "cluster.local"
+kubernetesVersion: "v{{ .KubernetesVersion }}"
+{{ if .ControlPlaneEndpoint }}controlPlaneEndpoint: "{{ .ControlPlaneEndpoint }}"{{end}}
+certificatesDir: "/etc/kubernetes/pki"
+{{ if .APIServerCertSANs }}
+apiServerCertSANs:
+{{range $k, $san := .APIServerCertSANs}}  - "{{ $san }}"
+{{end}}{{end}}
+apiServerExtraArgs:
+  # anonymous-auth: "false"
+  profiling: "false"
+  enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
+  disable-admission-plugins: ""
+  admission-control-config-file: "{{ .AdmissionConfig }}"
+  audit-log-path: "{{ .AuditLogDir }}/apiserver.log"
+  audit-log-maxage: "30"
+  audit-log-maxbackup: "10"
+  audit-log-maxsize: "100"
+  {{ if .WithAuditLog }}audit-policy-file: "{{ .AuditPolicyFile }}"{{ end }}
+  {{ if .EtcdPrefix }}etcd-prefix: "{{ .EtcdPrefix }}"{{end}}
+  service-account-lookup: "true"
+  kubelet-certificate-authority: "{{ .KubeletCertificateAuthority }}"
+  tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+  {{ .EncryptionProviderPrefix }}encryption-provider-config: "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
+  {{ if (and .OIDCIssuerURL .OIDCClientID) }}
+  oidc-issuer-url: "{{ .OIDCIssuerURL }}"
+  oidc-client-id: "{{ .OIDCClientID }}"
+  oidc-username-claim: "email"
+  oidc-username-prefix: "oidc:"
+  oidc-groups-claim: "groups"{{end}}
+  {{ if .CloudProvider }}
+  cloud-provider: "{{ .CloudProvider }}"
+  cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
+schedulerExtraArgs:
+  profiling: "false"
+apiServerExtraVolumes:
+  {{ if .WithAuditLog }}
+  - name: audit-log-dir
+    hostPath: {{ .AuditLogDir }}
+    mountPath: {{ .AuditLogDir }}
+    pathType: DirectoryOrCreate
+  - name: audit-policy-file
+    hostPath: {{ .AuditPolicyFile }}
+    mountPath: {{ .AuditPolicyFile }}
+    readOnly: true
+    pathType: FileOrCreate{{ end }}
+  - name: admission-control-config-file
+    hostPath: {{ .AdmissionConfig }}
+    mountPath: {{ .AdmissionConfig }}
+    writable: false
+    pathType: File
+  - name: admission-control-config-dir
+    hostPath: /etc/kubernetes/admission-control/
+    mountPath: /etc/kubernetes/admission-control/
+    writable: false
+    pathType: Directory
+  {{ if .CloudProvider }}
+  - name: cloud-config
+    hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
+    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
+controllerManagerExtraArgs:
+  cluster-name: "{{ .ClusterName }}"
+  profiling: "false"
+  terminated-pod-gc-threshold: "10"
+  feature-gates: "RotateKubeletServerCertificate=true"
+  {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}
+  {{ if .CloudProvider }}
+  cloud-provider: "{{ .CloudProvider }}"
+  cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf
+controllerManagerExtraVolumes:
+  - name: cloud-config
+    hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
+    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
+etcd:
+  {{ if .EtcdEndpoints }}
+  external:
+    endpoints:
+    {{range $k, $endpoint := .EtcdEndpoints }}  - "{{ $endpoint }}"
+    {{end}}
+    caFile: {{ .EtcdCAFile }}
+    certFile: {{ .EtcdCertFile }}
+    keyFile: {{ .EtcdKeyFile }}
+  {{else}}
+  local:
+    extraArgs:
+      peer-auto-tls: "false"
+  {{end}}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+serverTLSBootstrap: true

@@ -839,6 +839,8 @@ func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) err
 	return nil
 }
 
+//go:generate templify -t ${GOTMPL} -p controlplane -f admissionConfiguration admission_configuration.yaml.tmpl
+
 func writeAdmissionConfiguration(out io.Writer, filename, rateLimitConfigFile string) error {
 	dir := filepath.Dir(filename)
 
@@ -848,14 +850,7 @@ func writeAdmissionConfiguration(out io.Writer, filename, rateLimitConfigFile st
 		return err
 	}
 
-	conf := `kind: AdmissionConfiguration
-apiVersion: apiserver.k8s.io/v1alpha1
-plugins:
-- name: EventRateLimit
-  path: {{ .RateLimitConfigFile }}
-`
-
-	tmpl, err := template.New("admission-config").Parse(conf)
+	tmpl, err := template.New("admission-config").Parse(admissionConfigurationTemplate())
 	if err != nil {
 		return err
 	}
@@ -878,6 +873,8 @@ plugins:
 	return tmpl.Execute(w, d)
 }
 
+//go:generate templify -t ${GOTMPL} -p controlplane -f kubeProxyConfig kube_proxy_config.yaml.tmpl
+
 func writeKubeProxyConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
@@ -887,12 +884,10 @@ func writeKubeProxyConfig(out io.Writer, filename string) error {
 		return err
 	}
 
-	conf := `apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-`
-
-	return file.Overwrite(filename, conf)
+	return file.Overwrite(filename, kubeProxyConfigTemplate())
 }
+
+//go:generate templify -t ${GOTMPL} -p controlplane -f eventRateLimit event_rate_limit.yaml.tmpl
 
 func writeEventRateLimitConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
@@ -903,19 +898,7 @@ func writeEventRateLimitConfig(out io.Writer, filename string) error {
 		return err
 	}
 
-	conf := `kind: Configuration
-apiVersion: eventratelimit.admission.k8s.io/v1alpha1
-limits:
-- type: Namespace
-  qps: 50
-  burst: 100
-  cacheSize: 2000
-- type: User
-  qps: 10
-  burst: 50
-`
-
-	return file.Overwrite(filename, conf)
+	return file.Overwrite(filename, eventRateLimitTemplate())
 }
 
 func waitForAPIServer(out io.Writer) error {
@@ -953,6 +936,8 @@ func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error 
 	return cmd.CombinedOutputAsync()
 }
 
+//go:generate templify -t ${GOTMPL} -p controlplane -f certificateAutoApprover certificate_auto_approver.yaml.tmpl
+
 func writeCertificateAutoApprover(out io.Writer) error {
 	filename := certificateAutoApprover
 	dir := filepath.Dir(filename)
@@ -963,88 +948,7 @@ func writeCertificateAutoApprover(out io.Writer) error {
 		return err
 	}
 
-	conf := `apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: auto-approver
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  name: auto-approver
-rules:
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests
-  verbs:
-  - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests/approval
-  verbs:
-  - create
-  - update
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: auto-approver
-subjects:
-- kind: ServiceAccount
-  namespace: kube-system
-  name: auto-approver
-roleRef:
-  kind: ClusterRole
-  name: auto-approver
-  apiGroup: rbac.authorization.k8s.io
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: auto-approver
-  namespace: kube-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      name: auto-approver
-  template:
-    metadata:
-      labels:
-        name: auto-approver
-    spec:
-      serviceAccountName: auto-approver
-      tolerations:
-        - effect: NoSchedule
-          operator: Exists
-      priorityClassName: system-cluster-critical
-      containers:
-        - name: auto-approver
-          image: banzaicloud/auto-approver:0.1.0
-          imagePullPolicy: Always
-          env:
-            - name: WATCH_NAMESPACE
-              value: ""
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: OPERATOR_NAME
-              value: "auto-approver"
-`
-	err = file.Overwrite(filename, conf)
+	err = file.Overwrite(filename, certificateAutoApproverTemplate())
 	if err != nil {
 		return err
 	}
@@ -1053,6 +957,8 @@ spec:
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	return cmd.CombinedOutputAsync()
 }
+
+//go:generate templify -t ${GOTMPL} -p controlplane -f podSecurityPolicy pod_security_policy.yaml.tmpl
 
 func writePodSecurityPolicyConfig(out io.Writer) error {
 	filename := podSecurityPolicyConfig
@@ -1064,264 +970,7 @@ func writePodSecurityPolicyConfig(out io.Writer) error {
 		return err
 	}
 
-	conf := `apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pke:podsecuritypolicy:unprivileged-addon
-  namespace: kube-system
-  labels:
-    addonmanager.kubernetes.io/mode: Reconcile
-    kubernetes.io/cluster-service: "true"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: pke:podsecuritypolicy:unprivileged-addon
-subjects:
-- kind: Group
-  # All service accounts in the kube-system namespace are allowed to use this.
-  name: system:serviceaccounts:kube-system
-  apiGroup: rbac.authorization.k8s.io
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pke:podsecuritypolicy:nodes
-  namespace: kube-system
-  annotations:
-    kubernetes.io/description: 'Allow nodes to create privileged pods. Should
-      be used in combination with the NodeRestriction admission plugin to limit
-      nodes to mirror pods bound to themselves.'
-  labels:
-    addonmanager.kubernetes.io/mode: Reconcile
-    kubernetes.io/cluster-service: 'true'
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pke:podsecuritypolicy:privileged
-subjects:
-  - kind: Group
-    apiGroup: rbac.authorization.k8s.io
-    name: system:nodes
-  - kind: User
-    apiGroup: rbac.authorization.k8s.io
-    # Legacy node ID
-    name: kubelet
----
-apiVersion: rbac.authorization.k8s.io/v1
-# The persistent volume binder creates recycler pods in the default namespace,
-# but the addon manager only creates namespaced objects in the kube-system
-# namespace, so this is a ClusterRoleBinding.
-kind: ClusterRoleBinding
-metadata:
-  name: pke:podsecuritypolicy:persistent-volume-binder
-  labels:
-    addonmanager.kubernetes.io/mode: Reconcile
-    kubernetes.io/cluster-service: "true"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pke:podsecuritypolicy:persistent-volume-binder
-subjects:
-- kind: ServiceAccount
-  name: persistent-volume-binder
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-# The persistent volume binder creates recycler pods in the default namespace,
-# but the addon manager only creates namespaced objects in the kube-system
-# namespace, so this is a ClusterRole.
-kind: ClusterRole
-metadata:
-  name: pke:podsecuritypolicy:persistent-volume-binder
-  namespace: default
-  labels:
-    kubernetes.io/cluster-service: "true"
-    addonmanager.kubernetes.io/mode: Reconcile
-rules:
-- apiGroups:
-  - policy
-  resourceNames:
-  - pke.persistent-volume-binder
-  resources:
-  - podsecuritypolicies
-  verbs:
-  - use
----
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: pke.persistent-volume-binder
-  annotations:
-    kubernetes.io/description: 'Policy used by the persistent-volume-binder
-      (a.k.a. persistentvolume-controller) to run recycler pods.'
-    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'docker/default'
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default'
-  labels:
-    kubernetes.io/cluster-service: 'true'
-    addonmanager.kubernetes.io/mode: Reconcile
-spec:
-  privileged: false
-  volumes:
-  - 'nfs'
-  - 'secret'   # Required for service account credentials.
-  - 'projected'
-  hostNetwork: false
-  hostIPC: false
-  hostPID: false
-  runAsUser:
-    rule: 'RunAsAny'
-  seLinux:
-    rule: 'RunAsAny'
-  supplementalGroups:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
-  readOnlyRootFilesystem: false
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pke:podsecuritypolicy:privileged-binding
-  namespace: kube-system
-  labels:
-    addonmanager.kubernetes.io/mode: Reconcile
-    kubernetes.io/cluster-service: "true"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: pke:podsecuritypolicy:privileged
-subjects:
-  - kind: ServiceAccount
-    name: kube-proxy
-    namespace: kube-system
-  - kind: ServiceAccount
-    name: weave-net
-    namespace: kube-system
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: pke:podsecuritypolicy:privileged
-  labels:
-    kubernetes.io/cluster-service: "true"
-    addonmanager.kubernetes.io/mode: Reconcile
-rules:
-- apiGroups:
-  - policy
-  resourceNames:
-  - pke.privileged
-  resources:
-  - podsecuritypolicies
-  verbs:
-  - use
----
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: pke.privileged
-  annotations:
-    kubernetes.io/description: 'privileged allows full unrestricted access to
-      pod features, as if the PodSecurityPolicy controller was not enabled.'
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
-  labels:
-    kubernetes.io/cluster-service: "true"
-    addonmanager.kubernetes.io/mode: Reconcile
-spec:
-  privileged: true
-  allowPrivilegeEscalation: true
-  allowedCapabilities:
-  - '*'
-  volumes:
-  - '*'
-  hostNetwork: true
-  hostPorts:
-  - min: 0
-    max: 65535
-  hostIPC: true
-  hostPID: true
-  runAsUser:
-    rule: 'RunAsAny'
-  seLinux:
-    rule: 'RunAsAny'
-  supplementalGroups:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
-  readOnlyRootFilesystem: false
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: pke:podsecuritypolicy:unprivileged-addon
-  namespace: kube-system
-  labels:
-    kubernetes.io/cluster-service: "true"
-    addonmanager.kubernetes.io/mode: Reconcile
-rules:
-- apiGroups:
-  - policy
-  resourceNames:
-  - pke.unprivileged-addon
-  resources:
-  - podsecuritypolicies
-  verbs:
-  - use
----
-apiVersion: policy/v1beta1
-kind: PodSecurityPolicy
-metadata:
-  name: pke.unprivileged-addon
-  annotations:
-    kubernetes.io/description: 'This policy grants the minimum amount of
-      privilege necessary to run non-privileged kube-system pods. This policy is
-      not intended for use outside of kube-system, and may include further
-      restrictions in the future.'
-    seccomp.security.alpha.kubernetes.io/defaultProfileName:  'docker/default'
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default'
-  labels:
-    kubernetes.io/cluster-service: 'true'
-    addonmanager.kubernetes.io/mode: Reconcile
-spec:
-  privileged: false
-  allowPrivilegeEscalation: false
-  # The docker default set of capabilities
-  allowedCapabilities:
-  - SETPCAP
-  - MKNOD
-  - AUDIT_WRITE
-  - CHOWN
-  - NET_RAW
-  - DAC_OVERRIDE
-  - FOWNER
-  - FSETID
-  - KILL
-  - SETGID
-  - SETUID
-  - NET_BIND_SERVICE
-  - SYS_CHROOT
-  - SETFCAP
-  volumes:
-  - 'emptyDir'
-  - 'configMap'
-  - 'secret'
-  - 'projected'
-  hostNetwork: false
-  hostIPC: false
-  hostPID: false
-  # TODO: The addons using this profile should not run as root.
-  runAsUser:
-    rule: 'RunAsAny'
-  seLinux:
-    rule: 'RunAsAny'
-  supplementalGroups:
-    rule: 'RunAsAny'
-  fsGroup:
-    rule: 'RunAsAny'
-  readOnlyRootFilesystem: false
-`
-
-	err = file.Overwrite(filename, conf)
+	err = file.Overwrite(filename, podSecurityPolicyTemplate())
 	if err != nil {
 		return err
 	}

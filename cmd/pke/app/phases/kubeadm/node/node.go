@@ -282,6 +282,8 @@ func (n *Node) install(out io.Writer) error {
 	return linux.SystemctlEnableAndStart(out, "kubelet")
 }
 
+//go:generate templify -t ${GOTMPL} -p node -f kubeProxyConfig kube_proxy_config.yaml.tmpl
+
 func writeKubeProxyConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
@@ -291,35 +293,17 @@ func writeKubeProxyConfig(out io.Writer, filename string) error {
 		return err
 	}
 
-	conf := `apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-`
-
-	return file.Overwrite(filename, conf)
+	return file.Overwrite(filename, kubeProxyConfigTemplate())
 }
+
+//go:generate templify -t ${GOTMPL} -p node -f cniBridge cni_bridge.json.tmpl
 
 func writeCNIBridge(out io.Writer, cloudProvider, podNetworkCIDR, filename string) error {
 	if cloudProvider != constants.CloudProviderAzure || podNetworkCIDR == "" {
 		return nil
 	}
 
-	conf := `{
-    "cniVersion": "0.3.1",
-    "name": "bridge",
-    "type": "bridge",
-    "bridge": "cnio0",
-    "isGateway": true,
-    "ipMasq": true,
-    "ipam": {
-        "type": "host-local",
-        "ranges": [
-          [{"subnet": "{{ .PodNetworkCIDR }}"}]
-        ],
-        "routes": [{"dst": "0.0.0.0/0"}]
-    }
-}`
-
-	tmpl, err := template.New("cni-bridge").Parse(conf)
+	tmpl, err := template.New("cni-bridge").Parse(cniBridgeTemplate())
 	if err != nil {
 		return err
 	}
@@ -342,15 +326,12 @@ func writeCNIBridge(out io.Writer, cloudProvider, podNetworkCIDR, filename strin
 	return tmpl.Execute(w, d)
 }
 
+//go:generate templify -t ${GOTMPL} -p node -f cniLoopback cni_loopback.json.tmpl
+
 func writeCNILoopback(out io.Writer, cloudProvider, filename string) error {
 	if cloudProvider != constants.CloudProviderAzure {
 		return nil
 	}
 
-	conf := `{
-    "cniVersion": "0.3.1",
-    "type": "loopback"
-}`
-
-	return file.Overwrite(filename, conf)
+	return file.Overwrite(filename, cniLoopbackTemplate())
 }

@@ -22,14 +22,17 @@ GOLANGCI_VERSION = 1.16.0
 LICENSEI_VERSION = 0.1.0
 GORELEASER_VERSION = 0.105.0
 OPENAPI_GENERATOR_VERSION = PR1869
+TEMPLIFY_VERSION = 7fafacc
 
 GOLANG_VERSION = 1.12
+
+export GOTMPL = ${PWD}/go.tmpl
 
 .PHONY: build
 build: pke ## Build project
 
 .PHONY: pke
-pke: ## Build PKE binary
+pke: gogenerate ## Build PKE binary
 ifneq (${IGNORE_GOLANG_VERSION_REQ}, 1)
 	@printf "${GOLANG_VERSION}\n$$(go version | awk '{sub(/^go/, "", $$3);print $$3}')" | sort -t '.' -k 1,1 -k 2,2 -k 3,3 -g | head -1 | grep -q -E "^${GOLANG_VERSION}$$" || (printf "Required Go version is ${GOLANG_VERSION}\nInstalled: `go version`" && exit 1)
 endif
@@ -39,6 +42,14 @@ endif
 pke-docs: ## Generate documentation for PKE
 	rm -rf cmd/pke/docs/*.md
 	cd cmd/pke/docs/ && go run -v generate.go
+
+.PHONY: gogenerate
+gogenerate: bin/templify ## Generate go files from template
+	export GOOS=linux && PATH=${PATH}:${PWD}/bin/ go generate ./cmd/...
+
+bin/templify:
+	GOPATH=${BUILD_DIR}/templify go get github.com/wlbr/templify@${TEMPLIFY_VERSION}
+	@ln -sf ${BUILD_DIR}/templify/bin/templify bin/templify
 
 .PHONY: check
 check: test lint ## Run tests and linters

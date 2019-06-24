@@ -147,6 +147,8 @@ func installContainerD(out io.Writer, imageRepository string) error {
 	return writeContainerDConfig(out, containerDConf, imageRepository)
 }
 
+//go:generate templify -t ${GOTMPL} -p container -f containerdConfig containerd_config.toml.tmpl
+
 func writeContainerDConfig(out io.Writer, filename, imageRepository string) error {
 	dir := filepath.Dir(filename)
 
@@ -156,10 +158,7 @@ func writeContainerDConfig(out io.Writer, filename, imageRepository string) erro
 		return err
 	}
 
-	conf := `[plugins.cri]
-  sandbox_image = "{{ .ImageRepository }}/pause:3.1"`
-
-	tmpl, err := template.New("containerd-config").Parse(conf)
+	tmpl, err := template.New("containerd-config").Parse(containerdConfigTemplate())
 	if err != nil {
 		return err
 	}

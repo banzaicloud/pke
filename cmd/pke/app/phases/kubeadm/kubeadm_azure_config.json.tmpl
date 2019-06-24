@@ -1,0 +1,18 @@
+{
+    "cloud":"{{ .Cloud }}",
+    "tenantId": "{{ .TenantId }}",
+    "subscriptionId": "{{ .SubscriptionId }}",
+    "resourceGroup": "{{ .ResourceGroup }}",
+    "location": "{{ .Location }}",
+    "subnetName": "{{ .SubnetName }}",
+    "securityGroupName": "{{ .SecurityGroupName }}",
+    "vnetName": "{{ .VNetName }}",
+    "vnetResourceGroup": "{{ .VNetResourceGroup }}",
+    "vmType": "{{ .VMType }}",
+    "loadBalancerSku": "{{ .LoadBalancerSku }}",
+    "routeTableName": "{{ .RouteTableName }}",
+    "cloudProviderBackoff": false,
+    "useManagedIdentityExtension": true,
+    "useInstanceMetadata": true,
+    "excludeMasterFromStandardLB": {{ .ExcludeMasterFromStandardLB }}
+}

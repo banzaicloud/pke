@@ -1,0 +1,11 @@
+kind: {{ .Kind }}
+apiVersion: {{ .APIVersion }}
+resources:
+  - resources:
+    - secrets
+    providers:
+    - aescbc:
+        keys:
+        - name: key1
+          secret: "{{ .EncryptionSecret }}"
+    - identity: {}
