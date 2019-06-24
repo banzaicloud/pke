@@ -106,6 +106,7 @@ func parseRpmPackageOutput(pkg string) (name, version, release, arch string, err
 }
 
 var _ KubernetesPackages = (*YumInstaller)(nil)
+var _ ContainerDPackages = (*YumInstaller)(nil)
 
 type YumInstaller struct{}
 
@@ -133,6 +134,15 @@ func (y *YumInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion st
 		"--disableexcludes=kubernetes",
 	}
 	return YumInstall(out, pkg)
+}
+
+func (y *YumInstaller) InstallPrerequisites(out io.Writer, containerDVersion string) error {
+	// yum install -y libseccomp
+	if err := YumInstall(out, []string{"libseccomp"}); err != nil {
+		return errors.Wrap(err, "unable to install libseccomp package")
+	}
+
+	return nil
 }
 
 func mapYumPackageVersion(pkg, kubernetesVersion string) string {

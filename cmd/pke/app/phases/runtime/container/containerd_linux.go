@@ -79,9 +79,10 @@ func installCentOS7(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "unable to load all sysctl rules from files")
 	}
 
-	// yum install -y libseccomp
-	if err := linux.YumInstall(out, []string{"libseccomp"}); err != nil {
-		return errors.Wrap(err, "unable to install libseccomp package")
+	var pm linux.ContainerDPackages
+	pm = linux.NewYumInstaller()
+	if err := pm.InstallPrerequisites(out, containerDVersion); err != nil {
+		return errors.Wrap(err, "unable to install ContainerD prerequisites")
 	}
 
 	_ = linux.SystemctlDisableAndStop(out, "containerd")
