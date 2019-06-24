@@ -15,7 +15,7 @@ pke machine-image [flags]
 ```
   -h, --help                        help for machine-image
       --image-repository string     Prefix for image repository (default "banzaicloud")
-      --kubernetes-version string   Kubernetes version (default "1.14.0")
+      --kubernetes-version string   Kubernetes version (default "1.14.3")
 ```
 
 ### SEE ALSO

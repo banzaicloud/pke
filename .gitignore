@@ -3,6 +3,7 @@
 /dist/
 /vendor/
 /pke-single-config.yaml
+/pke-multi-config.yaml
 
 **/.vagrant*
 .DS_Store

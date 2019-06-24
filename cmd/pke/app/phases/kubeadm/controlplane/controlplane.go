@@ -15,8 +15,8 @@
 package controlplane
 
 import (
+	"bytes"
 	"context"
-	"crypto/rand"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
@@ -58,6 +58,7 @@ const (
 	cmdKubeadm                    = "/bin/kubeadm"
 	cmdKubectl                    = "/bin/kubectl"
 	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
+	calicoUrl                     = "https://docs.projectcalico.org/v3.7/manifests/calico.yaml"
 	kubeConfig                    = "/etc/kubernetes/admin.conf"
 	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
 	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
@@ -69,10 +70,12 @@ const (
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
 	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
 	certificateAutoApprover       = "/etc/kubernetes/admission-control/deploy-auto-approver.yaml"
-	encryptionProviderConfig      = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 	cniDir                        = "/etc/cni/net.d"
 	etcdDir                       = "/var/lib/etcd"
+	auditPolicyFile               = "/etc/kubernetes/audit-policy-file.yaml"
+	auditLogDir                   = "/var/log/audit/apiserver"
+	encryptionSecretLength        = 32
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -96,6 +99,7 @@ type ControlPlane struct {
 	oidcClientID                     string
 	imageRepository                  string
 	withPluginPSP                    bool
+	withAuditLog                     bool
 	node                             *node.Node
 	azureTenantID                    string
 	azureSubnetName                  string
@@ -105,8 +109,18 @@ type ControlPlane struct {
 	azureVMType                      string
 	azureLoadBalancerSku             string
 	azureRouteTableName              string
+	azureStorageAccountType          string
+	azureStorageKind                 string
 	azureExcludeMasterFromStandardLB bool
 	cidr                             string
+	disableDefaultStorageClass       bool
+	taints                           []string
+	etcdEndpoints                    []string
+	etcdCAFile                       string
+	etcdCertFile                     string
+	etcdKeyFile                      string
+	etcdPrefix                       string
+	encryptionSecret                 string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -133,7 +147,7 @@ func (c *ControlPlane) Short() string {
 
 func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
 	// Kubernetes network
 	flags.String(constants.FlagNetworkProvider, "weave", "Kubernetes network provider")
 	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
@@ -143,7 +157,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes cluster name
 	flags.String(constants.FlagClusterName, "pke", "Kubernetes cluster name")
 	// Kubernetes certificates
-	flags.StringArray(constants.FlagAPIServerCertSANs, []string{}, "sets extra Subject Alternative Names for the API Server signing cert")
+	flags.StringSlice(constants.FlagAPIServerCertSANs, []string{}, "sets extra Subject Alternative Names for the API Server signing cert")
 	flags.String(constants.FlagControllerManagerSigningCA, "", "Kubernetes Controller Manager signing cert")
 	flags.String(constants.FlagKubeletCertificateAuthority, "/etc/kubernetes/pki/ca.crt", "Path to a cert file for the certificate authority. Used for kubelet server certificate verify.")
 	// Kubernetes cluster mode
@@ -159,6 +173,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
+	// AuditLog enable
+	flags.Bool(constants.FlagAuditLog, false, "Enable apiserver audit log")
 	// Azure cloud
 	flags.String(constants.FlagAzureTenantID, "", "The AAD Tenant ID for the Subscription that the cluster is deployed in")
 	flags.String(constants.FlagAzureSubnetName, "", "The name of the subnet that the cluster is deployed in")
@@ -168,12 +184,26 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureVMType, "standard", "The type of azure nodes. Candidate values are: vmss and standard")
 	flags.String(constants.FlagAzureLoadBalancerSku, "basic", "Sku of Load Balancer and Public IP. Candidate values are: basic and standard")
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
+	flags.String(constants.FlagAzureStorageAccountType, "Standard_LRS", "Azure storage account Sku tier")
+	flags.String(constants.FlagAzureStorageKind, "dedicated", "Possible values are shared, dedicated, and managed")
 	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
+	flags.Bool(constants.FlagPipelineAPIInsecure, false, "If the Pipeline API should not verify the API's certificate")
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
+	// Storage class
+	flags.Bool(constants.FlagDisableDefaultStorageClass, false, "Do not deploy a default storage class")
+	// Taints
+	flags.StringSlice(constants.FlagTaints, []string{"node-role.kubernetes.io/master:NoSchedule"}, "Specifies the taints the Node should be registered with")
+	// External Etcd
+	flags.StringSlice(constants.FlagExternalEtcdEndpoints, []string{}, "Endpoints of etcd members")
+	flags.String(constants.FlagExternalEtcdCAFile, "", "An SSL Certificate Authority file used to secure etcd communication")
+	flags.String(constants.FlagExternalEtcdCertFile, "", "An SSL certification file used to secure etcd communication")
+	flags.String(constants.FlagExternalEtcdKeyFile, "", "An SSL key file used to secure etcd communication")
+	flags.String(constants.FlagExternalEtcdPrefix, "", "The prefix to prepend to all resource paths in etcd")
+	flags.String(constants.FlagEncryptionSecret, "", "Use this key to encrypt secrets (32 byte base64 encoded)")
 
 	c.addHAControlPlaneFlags(flags)
 }
@@ -212,20 +242,24 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	// Azure specific required flags
 	if c.cloudProvider == constants.CloudProviderAzure {
 		if err := validator.NotEmpty(map[string]interface{}{
-			constants.FlagAzureTenantID:          c.azureTenantID,
-			constants.FlagAzureSubnetName:        c.azureSubnetName,
-			constants.FlagAzureSecurityGroupName: c.azureSecurityGroupName,
-			constants.FlagAzureVNetName:          c.azureVNetName,
-			constants.FlagAzureVNetResourceGroup: c.azureVNetResourceGroup,
-			constants.FlagAzureVMType:            c.azureVMType,
-			constants.FlagAzureLoadBalancerSku:   c.azureLoadBalancerSku,
-			constants.FlagAzureRouteTableName:    c.azureRouteTableName,
+			constants.FlagAzureTenantID:           c.azureTenantID,
+			constants.FlagAzureSubnetName:         c.azureSubnetName,
+			constants.FlagAzureSecurityGroupName:  c.azureSecurityGroupName,
+			constants.FlagAzureVNetName:           c.azureVNetName,
+			constants.FlagAzureVNetResourceGroup:  c.azureVNetResourceGroup,
+			constants.FlagAzureVMType:             c.azureVMType,
+			constants.FlagAzureLoadBalancerSku:    c.azureLoadBalancerSku,
+			constants.FlagAzureRouteTableName:     c.azureRouteTableName,
+			constants.FlagAzureStorageAccountType: c.azureStorageAccountType,
+			constants.FlagAzureStorageKind:        c.azureStorageKind,
 		}); err != nil {
 			return err
 		}
 	}
 
-	if c.networkProvider != "weave" {
+	switch c.networkProvider {
+	case "weave", "calico", "none":
+	default:
 		return errors.Wrapf(constants.ErrUnsupportedNetworkProvider, "network provider: %s", c.networkProvider)
 	}
 
@@ -277,12 +311,12 @@ func (c *ControlPlane) pipelineJoin(cmd *cobra.Command) error {
 		}
 
 		// Pipeline client
-		endpoint, token, orgID, clusterID, err := pipelineutil.CommandArgs(cmd)
+		endpoint, token, insecure, orgID, clusterID, err := pipelineutil.CommandArgs(cmd)
 		if err != nil {
 			return err
 		}
 
-		p := pipelineutil.Client(os.Stdout, endpoint, token)
+		p := pipelineutil.Client(os.Stdout, endpoint, token, insecure)
 
 		// elect leader
 		_, resp, err := p.ClustersApi.PostLeaderElection(context.Background(), orgID, clusterID, pipeline.PostLeaderElectionRequest{
@@ -368,6 +402,9 @@ func (c *ControlPlane) Run(out io.Writer) error {
 				return err
 			}
 			// install additional master node
+			if err := writeMasterConfig(out, c.withAuditLog, c.kubernetesVersion, c.encryptionSecret); err != nil {
+				return err
+			}
 			_, _ = fmt.Fprintf(out, "[%s] installing additional master node\n", c.Use())
 			return c.node.Run(out)
 		}
@@ -390,8 +427,15 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		return err
 	}
 
-	if err := installPodNetwork(out, c.cloudProvider, c.podNetworkCIDR, kubeConfig); err != nil {
-		return err
+	switch c.networkProvider {
+	case "weave":
+		if err := installWeave(out, c.cloudProvider, c.podNetworkCIDR, kubeConfig); err != nil {
+			return err
+		}
+	case "calico":
+		if err := installCalico(out, c.podNetworkCIDR, kubeConfig); err != nil {
+			return err
+		}
 	}
 
 	return taintRemoveNoSchedule(out, c.clusterMode, kubeConfig)
@@ -484,7 +528,7 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
-	c.apiServerCertSANs, err = cmd.Flags().GetStringArray(constants.FlagAPIServerCertSANs)
+	c.apiServerCertSANs, err = cmd.Flags().GetStringSlice(constants.FlagAPIServerCertSANs)
 	if err != nil {
 		return
 	}
@@ -512,10 +556,35 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
+	c.withAuditLog, err = cmd.Flags().GetBool(constants.FlagAuditLog)
+	if err != nil {
+		return
+	}
 	c.joinControlPlane, err = cmd.Flags().GetBool(constants.FlagControlPlaneJoin)
 	if err != nil {
 		return
 	}
+	err = c.azureParameters(cmd)
+	if err != nil {
+		return
+	}
+	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
+	if err != nil {
+		return
+	}
+	c.disableDefaultStorageClass, err = cmd.Flags().GetBool(constants.FlagDisableDefaultStorageClass)
+	if err != nil {
+		return
+	}
+	c.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
+	if err != nil {
+		return
+	}
+
+	return c.etcdParameters(cmd)
+}
+
+func (c *ControlPlane) azureParameters(cmd *cobra.Command) (err error) {
 	c.azureTenantID, err = cmd.Flags().GetString(constants.FlagAzureTenantID)
 	if err != nil {
 		return
@@ -548,9 +617,62 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
-	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
+	c.azureStorageAccountType, err = cmd.Flags().GetString(constants.FlagAzureStorageAccountType)
+	if err != nil {
+		return
+	}
+	c.azureStorageKind, err = cmd.Flags().GetString(constants.FlagAzureStorageKind)
 
 	return
+}
+
+func (c *ControlPlane) etcdParameters(cmd *cobra.Command) (err error) {
+	c.etcdEndpoints, err = cmd.Flags().GetStringSlice(constants.FlagExternalEtcdEndpoints)
+	if err != nil {
+		return
+	}
+	c.etcdCAFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdCAFile)
+	if err != nil {
+		return
+	}
+	c.etcdCertFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdCertFile)
+	if err != nil {
+		return
+	}
+	c.etcdKeyFile, err = cmd.Flags().GetString(constants.FlagExternalEtcdKeyFile)
+	if err != nil {
+		return
+	}
+	c.etcdPrefix, err = cmd.Flags().GetString(constants.FlagExternalEtcdPrefix)
+	if err != nil {
+		return
+	}
+	c.encryptionSecret, err = cmd.Flags().GetString(constants.FlagEncryptionSecret)
+	if err != nil {
+		return
+	}
+
+	return validateEncryptionSecret(c.encryptionSecret)
+}
+
+func validateEncryptionSecret(encryptionSecret string) error {
+	if encryptionSecret != "" {
+		b, err := base64.StdEncoding.DecodeString(encryptionSecret)
+		if err != nil {
+			return errors.Wrapf(err, "Not valid --%s", constants.FlagEncryptionSecret)
+		}
+
+		if l := len(b); l != encryptionSecretLength {
+			return errors.New(fmt.Sprintf(
+				"Not valid --%s length. Expected length after base64 decode: %d, got: %d",
+				constants.FlagEncryptionSecret,
+				encryptionSecretLength,
+				l,
+			))
+		}
+	}
+
+	return nil
 }
 
 func (c *ControlPlane) installMaster(out io.Writer) error {
@@ -574,23 +696,8 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		return err
 	}
 
-	err = writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
-	if err != nil {
-		return err
-	}
-
-	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
-	if err != nil {
-		return err
-	}
-
-	err = writeKubeProxyConfig(out, kubeProxyConfig)
-	if err != nil {
-		return err
-	}
-
-	err = writeEncryptionProviderConfig(out, encryptionProviderConfig, c.kubernetesVersion, "")
-	if err != nil {
+	// write master config
+	if err := writeMasterConfig(out, c.withAuditLog, c.kubernetesVersion, c.encryptionSecret); err != nil {
 		return err
 	}
 
@@ -626,8 +733,10 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		return err
 	}
 	// apply PSP
-	if err := writePodSecurityPolicyConfig(out); err != nil {
-		return err
+	if c.withPluginPSP {
+		if err := writePodSecurityPolicyConfig(out); err != nil {
+			return err
+		}
 	}
 
 	// if replica set started before default PSP is applied, replica set will hang. force re-create.
@@ -637,14 +746,37 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// apply default storage class
-	if err := applyDefaultStorageClass(out, c.cloudProvider); err != nil {
+	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider, c.azureStorageAccountType, c.azureStorageKind); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func installPodNetwork(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig string) error {
+func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string) error {
+	resp, err := http.Get(calicoUrl)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("failed to download Calico manifest: unhandled http status code: %d", resp.StatusCode)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return emperror.Wrap(err, "failed to download Calico manifest")
+	}
+	input := strings.ReplaceAll(buf.String(), "192.168.0.0/16", podNetworkCIDR)
+
+	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", "-")
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	cmd.Stdin = strings.NewReader(input)
+	_, err = cmd.CombinedOutputAsync()
+	return err
+}
+
+func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig string) error {
 	// kubectl version
 	cmd := runner.Cmd(out, cmdKubectl, "version")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
@@ -1204,74 +1336,40 @@ spec:
 	return err
 }
 
-func writeEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, encryptionSecret string) error {
-	if encryptionSecret == "" {
-		// generate encryption secret
-		var rnd = make([]byte, 32)
-		_, err := rand.Read(rnd)
-		if err != nil {
-			return err
-		}
-
-		encryptionSecret = base64.StdEncoding.EncodeToString(rnd)
-	}
-
-	var (
-		kind       = "EncryptionConfiguration"
-		apiVersion = "apiserver.config.k8s.io/v1"
-	)
-	ver, err := semver.NewVersion(kubernetesVersion)
-	if err != nil {
-		return err
-	}
-	if ver.LessThan(semver.MustParse("1.13.0")) {
-		kind = "EncryptionConfig"
-		apiVersion = "v1"
-	}
-
-	conf := `kind: {{ .Kind }}
-apiVersion: {{ .APIVersion }}
-resources:
-  - resources:
-    - secrets
-    providers:
-    - aescbc:
-        keys:
-        - name: key1
-          secret: "{{ .EncryptionSecret }}"
-    - identity: {}
-`
-
-	tmpl, err := template.New("admission-config").Parse(conf)
-	if err != nil {
-		return err
-	}
-
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
-	type data struct {
-		Kind             string
-		APIVersion       string
-		EncryptionSecret string
-	}
-
-	d := data{
-		Kind:             kind,
-		APIVersion:       apiVersion,
-		EncryptionSecret: encryptionSecret,
-	}
-
-	return tmpl.Execute(w, d)
-}
-
 func deleteKubeDNSReplicaSet(out io.Writer) error {
 	cmd := runner.Cmd(out, cmdKubectl, "delete", "rs", "-n", "kube-system", "k8s-app=kube-dns")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	_, err := cmd.CombinedOutputAsync()
 	return err
+}
+
+func writeMasterConfig(out io.Writer, a bool, kubernetesVersion, encryptionSecret string) error {
+
+	if a {
+		if err := writeAuditPolicyFile(out); err != nil {
+			return emperror.Wrap(err, "writing audit policy file failed")
+		}
+	}
+
+	err := writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
+	if err != nil {
+		return emperror.Wrap(err, "writing admission config failed")
+	}
+
+	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
+	if err != nil {
+		return emperror.Wrap(err, "writing event limit config failed")
+	}
+
+	err = writeKubeProxyConfig(out, kubeProxyConfig)
+	if err != nil {
+		return emperror.Wrap(err, "writing kube proxy config failed")
+	}
+
+	err = kubeadm.WriteEncryptionProviderConfig(out, kubeadm.EncryptionProviderConfig, kubernetesVersion, encryptionSecret)
+	if err != nil {
+		return emperror.Wrap(err, "writing encryption provider config failed")
+	}
+
+	return nil
 }

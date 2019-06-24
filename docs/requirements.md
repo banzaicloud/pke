@@ -16,7 +16,7 @@ You can also use the following commands as root to achieve this:
 
 
 ```
-curl -v https://banzaicloud.com/downloads/pke/pke-0.4.0 -o /usr/local/bin/pke
+curl -v https://banzaicloud.com/downloads/pke/pke-0.4.5 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 ```

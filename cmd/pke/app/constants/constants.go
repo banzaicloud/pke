@@ -37,6 +37,9 @@ const (
 	// FlagPipelineAPITokenShort token for accessing Pipeline API.
 	FlagPipelineAPITokenShort = "t"
 
+	// FlagPipelineAPIInsecure if the Pipeline API should not verify the API's certificate.
+	FlagPipelineAPIInsecure = "pipeline-insecure"
+
 	// FlagPipelineOrganizationID organization id in Pipeline.
 	FlagPipelineOrganizationID = "pipeline-org-id"
 	// FlagPipelineClusterID cluster id in Pipeline.
@@ -87,6 +90,8 @@ const (
 	FlagClusterMode = "kubernetes-master-mode"
 	// FlagControlPlaneJoin worker command should install control plane node.
 	FlagControlPlaneJoin = "kubernetes-join-control-plane"
+	// FlagAdditionalControlPlane upgrade additional control plane node.
+	FlagAdditionalControlPlane = "kubernetes-additional-control-plane"
 
 	// CloudProviderAmazon Amazon Web Services
 	CloudProviderAmazon = "aws"
@@ -98,6 +103,9 @@ const (
 
 	// FlagAdmissionPluginPodSecurityPolicy enable admission plugin PodSecurityPolicy.
 	FlagAdmissionPluginPodSecurityPolicy = "with-plugin-psp"
+
+	// FlagAuditLog enable audit log.
+	FlagAuditLog = "with-audit-log"
 
 	// Azure specific flags
 	// FlagAzureTenantID the AAD Tenant ID for the Subscription that the cluster is deployed in.
@@ -116,6 +124,30 @@ const (
 	FlagAzureLoadBalancerSku = "azure-loadbalancer-sku"
 	// FlagAzureRouteTableName the name of the route table attached to the subnet that the cluster is deployed in.
 	FlagAzureRouteTableName = "azure-route-table-name"
+	// FlagAzureStorageAccountType Azure storage account Sku tier.
+	FlagAzureStorageAccountType = "azure-storage-account-type"
+	// FlagAzureStorageKind possible values are shared, dedicated, and managed (default).
+	FlagAzureStorageKind = "azure-storage-kind"
+
+	// FlagDisableDefaultStorageClass adds default storage class.
+	FlagDisableDefaultStorageClass = "disable-default-storage-class"
+
+	// FlagTaints specifies the taints the Node should be registered with.
+	FlagTaints = "taints"
+
+	// Etcd specific flags
+	// FlagExternalEtcdEndpoints endpoints of etcd members.
+	FlagExternalEtcdEndpoints = "etcd-endpoints"
+	// FlagExternalEtcdCAFile is an SSL Certificate Authority file used to secure etcd communication.
+	FlagExternalEtcdCAFile = "etcd-ca-file"
+	// FlagExternalEtcdCertFile is an SSL certification file used to secure etcd communication.
+	FlagExternalEtcdCertFile = "etcd-cert-file"
+	// FlagExternalEtcdKeyFile is an SSL key file used to secure etcd communication.
+	FlagExternalEtcdKeyFile = "etcd-key-file"
+	// FlagExternalEtcdPrefix the prefix to prepend to all resource paths in etcd.
+	FlagExternalEtcdPrefix = "etcd-prefix"
+	// FlagEncryptionSecret use this key to encrypt secrets.
+	FlagEncryptionSecret = "encryption-secret"
 )
 
 var (

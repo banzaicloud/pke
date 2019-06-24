@@ -14,7 +14,7 @@ pke install worker kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.14.0")
+      --kubernetes-version string   Kubernetes version (default "1.14.3")
 ```
 
 ### SEE ALSO

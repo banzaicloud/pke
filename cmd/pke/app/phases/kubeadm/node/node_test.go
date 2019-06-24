@@ -36,6 +36,7 @@ func TestWriteKubeadmConfig(t *testing.T) {
 		caCertHash:        "sha256:xxx",
 		cloudProvider:     constants.CloudProviderAmazon,
 		nodepool:          "pool2",
+		taints:            []string{"node-role.kubernetes.io/master:NoSchedule-"},
 	}
 
 	err := n.writeKubeadmConfig(os.Stdout, filename)

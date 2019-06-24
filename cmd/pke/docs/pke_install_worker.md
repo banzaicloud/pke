@@ -29,12 +29,14 @@ pke install worker [flags]
       --kubernetes-infrastructure-cidr string       network CIDR for the actual machine (default "192.168.64.0/20")
       --kubernetes-node-token string                PKE join token
       --kubernetes-pod-network-cidr string          range of IP addresses for the pod network on the current node
-      --kubernetes-version string                   Kubernetes version (default "1.14.0")
+      --kubernetes-version string                   Kubernetes version (default "1.14.3")
       --pipeline-cluster-id int32                   Cluster ID to use with Pipeline API
+      --pipeline-insecure                           If the Pipeline API should not verify the API's certificate
       --pipeline-nodepool string                    name of the nodepool the node belongs to
       --pipeline-org-id int32                       Organization ID to use with Pipeline API
   -t, --pipeline-token string                       Token for accessing Pipeline API
   -u, --pipeline-url string                         Pipeline API server url
+      --taints strings                              Specifies the taints the Node should be registered with
 ```
 
 ### SEE ALSO

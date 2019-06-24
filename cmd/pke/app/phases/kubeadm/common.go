@@ -15,20 +15,26 @@
 package kubeadm
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"text/template"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/pkg/errors"
 )
 
 const (
-	urlAzureAZ = "http://169.254.169.254/metadata/instance?api-version=2018-10-01"
+	urlAzureAZ               = "http://169.254.169.254/metadata/instance?api-version=2018-10-01"
+	EncryptionProviderConfig = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 )
 
 func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, subnetName, securityGroupName, vnetName, vnetResourceGroup, vmType, loadBalancerSku, routeTableName string, excludeMasterFromStandardLB bool) error {
@@ -143,4 +149,87 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
 	}
 
 	return nil
+}
+
+// WriteEncryptionProviderConfig creates configuration to encrypt Kubernetes secrets.
+// If encryptionSecret is not provided, but the configuration is already in place
+// secret will NOT be replaced with a newly generated one.
+// Provided secret will always overwrite existing configuration.
+// Pipeline sourced encryption secret uses this behaviour.
+func WriteEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, encryptionSecret string) error {
+
+	if encryptionSecret == "" {
+		// check existing configuration
+		if _, err := os.Stat(filename); err == nil {
+			return nil
+		}
+
+		// generate encryption secret
+		var rnd = make([]byte, 32)
+		_, err := rand.Read(rnd)
+		if err != nil {
+			return err
+		}
+
+		encryptionSecret = base64.StdEncoding.EncodeToString(rnd)
+	}
+
+	var (
+		kind       = "EncryptionConfiguration"
+		apiVersion = "apiserver.config.k8s.io/v1"
+	)
+	ver, err := semver.NewVersion(kubernetesVersion)
+	if err != nil {
+		return err
+	}
+	if ver.LessThan(semver.MustParse("1.13.0")) {
+		kind = "EncryptionConfig"
+		apiVersion = "v1"
+	}
+
+	conf := `kind: {{ .Kind }}
+apiVersion: {{ .APIVersion }}
+resources:
+  - resources:
+    - secrets
+    providers:
+    - aescbc:
+        keys:
+        - name: key1
+          secret: "{{ .EncryptionSecret }}"
+    - identity: {}
+`
+
+	tmpl, err := template.New("admission-config").Parse(conf)
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Dir(filename)
+	_, _ = fmt.Fprintf(out, "creating directory: %q\n", dir)
+	err = os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	type data struct {
+		Kind             string
+		APIVersion       string
+		EncryptionSecret string
+	}
+
+	d := data{
+		Kind:             kind,
+		APIVersion:       apiVersion,
+		EncryptionSecret: encryptionSecret,
+	}
+
+	return tmpl.Execute(w, d)
 }

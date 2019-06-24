@@ -46,6 +46,7 @@ const (
 	cniDir             = "/etc/cni/net.d"
 	cniBridgeConfig    = "/etc/cni/net.d/10-bridge.conf"
 	cniLoopbackConfig  = "/etc/cni/net.d/99-loopback.conf"
+	maxJoinRetries     = 5
 )
 
 var _ phases.Runnable = (*Node)(nil)
@@ -67,6 +68,7 @@ type Node struct {
 	azureVMType            string
 	azureLoadBalancerSku   string
 	azureRouteTableName    string
+	taints                 []string
 }
 
 func NewCommand(out io.Writer) *cobra.Command {
@@ -83,12 +85,13 @@ func (n *Node) Short() string {
 
 func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
 	// Kubernetes network
 	flags.String(constants.FlagPodNetworkCIDR, "", "range of IP addresses for the pod network on the current node")
 	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
+	flags.Bool(constants.FlagPipelineAPIInsecure, false, "If the Pipeline API should not verify the API's certificate")
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	// Kubernetes cloud provider (optional)
@@ -111,6 +114,8 @@ func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureVMType, "standard", "The type of azure nodes. Candidate values are: vmss and standard")
 	flags.String(constants.FlagAzureLoadBalancerSku, "basic", "Sku of Load Balancer and Public IP. Candidate values are: basic and standard")
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
+	// Taints
+	flags.StringSlice(constants.FlagTaints, nil, "Specifies the taints the Node should be registered with")
 }
 
 func (n *Node) Validate(cmd *cobra.Command) error {
@@ -230,6 +235,10 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 		return
 	}
 	n.azureRouteTableName, err = cmd.Flags().GetString(constants.FlagAzureRouteTableName)
+	if err != nil {
+		return
+	}
+	n.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
 
 	return
 }
@@ -268,7 +277,7 @@ func (n *Node) install(out io.Writer) error {
 		return err
 	}
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < maxJoinRetries; i++ {
 		// kubeadm join 10.240.0.11:6443 --token 0uk28q.e5i6ewi7xb0g8ye9 --discovery-token-ca-cert-hash sha256:a1a74c00ecccf947b69b49172390018096affbbae25447c4bd0c0906273c1482 --cri-socket=unix:///run/containerd/containerd.sock
 		ll, err := runner.Cmd(out, cmdKubeadm, "join", "--config="+kubeadmConfig).CombinedOutputAsync()
 		if err == nil {

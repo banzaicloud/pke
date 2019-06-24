@@ -1,6 +1,6 @@
 ## Pipeline Kubernetes Engine - PKE
 
-PKE is an extremely simple [CNCF certifed](https://www.cncf.io/certification/software-conformance/#logos) Kubernetes installer and distribution, designed to work on any cloud, VM or bare metal. The `pke` tool supports cloud provider integrations, multi-phased installs (requires only an OS), pre-warmed machine image builds, and more. PKE is the preferred Kubernetes run-time of the Banzai Cloud Pipeline platform](https://beta.banzaicloud.io/), which supercharges the development, deployment and scaling of container-based applications with native support for multi-, hybrid-, and edge-cloud environments.
+PKE is an extremely simple [CNCF certifed](https://www.cncf.io/certification/software-conformance/#logos) Kubernetes installer and distribution, designed to work on any cloud, VM or bare metal. The `pke` tool supports cloud provider integrations, multi-phased installs (requires only an OS), pre-warmed machine image builds, and more. PKE is the preferred Kubernetes run-time of the [Banzai Cloud Pipeline platform](https://beta.banzaicloud.io/), which supercharges the development, deployment and scaling of container-based applications with native support for multi-, hybrid-, and edge-cloud environments.
 
 If you would like to supercharge your Kubernetes experience using Banzai Cloud Pipeline, check out the free developer beta:
 <p align="center">
@@ -63,6 +63,10 @@ You can create PKE clusters on any of the cloud providers, Vagrant, virtual mach
 ### Contributing
 
 Thank you for your contribution and being part of our community. Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for details on the code of conduct, and the process for submitting pull requests. When you are opening a PR to PKE for the first time we will require you to sign a standard CLA.
+
+## Community
+
+If you have any questions about PKE, and would like to talk to us and the other members of the Banzai Cloud community, please join our [Slack](https://slack.banzaicloud.io/).
 
 ### License
 
