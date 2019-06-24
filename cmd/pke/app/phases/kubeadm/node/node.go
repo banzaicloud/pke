@@ -82,7 +82,7 @@ func (n *Node) Short() string {
 
 func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
 	// Kubernetes network
 	flags.String(constants.FlagPodNetworkCIDR, "", "range of IP addresses for the pod network on the current node")
 	// Pipeline

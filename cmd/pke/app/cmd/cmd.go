@@ -33,6 +33,7 @@ func NewPKECommand(in io.Reader, out io.Writer, gitVersion, gitCommit, gitTreeSt
 	cmd.AddCommand(NewCmdInstall(out))
 	cmd.AddCommand(NewCmdImage(out))
 	cmd.AddCommand(NewCmdToken(out))
+	cmd.AddCommand(NewCmdUpgrade(out))
 	cmd.AddCommand(NewCmdVersion(out, gitVersion, gitCommit, gitTreeState, buildDate))
 
 	return cmd

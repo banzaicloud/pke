@@ -20,7 +20,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
@@ -110,7 +109,9 @@ func (r *Runtime) installRuntime(out io.Writer, kubernetesVersion string) error 
 
 	// Install kubelet kubeadm and kubectl.
 	// yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
-	if err := linux.YumInstall(out, yumPackages(kubernetesVersion)); err != nil {
+	var pm linux.KubernetesPackages
+	pm = linux.NewYumInstaller()
+	if err := pm.InstallKubernetesPackages(out, kubernetesVersion); err != nil {
 		return errors.Wrap(err, "unable to install packages")
 	}
 
@@ -134,21 +135,4 @@ kernel.panic_on_oops=1
 `
 
 	return file.Overwrite(filename, conf)
-}
-
-func yumPackages(kubernetesVersion string) []string {
-	ver, _ := semver.NewVersion(kubernetesVersion)
-
-	cniVer := "0.6.0"
-	if !ver.LessThan(semver.MustParse("1.14.0")) {
-		cniVer = "0.7.5"
-	}
-
-	return []string{
-		"kubelet-" + kubernetesVersion + "-0",
-		"kubeadm-" + kubernetesVersion + "-0",
-		"kubectl-" + kubernetesVersion + "-0",
-		"kubernetes-cni-" + cniVer,
-		"--disableexcludes=kubernetes",
-	}
 }

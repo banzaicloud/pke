@@ -90,6 +90,8 @@ const (
 	FlagClusterMode = "kubernetes-master-mode"
 	// FlagControlPlaneJoin worker command should install control plane node.
 	FlagControlPlaneJoin = "kubernetes-join-control-plane"
+	// FlagAdditionalControlPlane upgrade additional control plane node.
+	FlagAdditionalControlPlane = "kubernetes-additional-control-plane"
 
 	// CloudProviderAmazon Amazon Web Services
 	CloudProviderAmazon = "aws"

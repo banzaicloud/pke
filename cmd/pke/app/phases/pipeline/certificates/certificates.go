@@ -51,6 +51,7 @@ const (
 var _ phases.Runnable = (*Certificates)(nil)
 
 type Certificates struct {
+	pipelineEnabled        bool
 	pipelineAPIEndpoint    string
 	pipelineAPIToken       string
 	pipelineAPIInsecure    bool
@@ -79,7 +80,7 @@ func (c *Certificates) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
 }
 
 func (c *Certificates) Validate(cmd *cobra.Command) error {
@@ -87,6 +88,7 @@ func (c *Certificates) Validate(cmd *cobra.Command) error {
 		// TODO: Warning
 		return nil
 	}
+	c.pipelineEnabled = true
 
 	var err error
 	c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID, err = pipelineutil.CommandArgs(cmd)
@@ -103,6 +105,10 @@ func (c *Certificates) Validate(cmd *cobra.Command) error {
 }
 
 func (c *Certificates) Run(out io.Writer) error {
+	if !c.pipelineEnabled {
+		return nil
+	}
+
 	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
 
 	if err := pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID); err != nil {

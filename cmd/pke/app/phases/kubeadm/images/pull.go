@@ -57,7 +57,7 @@ func (i *Image) Short() string {
 
 func (i *Image) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 }

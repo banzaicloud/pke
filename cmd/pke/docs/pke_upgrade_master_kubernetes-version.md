@@ -1,4 +1,4 @@
-## pke install worker kubernetes-version
+## pke upgrade master kubernetes-version
 
 Check Kubernetes version is supported or not
 
@@ -7,7 +7,7 @@ Check Kubernetes version is supported or not
 Check Kubernetes version is supported or not
 
 ```
-pke install worker kubernetes-version [flags]
+pke upgrade master kubernetes-version [flags]
 ```
 
 ### Options
@@ -19,5 +19,5 @@ pke install worker kubernetes-version [flags]
 
 ### SEE ALSO
 
-* [pke install worker](pke_install_worker.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node
+* [pke upgrade master](pke_upgrade_master.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) master machine
 
