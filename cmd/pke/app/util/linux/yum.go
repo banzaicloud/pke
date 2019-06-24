@@ -158,7 +158,8 @@ func mapYumPackageVersion(pkg, kubernetesVersion string) string {
 
 	case kubernetescni:
 		ver, _ := semver.NewVersion(kubernetesVersion)
-		if !ver.LessThan(semver.MustParse("1.14.0")) {
+		c, _ := semver.NewConstraint(">=1.12.7,<1.13.x || >=1.13.5")
+		if c.Check(ver) {
 			return "kubernetes-cni-0.7.5-0"
 		}
 		return "kubernetes-cni-0.6.0-0"
