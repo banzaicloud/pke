@@ -43,8 +43,8 @@ type Image struct {
 	imageRepository   string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &Image{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&Image{})
 }
 
 func (i *Image) Use() string {
@@ -90,7 +90,7 @@ func (i *Image) Validate(cmd *cobra.Command) error {
 }
 
 func (i *Image) Run(out io.Writer) error {
-	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", i.Use())
+	_, _ = fmt.Fprintf(out, "[%s] running\n", i.Use())
 
 	c := controlplane.NewDefault(i.kubernetesVersion, i.imageRepository)
 

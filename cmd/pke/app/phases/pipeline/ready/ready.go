@@ -59,8 +59,8 @@ type Ready struct {
 	pipelineNodepool       string
 }
 
-func NewCommand(out io.Writer, role Role) *cobra.Command {
-	return phases.NewCommand(out, &Ready{role: role})
+func NewCommand(role Role) *cobra.Command {
+	return phases.NewCommand(&Ready{role: role})
 }
 
 func (r *Ready) Use() string {
@@ -120,7 +120,7 @@ func (r *Ready) Run(out io.Writer) error {
 		return nil
 	}
 
-	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", r.Use())
+	_, _ = fmt.Fprintf(out, "[%s] running\n", r.Use())
 
 	if err := pipelineutil.ValidArgs(r.pipelineAPIEndpoint, r.pipelineAPIToken, r.pipelineAPIInsecure, r.pipelineOrganizationID, r.pipelineClusterID); err != nil {
 		_, _ = fmt.Fprintf(out, "[WARNING][%s] Skipping phase due to missing Pipeline API endpoint credentials. %s\n", use, err)

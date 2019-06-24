@@ -15,12 +15,10 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
 )
 
-func NewPKECommand(in io.Reader, out io.Writer, gitVersion, gitCommit, gitTreeState, buildDate string) *cobra.Command {
+func NewPKECommand(gitVersion, gitCommit, gitTreeState, buildDate string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "pke",
 		Short:             "Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)",
@@ -30,11 +28,11 @@ func NewPKECommand(in io.Reader, out io.Writer, gitVersion, gitCommit, gitTreeSt
 
 	cmd.ResetFlags()
 
-	cmd.AddCommand(NewCmdInstall(out))
-	cmd.AddCommand(NewCmdImage(out))
-	cmd.AddCommand(NewCmdToken(out))
-	cmd.AddCommand(NewCmdUpgrade(out))
-	cmd.AddCommand(NewCmdVersion(out, gitVersion, gitCommit, gitTreeState, buildDate))
+	cmd.AddCommand(NewCmdInstall())
+	cmd.AddCommand(NewCmdImage())
+	cmd.AddCommand(NewCmdToken())
+	cmd.AddCommand(NewCmdUpgrade())
+	cmd.AddCommand(NewCmdVersion(gitVersion, gitCommit, gitTreeState, buildDate))
 
 	return cmd
 }

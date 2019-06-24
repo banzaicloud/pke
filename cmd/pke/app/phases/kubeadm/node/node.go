@@ -68,8 +68,8 @@ type Node struct {
 	taints                 []string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &Node{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&Node{})
 }
 
 func (n *Node) Use() string {
@@ -149,7 +149,7 @@ func (n *Node) Validate(cmd *cobra.Command) error {
 }
 
 func (n *Node) Run(out io.Writer) error {
-	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", n.Use())
+	_, _ = fmt.Fprintf(out, "[%s] running\n", n.Use())
 
 	if err := n.install(out); err != nil {
 		if rErr := kubeadm.Reset(out); rErr != nil {

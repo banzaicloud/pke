@@ -40,8 +40,8 @@ type Version struct {
 	kubernetesVersion string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &Version{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&Version{})
 }
 
 func (v *Version) Use() string {
@@ -74,7 +74,7 @@ func (v *Version) Validate(cmd *cobra.Command) error {
 }
 
 func (v *Version) Run(out io.Writer) error {
-	_, _ = fmt.Fprintf(out, "Kubernetes version %q is supported\n", v.kubernetesVersion)
+	_, _ = fmt.Fprintf(out, "[%s] Kubernetes version %q is supported\n", use, v.kubernetesVersion)
 	return nil
 }
 

@@ -50,8 +50,8 @@ type Create struct {
 	o string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &Create{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&Create{})
 }
 
 func (*Create) Use() string {

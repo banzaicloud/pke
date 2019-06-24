@@ -123,8 +123,8 @@ type ControlPlane struct {
 	encryptionSecret                 string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &ControlPlane{
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&ControlPlane{
 		node: &node.Node{},
 	})
 }
@@ -390,7 +390,7 @@ func (c *ControlPlane) appendAdvertiseAddressAsLoopback() error {
 }
 
 func (c *ControlPlane) Run(out io.Writer) error {
-	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
+	_, _ = fmt.Fprintf(out, "[%s] running\n", c.Use())
 
 	if c.clusterMode == "ha" {
 		// additional master node

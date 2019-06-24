@@ -15,8 +15,6 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/upgrade/controlplane"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/upgrade/node"
@@ -24,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCmdUpgrade(out io.Writer) *cobra.Command {
+func NewCmdUpgrade() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine",
@@ -32,13 +30,13 @@ func NewCmdUpgrade(out io.Writer) *cobra.Command {
 		RunE:  phases.RunEAllSubcommands,
 	}
 
-	cmd.AddCommand(upgradeMaster(out))
-	cmd.AddCommand(upgradeWorker(out))
+	cmd.AddCommand(upgradeMaster())
+	cmd.AddCommand(upgradeWorker())
 
 	return cmd
 }
 
-func upgradeMaster(out io.Writer) *cobra.Command {
+func upgradeMaster() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "master",
 		Short: "Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) master machine",
@@ -46,15 +44,15 @@ func upgradeMaster(out io.Writer) *cobra.Command {
 		RunE:  phases.RunEAllSubcommands,
 	}
 
-	cmd.AddCommand(version.NewCommand(out))
-	cmd.AddCommand(controlplane.NewCommand(out))
+	cmd.AddCommand(version.NewCommand())
+	cmd.AddCommand(controlplane.NewCommand())
 
 	phases.MakeRunnable(cmd)
 
 	return cmd
 }
 
-func upgradeWorker(out io.Writer) *cobra.Command {
+func upgradeWorker() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "worker",
 		Short: "Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) worker machine",
@@ -62,8 +60,8 @@ func upgradeWorker(out io.Writer) *cobra.Command {
 		RunE:  phases.RunEAllSubcommands,
 	}
 
-	cmd.AddCommand(version.NewCommand(out))
-	cmd.AddCommand(node.NewCommand(out))
+	cmd.AddCommand(version.NewCommand())
+	cmd.AddCommand(node.NewCommand())
 
 	phases.MakeRunnable(cmd)
 

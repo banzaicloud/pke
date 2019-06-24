@@ -45,8 +45,8 @@ type ControlPlane struct {
 	kubernetesAdditionalControlPlane bool
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &ControlPlane{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&ControlPlane{})
 }
 
 func (*ControlPlane) Use() string {

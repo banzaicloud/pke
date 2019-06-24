@@ -31,7 +31,7 @@ type Runnable interface {
 }
 
 // NewCommand create new command.
-func NewCommand(out io.Writer, r Runnable) *cobra.Command {
+func NewCommand(r Runnable) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   r.Use(),
 		Short: r.Short(),
@@ -39,7 +39,7 @@ func NewCommand(out io.Writer, r Runnable) *cobra.Command {
 			if err := r.Validate(cmd); err != nil {
 				return err
 			}
-			return r.Run(out)
+			return r.Run(cmd.OutOrStdout())
 		},
 	}
 
