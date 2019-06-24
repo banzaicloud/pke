@@ -19,5 +19,5 @@ type CreatePkeClusterRequestBase struct {
 	SshSecretId string `json:"sshSecretId,omitempty"`
 	ScaleOptions ScaleOptions `json:"scaleOptions,omitempty"`
 	Type string `json:"type"`
-	Kubernetes map[string]interface{} `json:"kubernetes"`
+	Kubernetes CreatePkeClusterKubernetes `json:"kubernetes"`
 }

@@ -16,4 +16,7 @@ type UpdateNodePoolsAzure struct {
 	Count int32 `json:"count"`
 	MinCount int32 `json:"minCount,omitempty"`
 	MaxCount int32 `json:"maxCount,omitempty"`
+	InstanceType string `json:"instanceType,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
+	VnetSubnetID string `json:"vnetSubnetID,omitempty"`
 }
