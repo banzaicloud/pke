@@ -97,6 +97,8 @@ const (
 	CloudProviderAmazon = "aws"
 	// CloudProviderAzure Azure Cloud Services
 	CloudProviderAzure = "azure"
+	// CloudProviderVsphere VMware vSphere platform
+	CloudProviderVsphere = "vsphere"
 
 	// FlagImageRepository prefix for image repository.
 	FlagImageRepository = "image-repository"
@@ -128,6 +130,27 @@ const (
 	FlagAzureStorageAccountType = "azure-storage-account-type"
 	// FlagAzureStorageKind possible values are shared, dedicated, and managed (default).
 	FlagAzureStorageKind = "azure-storage-kind"
+
+	// Vsphere specific flags
+
+	// FlagVsphereServer is the hostname or IP of vCenter to use.
+	FlagVsphereServer = "vsphere-server"
+	// FlagVspherePort is the TCP port where vCenter listens.
+	FlagVspherePort = "vsphere-port"
+	// FlagVsphereFingerprint is the fingerprint of the server certificate of vCenter to use.
+	FlagVsphereFingerprint = "vsphere-fingerprint"
+	// FlagVsphereDatacenter is the name of the datacenter to use to store persistent volumes (and deploy temporary VMs to create them).
+	FlagVsphereDatacenter = "vsphere-datacenter"
+	// FlagVsphereDatastore is the name of the datastore that is in the given datacenter, and is available on all nodes.
+	FlagVsphereDatastore = "vsphere-datastore"
+	// FlagVsphereResourcePool is the path of the resource pool to create temporary VMs in during volume creation (for example "Cluster/Pool").
+	FlagVsphereResourcePool = "vsphere-resourcepool"
+	// FlagVsphereFolder is the name of the folder (aka blue folder) to create temporary VMs in during volume creation as well as all Kubernetes nodes are there.
+	FlagVsphereFolder = "vsphere-folder"
+	// FlagVsphereUsername is the name of vCenter SSO user to use for deploying persistent volumes. (Should be avoided in favor of a K8S secret.)
+	FlagVsphereUsername = "vsphere-username"
+	// FlagVspherePassword is the password of vCenter SSO user to use for deploying persistent volumes. (Should be avoided in favor of a K8S secret.)
+	FlagVspherePassword = "vsphere-password"
 
 	// FlagDisableDefaultStorageClass adds default storage class.
 	FlagDisableDefaultStorageClass = "disable-default-storage-class"

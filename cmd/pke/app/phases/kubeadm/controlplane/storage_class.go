@@ -24,7 +24,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
 
-func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider, azureStorageAccountType, azuerStorageKind string) error {
+func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider string, azureStorageAccountType, azureStorageKind string) error {
 	if disableDefaultStorageClass {
 		return nil
 	}
@@ -34,7 +34,9 @@ func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cl
 	case constants.CloudProviderAmazon:
 		err = writeStorageClassAmazon(out, storageClassConfig)
 	case constants.CloudProviderAzure:
-		err = writeStorageClassAzure(out, storageClassConfig, azureStorageAccountType, azuerStorageKind)
+		err = writeStorageClassAzure(out, storageClassConfig, azureStorageAccountType, azureStorageKind)
+	case constants.CloudProviderVsphere:
+		err = writeStorageClassVsphere(out, storageClassConfig)
 	default:
 		err = writeStorageClassLocalPathStorage(out, storageClassConfig)
 	}
@@ -84,6 +86,30 @@ parameters:
 	d := data{}
 
 	return tmpl.Execute(w, d)
+}
+
+func writeStorageClassVsphere(out io.Writer, filename string) error {
+	_, _ = fmt.Fprintf(out, "[%s] creating Amazon default storage class\n", use)
+	// https://vmware.github.io/vsphere-storage-for-kubernetes/documentation/policy-based-mgmt.html#vmfs-and-nfs
+	conf := `kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: vsphere
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/vsphere-volume
+parameters:
+  diskformat: thin
+`
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	_, err = w.WriteString(conf)
+	return err
 }
 
 func writeStorageClassAzure(out io.Writer, filename string, storageAccountType, kind string) error {

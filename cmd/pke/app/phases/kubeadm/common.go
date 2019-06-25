@@ -151,6 +151,84 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
 	return nil
 }
 
+func WriteKubeadmVsphereConfig(out io.Writer, filename, cloudProvider, server string, port int, fingerprint, datacenter, datastore, resourcePool, folder, username, password string) error {
+	if cloudProvider != constants.CloudProviderVsphere {
+		return nil
+	}
+
+	conf := `
+[Global]
+
+[VirtualCenter "{{ .Server }}"]
+port = "{{ .Port }}"
+datacenters = "{{ .Datacenter }}"
+{{ if .Fingerprint }}
+thumbprint = "{{ .Fingerprint }}"
+{{ end }}
+{{ if .Username }}
+user = "{{ .Username }}"
+{{ end }}
+{{ if .Password }}
+password = "{{ .Password }}"
+{{ end }}
+
+[Workspace]
+server = "{{ .Server }}"
+datacenter = "{{ .Datacenter }}"
+default-datastore = "{{ .Datastore }}"
+resourcepool-path = "{{ .ResourcePool }}"
+folder = "{{ .Folder }}"
+
+[Disk]
+scsicontrollertype = pvscsi	
+	`
+
+	tmpl, err := template.New("vsphere-config").Parse(conf)
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Dir(filename)
+	_, _ = fmt.Fprintf(out, "creating directory: %q\n", dir)
+	err = os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	type data struct {
+		Server       string
+		Port         int
+		Fingerprint  string
+		Datacenter   string
+		Datastore    string
+		ResourcePool string
+		Folder       string
+		Username     string
+		Password     string
+	}
+
+	d := data{
+		Server:       server,
+		Port:         port,
+		Fingerprint:  fingerprint,
+		Datacenter:   datacenter,
+		Datastore:    datastore,
+		ResourcePool: resourcePool,
+		Folder:       folder,
+		Username:     username,
+		Password:     password,
+	}
+
+	return tmpl.Execute(w, d)
+}
+
 // WriteEncryptionProviderConfig creates configuration to encrypt Kubernetes secrets.
 // If encryptionSecret is not provided, but the configuration is already in place
 // secret will NOT be replaced with a newly generated one.
