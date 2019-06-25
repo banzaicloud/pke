@@ -152,6 +152,9 @@ const (
 	// FlagVspherePassword is the password of vCenter SSO user to use for deploying persistent volumes. (Should be avoided in favor of a K8S secret.)
 	FlagVspherePassword = "vsphere-password"
 
+	// FlagLbRange is the IPv4 range advertised via ARP and allocated for LoadBalancer Services.
+	FlagLbRange = "lb-range"
+
 	// FlagDisableDefaultStorageClass adds default storage class.
 	FlagDisableDefaultStorageClass = "disable-default-storage-class"
 

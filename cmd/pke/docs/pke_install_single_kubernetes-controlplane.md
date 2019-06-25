@@ -50,6 +50,7 @@ pke install single kubernetes-controlplane [flags]
       --kubernetes-pod-network-cidr string                range of IP addresses for the pod network (default "10.20.0.0/16")
       --kubernetes-service-cidr string                    range of IP address for service VIPs (default "10.10.0.0/16")
       --kubernetes-version string                         Kubernetes version (default "1.14.3")
+      --lb-range string                                   Advertise the specified IPv4 range via ARP and allocate addresses for LoadBalancer Services (non-cloud only, example: 192.168.0.100-192.168.0.110)
       --pipeline-cluster-id int32                         Cluster ID to use with Pipeline API
       --pipeline-insecure                                 If the Pipeline API should not verify the API's certificate
       --pipeline-nodepool string                          name of the nodepool the node belongs to

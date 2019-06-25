@@ -123,6 +123,7 @@ type ControlPlane struct {
 	vsphereUsername                  string
 	vspherePassword                  string
 	cidr                             string
+	lbRange                          string
 	disableDefaultStorageClass       bool
 	taints                           []string
 	etcdEndpoints                    []string
@@ -217,6 +218,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
 	// Storage class
 	flags.Bool(constants.FlagDisableDefaultStorageClass, false, "Do not deploy a default storage class")
+	flags.String(constants.FlagLbRange, "", "Advertise the specified IPv4 range via ARP and allocate addresses for LoadBalancer Services (non-cloud only, example: 192.168.0.100-192.168.0.110)")
 	// Taints
 	flags.StringSlice(constants.FlagTaints, []string{"node-role.kubernetes.io/master:NoSchedule"}, "Specifies the taints the Node should be registered with")
 	// External Etcd
@@ -602,6 +604,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
+	c.lbRange, err = cmd.Flags().GetString(constants.FlagLbRange)
+	if err != nil {
+		return
+	}
 	c.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
 	if err != nil {
 		return
@@ -813,7 +819,10 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		return err
 	}
 
-	return nil
+	// install MetalLB if specified
+	err = applyLbRange(out, c.lbRange, c.cloudProvider)
+
+	return err
 }
 
 func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string) error {
