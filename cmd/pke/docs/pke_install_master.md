@@ -57,6 +57,15 @@ pke install master [flags]
   -t, --pipeline-token string                             Token for accessing Pipeline API
   -u, --pipeline-url string                               Pipeline API server url
       --taints strings                                    Specifies the taints the Node should be registered with (default [node-role.kubernetes.io/master:NoSchedule])
+      --vsphere-datacenter string                         The name of the datacenter to use to store persistent volumes (and deploy temporary VMs to create them)
+      --vsphere-datastore string                          The name of the datastore that is in the given datacenter, and is available on all nodes
+      --vsphere-fingerprint string                        The fingerprint of the server certificate of vCenter to use
+      --vsphere-folder string                             The name of the folder (aka blue folder) to create temporary VMs in during volume creation, as well as all Kubernetes nodes are in
+      --vsphere-password string                           The password of vCenter SSO user to use for deploying persistent volumes (should be avoided in favor of a K8S secret)
+      --vsphere-port int                                  The TCP port where vCenter listens (default 443)
+      --vsphere-resourcepool string                       The path of the resource pool to create temporary VMs in during volume creation (for example "Cluster/Pool")
+      --vsphere-server string                             The hostname or IP of vCenter to use
+      --vsphere-username string                           The name of vCenter SSO user to use for deploying persistent volumes (Should be avoided in favor of a K8S secret)
       --with-audit-log                                    Enable apiserver audit log
       --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
 ```
