@@ -462,6 +462,11 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		}
 	}
 
+	// install MetalLB if specified
+	if err := applyLbRange(out, c.lbRange, c.cloudProvider); err != nil {
+		return err
+	}
+
 	return taintRemoveNoSchedule(out, c.clusterMode, kubeConfig)
 }
 
@@ -819,10 +824,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		return err
 	}
 
-	// install MetalLB if specified
-	err = applyLbRange(out, c.lbRange, c.cloudProvider)
-
-	return err
+	return nil
 }
 
 func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string) error {
