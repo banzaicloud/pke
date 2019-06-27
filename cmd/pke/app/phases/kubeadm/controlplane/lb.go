@@ -51,23 +51,10 @@ func applyLbRange(out io.Writer, lbRange, cloudProvider string) error {
 	return err
 }
 
-func writeLbRangeConfig(out io.Writer, filename, lbRange string) error {
-	conf := `
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: config
-  namespace: metallb-system
-data:
-  config: |
-    address-pools:
-    - name: default
-      protocol: layer2
-      addresses:
-      - {{ .Range }}
-`
+//go:generate templify -t ${GOTMPL} -p controlplane -f lbRangeConfig lb_range_config.yaml.tmpl
 
-	tmpl, err := template.New("metallb-config").Parse(conf)
+func writeLbRangeConfig(out io.Writer, filename, lbRange string) error {
+	tmpl, err := template.New("metallb-config").Parse(lbRangeConfigTemplate())
 	if err != nil {
 		return err
 	}
