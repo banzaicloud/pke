@@ -34,7 +34,7 @@ func kubeadmConfigV1Beta1Template() string {
 		"    # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker\n" +
 		"    {{ if .CloudProvider }}\n" +
 		"    cloud-provider: \"{{ .CloudProvider }}\"{{end}}\n" +
-		"    {{ if eq .CloudProvider \"azure\" }}cloud-config: \"/etc/kubernetes/{{ .CloudProvider }}.conf\"{{end}}\n" +
+		"    {{if .KubeletCloudConfig }}cloud-config: \"/etc/kubernetes/{{ .CloudProvider }}.conf\"{{end}}\n" +
 		"    read-only-port: \"0\"\n" +
 		"    anonymous-auth: \"false\"\n" +
 		"    streaming-connection-idle-timeout: \"5m\"\n" +

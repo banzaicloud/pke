@@ -8,6 +8,7 @@ PACKAGE = github.com/banzaicloud/pke
 
 # Build variables
 BUILD_DIR ?= $(PWD)/build
+BINARY_NAME ?= pke
 VERSION ?= $(shell git describe --tags --exact-match 2>/dev/null || git symbolic-ref -q --short HEAD)
 COMMIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null)
 BUILD_DATE ?= $(shell date +%FT%T%z)
@@ -36,12 +37,16 @@ pke: gogenerate ## Build PKE binary
 ifneq (${IGNORE_GOLANG_VERSION_REQ}, 1)
 	@printf "${GOLANG_VERSION}\n$$(go version | awk '{sub(/^go/, "", $$3);print $$3}')" | sort -t '.' -k 1,1 -k 2,2 -k 3,3 -g | head -1 | grep -q -E "^${GOLANG_VERSION}$$" || (printf "Required Go version is ${GOLANG_VERSION}\nInstalled: `go version`" && exit 1)
 endif
-	go build -tags "${GOTAGS}" -ldflags "${LDFLAGS}" -o ${BUILD_DIR}/pke ${PACKAGE}/cmd/pke
+	go build -tags "${GOTAGS}" -ldflags "${LDFLAGS}" -o ${BUILD_DIR}/${BINARY_NAME} ${PACKAGE}/cmd/pke
 
 .PHONY: pke-docs
 pke-docs: ## Generate documentation for PKE
 	rm -rf cmd/pke/docs/*.md
 	cd cmd/pke/docs/ && go run -v generate.go
+
+.PHONY: pke-linux
+pke-linux: ## Cross-compile pke for linux
+	env GOOS=linux GOARCH=amd64 ${MAKE} pke BINARY_NAME=pke-linux
 
 .PHONY: gogenerate
 gogenerate: bin/templify ## Generate go files from template
