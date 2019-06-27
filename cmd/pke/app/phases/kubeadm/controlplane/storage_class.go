@@ -18,13 +18,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"text/template"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
+	"github.com/pkg/errors"
 )
 
-func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider, azureStorageAccountType, azuerStorageKind string) error {
+func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider string, azureStorageAccountType, azureStorageKind string) error {
 	if disableDefaultStorageClass {
 		return nil
 	}
@@ -34,7 +36,9 @@ func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cl
 	case constants.CloudProviderAmazon:
 		err = writeStorageClassAmazon(out, storageClassConfig)
 	case constants.CloudProviderAzure:
-		err = writeStorageClassAzure(out, storageClassConfig, azureStorageAccountType, azuerStorageKind)
+		err = writeStorageClassAzure(out, storageClassConfig, azureStorageAccountType, azureStorageKind)
+	case constants.CloudProviderVsphere:
+		err = writeStorageClassVsphere(out, storageClassConfig)
 	default:
 		err = writeStorageClassLocalPathStorage(out, storageClassConfig)
 	}
@@ -84,6 +88,63 @@ parameters:
 	d := data{}
 
 	return tmpl.Execute(w, d)
+}
+
+func testEnableUUIDTrue(device string) (bool, error) {
+	if _, err := os.Stat(device); err != nil {
+		return false, err
+	}
+
+	if _, err := os.Stat("/usr/lib/udev/scsi_id"); err != nil {
+		return false, err
+	}
+
+	cmd := exec.Command("/usr/lib/udev/scsi_id", "-g", "-u", "-d", device)
+	err := cmd.Run()
+	if err == nil {
+		return true, nil
+	}
+
+	if err, ok := err.(*exec.ExitError); ok {
+		if err.ExitCode() == 1 {
+			return false, nil
+		}
+	}
+	return false, err
+}
+
+func writeStorageClassVsphere(out io.Writer, filename string) error {
+	ok, err := testEnableUUIDTrue("/dev/sda")
+	switch {
+	case err != nil:
+		_, _ = fmt.Fprintf(out, "[%s] could not test for disk.EnableUUID=TRUE setting of the VM: %v\n", use, err)
+	case !ok:
+		return errors.New("It seems like disk.EnableUUID option of this virtual machine is not enabled. Persistent volume vSphere integration won't work without this setting.")
+	default:
+		_, _ = fmt.Fprintf(out, "[%s] test for disk.EnableUUID=TRUE passed\n", use)
+	}
+
+	_, _ = fmt.Fprintf(out, "[%s] creating vSphere default storage class\n", use)
+	// https://vmware.github.io/vsphere-storage-for-kubernetes/documentation/policy-based-mgmt.html#vmfs-and-nfs
+	conf := `kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: vsphere
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/vsphere-volume
+parameters:
+  diskformat: thin
+`
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
+
+	_, err = w.WriteString(conf)
+	return err
 }
 
 func writeStorageClassAzure(out io.Writer, filename string, storageAccountType, kind string) error {

@@ -64,6 +64,7 @@ const (
 	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
 	kubeadmAmazonConfig           = "/etc/kubernetes/aws.conf"
 	kubeadmAzureConfig            = "/etc/kubernetes/azure.conf"
+	kubeadmVsphereConfig          = "/etc/kubernetes/vsphere.conf"
 	storageClassConfig            = "/etc/kubernetes/storage-class.yaml"
 	kubernetesCASigningCert       = "/etc/kubernetes/pki/cm-signing-ca.crt"
 	admissionConfig               = "/etc/kubernetes/admission-control.yaml"
@@ -112,7 +113,17 @@ type ControlPlane struct {
 	azureStorageAccountType          string
 	azureStorageKind                 string
 	azureExcludeMasterFromStandardLB bool
+	vsphereServer                    string
+	vspherePort                      int
+	vsphereFingerprint               string
+	vsphereDatacenter                string
+	vsphereDatastore                 string
+	vsphereResourcePool              string
+	vsphereFolder                    string
+	vsphereUsername                  string
+	vspherePassword                  string
 	cidr                             string
+	lbRange                          string
 	disableDefaultStorageClass       bool
 	taints                           []string
 	etcdEndpoints                    []string
@@ -186,6 +197,18 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
 	flags.String(constants.FlagAzureStorageAccountType, "Standard_LRS", "Azure storage account Sku tier")
 	flags.String(constants.FlagAzureStorageKind, "dedicated", "Possible values are shared, dedicated, and managed")
+
+	// VMware vSphere specific flags
+	flags.String(constants.FlagVsphereServer, "", "The hostname or IP of vCenter to use")
+	flags.Int(constants.FlagVspherePort, 443, "The TCP port where vCenter listens")
+	flags.String(constants.FlagVsphereFingerprint, "", "The fingerprint of the server certificate of vCenter to use")
+	flags.String(constants.FlagVsphereDatacenter, "", "The name of the datacenter to use to store persistent volumes (and deploy temporary VMs to create them)")
+	flags.String(constants.FlagVsphereDatastore, "", "The name of the datastore that is in the given datacenter, and is available on all nodes")
+	flags.String(constants.FlagVsphereResourcePool, "", `The path of the resource pool to create temporary VMs in during volume creation (for example "Cluster/Pool")`)
+	flags.String(constants.FlagVsphereFolder, "", "The name of the folder (aka blue folder) to create temporary VMs in during volume creation, as well as all Kubernetes nodes are in")
+	flags.String(constants.FlagVsphereUsername, "", "The name of vCenter SSO user to use for deploying persistent volumes (Should be avoided in favor of a K8S secret)")
+	flags.String(constants.FlagVspherePassword, "", "The password of vCenter SSO user to use for deploying persistent volumes (should be avoided in favor of a K8S secret)")
+
 	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
 	flags.StringP(constants.FlagPipelineAPIToken, constants.FlagPipelineAPITokenShort, "", "Token for accessing Pipeline API")
@@ -195,6 +218,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagInfrastructureCIDR, "192.168.64.0/20", "network CIDR for the actual machine")
 	// Storage class
 	flags.Bool(constants.FlagDisableDefaultStorageClass, false, "Do not deploy a default storage class")
+	flags.String(constants.FlagLbRange, "", "Advertise the specified IPv4 range via ARP and allocate addresses for LoadBalancer Services (non-cloud only, example: 192.168.0.100-192.168.0.110)")
 	// Taints
 	flags.StringSlice(constants.FlagTaints, []string{"node-role.kubernetes.io/master:NoSchedule"}, "Specifies the taints the Node should be registered with")
 	// External Etcd
@@ -438,6 +462,11 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		}
 	}
 
+	// install MetalLB if specified
+	if err := applyLbRange(out, c.lbRange, c.cloudProvider); err != nil {
+		return err
+	}
+
 	return taintRemoveNoSchedule(out, c.clusterMode, kubeConfig)
 }
 
@@ -568,11 +597,19 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
+	err = c.vsphereParameters(cmd)
+	if err != nil {
+		return
+	}
 	c.cidr, err = cmd.Flags().GetString(constants.FlagInfrastructureCIDR)
 	if err != nil {
 		return
 	}
 	c.disableDefaultStorageClass, err = cmd.Flags().GetBool(constants.FlagDisableDefaultStorageClass)
+	if err != nil {
+		return
+	}
+	c.lbRange, err = cmd.Flags().GetString(constants.FlagLbRange)
 	if err != nil {
 		return
 	}
@@ -623,6 +660,37 @@ func (c *ControlPlane) azureParameters(cmd *cobra.Command) (err error) {
 	}
 	c.azureStorageKind, err = cmd.Flags().GetString(constants.FlagAzureStorageKind)
 
+	return
+}
+
+func (c *ControlPlane) vsphereParameters(cmd *cobra.Command) (err error) {
+	if c.vsphereServer, err = cmd.Flags().GetString(constants.FlagVsphereServer); err != nil {
+		return
+	}
+	if c.vspherePort, err = cmd.Flags().GetInt(constants.FlagVspherePort); err != nil {
+		return
+	}
+	if c.vsphereFingerprint, err = cmd.Flags().GetString(constants.FlagVsphereFingerprint); err != nil {
+		return
+	}
+	if c.vsphereDatacenter, err = cmd.Flags().GetString(constants.FlagVsphereDatacenter); err != nil {
+		return
+	}
+	if c.vsphereDatastore, err = cmd.Flags().GetString(constants.FlagVsphereDatastore); err != nil {
+		return
+	}
+	if c.vsphereResourcePool, err = cmd.Flags().GetString(constants.FlagVsphereResourcePool); err != nil {
+		return
+	}
+	if c.vsphereFolder, err = cmd.Flags().GetString(constants.FlagVsphereFolder); err != nil {
+		return
+	}
+	if c.vsphereUsername, err = cmd.Flags().GetString(constants.FlagVsphereUsername); err != nil {
+		return
+	}
+	if c.vspherePassword, err = cmd.Flags().GetString(constants.FlagVspherePassword); err != nil {
+		return
+	}
 	return
 }
 
@@ -709,6 +777,12 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 
 	// write kubeadm azure.conf
 	err = kubeadm.WriteKubeadmAzureConfig(out, kubeadmAzureConfig, c.cloudProvider, c.azureTenantID, c.azureSubnetName, c.azureSecurityGroupName, c.azureVNetName, c.azureVNetResourceGroup, c.azureVMType, c.azureLoadBalancerSku, c.azureRouteTableName, c.azureExcludeMasterFromStandardLB)
+	if err != nil {
+		return err
+	}
+
+	// write vsphere.conf
+	err = kubeadm.WriteKubeadmVsphereConfig(out, kubeadmVsphereConfig, c.cloudProvider, c.vsphereServer, c.vspherePort, c.vsphereFingerprint, c.vsphereDatacenter, c.vsphereDatastore, c.vsphereResourcePool, c.vsphereFolder, c.vsphereUsername, c.vspherePassword)
 	if err != nil {
 		return err
 	}

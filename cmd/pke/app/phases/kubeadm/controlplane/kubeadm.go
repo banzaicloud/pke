@@ -95,6 +95,13 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		return err
 	}
 
+	// decide if kubelet needs the cloud-provider config
+	kubeletCloudConfig := false
+	switch c.cloudProvider {
+	case "azure", "vsphere":
+		kubeletCloudConfig = true
+	}
+
 	type data struct {
 		APIServerAdvertiseAddress   string
 		APIServerBindPort           string
@@ -107,6 +114,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ServiceCIDR                 string
 		PodCIDR                     string
 		CloudProvider               string
+		KubeletCloudConfig          bool
 		Nodepool                    string
 		ControllerManagerSigningCA  string
 		OIDCIssuerURL               string
@@ -137,6 +145,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ServiceCIDR:                 c.serviceCIDR,
 		PodCIDR:                     c.podNetworkCIDR,
 		CloudProvider:               c.cloudProvider,
+		KubeletCloudConfig:          kubeletCloudConfig,
 		Nodepool:                    c.nodepool,
 		ControllerManagerSigningCA:  c.controllerManagerSigningCA,
 		OIDCIssuerURL:               c.oidcIssuerURL,
@@ -178,7 +187,7 @@ nodeRegistration:
     # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker
   {{if .CloudProvider }}
     cloud-provider: "{{ .CloudProvider }}"{{end}}
-    {{if eq .CloudProvider "azure" }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
+    {{if .KubeletCloudConfig }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
     read-only-port: "0"
     anonymous-auth: "false"
     streaming-connection-idle-timeout: "5m"
@@ -313,7 +322,7 @@ nodeRegistration:
     # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker
 {{if .CloudProvider }}
     cloud-provider: "{{ .CloudProvider }}"{{end}}
-    {{if eq .CloudProvider "azure" }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
+    {{if .KubeletCloudConfig }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
     read-only-port: "0"
     anonymous-auth: "false"
     streaming-connection-idle-timeout: "5m"
