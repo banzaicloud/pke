@@ -51,21 +51,24 @@ func (c *Command) CombinedOutput() ([]byte, error) {
 	return out, err
 }
 
-func (c *Command) CombinedOutputAsync() error {
+func (c *Command) CombinedOutputAsync() (string, error) {
+	lastLine := ""
+
 	c.ts = time.Now()
 	stdout, err := c.Cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return lastLine, err
 	}
 	stderr, err := c.Cmd.StderrPipe()
 	if err != nil {
-		return err
+		return lastLine, err
 	}
 	wait := make(chan bool, 2)
 	go func() {
 		scanner := bufio.NewScanner(stdout)
 		for scanner.Scan() {
 			m := scanner.Text()
+			lastLine = m
 			_, _ = fmt.Fprintf(c.w, "  out> %s\n", m)
 		}
 		wait <- true
@@ -74,6 +77,7 @@ func (c *Command) CombinedOutputAsync() error {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
 			m := scanner.Text()
+			lastLine = m
 			_, _ = fmt.Fprintf(c.w, "  err> %s\n", m)
 		}
 		wait <- true
@@ -81,13 +85,13 @@ func (c *Command) CombinedOutputAsync() error {
 
 	err = c.Start()
 	if err != nil {
-		return err
+		return lastLine, err
 	}
 
 	err = c.Wait()
 	<-wait
 
-	return err
+	return lastLine, err
 }
 
 func (c *Command) Output() ([]byte, error) {

@@ -42,7 +42,7 @@ var (
 )
 
 func YumInstall(out io.Writer, packages []string) error {
-	err := runner.Cmd(out, cmdYum, append([]string{"install", "-y"}, packages...)...).CombinedOutputAsync()
+	_, err := runner.Cmd(out, cmdYum, append([]string{"install", "-y"}, packages...)...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}

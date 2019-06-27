@@ -792,7 +792,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		"init",
 		"--config=" + kubeadmConfig,
 	}
-	err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
+	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
@@ -846,7 +846,8 @@ func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string) error {
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", "-")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	cmd.Stdin = strings.NewReader(input)
-	return cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
+	return err
 }
 
 func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig string) error {
@@ -876,7 +877,8 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 	// kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')&env.IPALLOC_RANGE=10.200.0.0/16"
 	cmd = runner.Cmd(out, cmdKubectl, "apply", "-f", u.String())
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
+	return err
 }
 
 func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) error {
@@ -988,7 +990,7 @@ func waitForAPIServer(out io.Writer) error {
 			// kubectl get cs. ensures kube-apiserver is restarted.
 			cmd := runner.Cmd(out, cmdKubectl, "get", "cs")
 			cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-			err := cmd.CombinedOutputAsync()
+			_, err := cmd.CombinedOutputAsync()
 			if err == nil {
 				return nil
 			}
@@ -1007,7 +1009,8 @@ func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error 
 	// kubectl taint node -l node-role.kubernetes.io/master node-role.kubernetes.io/master:NoSchedule-
 	cmd := runner.Cmd(out, cmdKubectl, "taint", "node", "-l node-role.kubernetes.io/master", "node-role.kubernetes.io/master:NoSchedule-")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err := cmd.CombinedOutputAsync()
+	return err
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f certificateAutoApprover certificate_auto_approver.yaml.tmpl
@@ -1029,7 +1032,8 @@ func writeCertificateAutoApprover(out io.Writer) error {
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
+	return err
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f podSecurityPolicy pod_security_policy.yaml.tmpl
@@ -1051,13 +1055,15 @@ func writePodSecurityPolicyConfig(out io.Writer) error {
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
+	return err
 }
 
 func deleteKubeDNSReplicaSet(out io.Writer) error {
 	cmd := runner.Cmd(out, cmdKubectl, "delete", "rs", "-n", "kube-system", "k8s-app=kube-dns")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	return cmd.CombinedOutputAsync()
+	_, err := cmd.CombinedOutputAsync()
+	return err
 }
 
 func writeMasterConfig(out io.Writer, a bool, kubernetesVersion, encryptionSecret string) error {

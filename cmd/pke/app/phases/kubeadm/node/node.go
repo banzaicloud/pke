@@ -19,7 +19,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
+	"time"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
@@ -44,6 +46,7 @@ const (
 	cniDir             = "/etc/cni/net.d"
 	cniBridgeConfig    = "/etc/cni/net.d/10-bridge.conf"
 	cniLoopbackConfig  = "/etc/cni/net.d/99-loopback.conf"
+	maxJoinRetries     = 5
 )
 
 var _ phases.Runnable = (*Node)(nil)
@@ -274,9 +277,19 @@ func (n *Node) install(out io.Writer) error {
 		return err
 	}
 
-	// kubeadm join 10.240.0.11:6443 --token 0uk28q.e5i6ewi7xb0g8ye9 --discovery-token-ca-cert-hash sha256:a1a74c00ecccf947b69b49172390018096affbbae25447c4bd0c0906273c1482 --cri-socket=unix:///run/containerd/containerd.sock
-	if err := runner.Cmd(out, cmdKubeadm, "join", "--config="+kubeadmConfig).CombinedOutputAsync(); err != nil {
-		return err
+	for i := 0; i < maxJoinRetries; i++ {
+		// kubeadm join 10.240.0.11:6443 --token 0uk28q.e5i6ewi7xb0g8ye9 --discovery-token-ca-cert-hash sha256:a1a74c00ecccf947b69b49172390018096affbbae25447c4bd0c0906273c1482 --cri-socket=unix:///run/containerd/containerd.sock
+		ll, err := runner.Cmd(out, cmdKubeadm, "join", "--config="+kubeadmConfig).CombinedOutputAsync()
+		if err == nil {
+			break
+		}
+
+		// re-run command on connection refused error
+		if !strings.Contains(ll, "connection refused") {
+			return err
+		}
+		_, _ = fmt.Fprintf(out, "[%s] re-run %q command\n", use, cmdKubeadm)
+		time.Sleep(time.Second)
 	}
 
 	return linux.SystemctlEnableAndStart(out, "kubelet")

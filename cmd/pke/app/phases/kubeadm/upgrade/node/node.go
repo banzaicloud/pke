@@ -109,7 +109,7 @@ func (n *Node) upgrade(out io.Writer, from, to *semver.Version) error {
 		"--kubelet-version",
 		to.String(),
 	}
-	err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
+	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}

@@ -48,7 +48,7 @@ func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cl
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", storageClassConfig)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	err = cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
