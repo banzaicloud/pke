@@ -134,39 +134,14 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
 	return nil
 }
 
+//go:generate templify -t ${GOTMPL} -p kubeadm -f kubeadmVsphereConfig kubeadm_vsphere_config.toml.tmpl
+
 func WriteKubeadmVsphereConfig(out io.Writer, filename, cloudProvider, server string, port int, fingerprint, datacenter, datastore, resourcePool, folder, username, password string) error {
 	if cloudProvider != constants.CloudProviderVsphere {
 		return nil
 	}
 
-	conf := `
-[Global]
-
-[VirtualCenter "{{ .Server }}"]
-port = "{{ .Port }}"
-datacenters = "{{ .Datacenter }}"
-{{ if .Fingerprint }}
-thumbprint = "{{ .Fingerprint }}"
-{{ end }}
-{{ if .Username }}
-user = "{{ .Username }}"
-{{ end }}
-{{ if .Password }}
-password = "{{ .Password }}"
-{{ end }}
-
-[Workspace]
-server = "{{ .Server }}"
-datacenter = "{{ .Datacenter }}"
-default-datastore = "{{ .Datastore }}"
-resourcepool-path = "{{ .ResourcePool }}"
-folder = "{{ .Folder }}"
-
-[Disk]
-scsicontrollertype = pvscsi	
-	`
-
-	tmpl, err := template.New("vsphere-config").Parse(conf)
+	tmpl, err := template.New("vsphere-config").Parse(kubeadmVsphereConfigTemplate())
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,24 @@
+[Global]
+
+[VirtualCenter "{{ .Server }}"]
+port = "{{ .Port }}"
+datacenters = "{{ .Datacenter }}"
+{{ if .Fingerprint }}
+    thumbprint = "{{ .Fingerprint }}"
+{{ end }}
+{{ if .Username }}
+    user = "{{ .Username }}"
+{{ end }}
+{{ if .Password }}
+    password = "{{ .Password }}"
+{{ end }}
+
+[Workspace]
+server = "{{ .Server }}"
+datacenter = "{{ .Datacenter }}"
+default-datastore = "{{ .Datastore }}"
+resourcepool-path = "{{ .ResourcePool }}"
+folder = "{{ .Folder }}"
+
+[Disk]
+scsicontrollertype = pvscsi

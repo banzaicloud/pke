@@ -103,6 +103,8 @@ func testEnableUUIDTrue(device string) (bool, error) {
 	return false, err
 }
 
+//go:generate templify -t ${GOTMPL} -p controlplane -f storageClassVsphere storage_class_vsphere.yaml.tmpl
+
 func writeStorageClassVsphere(out io.Writer, filename string) error {
 	ok, err := testEnableUUIDTrue("/dev/sda")
 	switch {
@@ -116,16 +118,6 @@ func writeStorageClassVsphere(out io.Writer, filename string) error {
 
 	_, _ = fmt.Fprintf(out, "[%s] creating vSphere default storage class\n", use)
 	// https://vmware.github.io/vsphere-storage-for-kubernetes/documentation/policy-based-mgmt.html#vmfs-and-nfs
-	conf := `kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: vsphere
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-provisioner: kubernetes.io/vsphere-volume
-parameters:
-  diskformat: thin
-`
 	// create and truncate write only file
 	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 	if err != nil {
@@ -133,7 +125,7 @@ parameters:
 	}
 	defer func() { _ = w.Close() }()
 
-	_, err = w.WriteString(conf)
+	_, err = w.WriteString(storageClassVsphereTemplate())
 	return err
 }
 
