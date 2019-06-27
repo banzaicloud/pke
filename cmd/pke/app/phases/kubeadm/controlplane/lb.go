@@ -35,7 +35,7 @@ func applyLbRange(out io.Writer, lbRange, cloudProvider string) error {
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", metalLbManifest)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	err := cmd.CombinedOutputAsync()
+	_, err := cmd.CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func applyLbRange(out io.Writer, lbRange, cloudProvider string) error {
 
 	cmd = runner.Cmd(out, cmdKubectl, "apply", "-f", metalLbConfig)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	err = cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
 	return err
 }
 
