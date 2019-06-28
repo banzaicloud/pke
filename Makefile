@@ -14,6 +14,7 @@ COMMIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null)
 BUILD_DATE ?= $(shell date +%FT%T%z)
 GIT_TREE_STATE ?= $(shell if [[ -z `git status --porcelain 2>/dev/null` ]]; then echo "clean"; else echo "dirty"; fi )
 LDFLAGS += -X main.Version=${VERSION} -X main.CommitHash=${COMMIT_HASH} -X main.BuildDate=${BUILD_DATE} -X main.GitTreeState=${GIT_TREE_STATE}
+GOPATH ?= `go env GOPATH`
 
 PIPELINE_VERSION = master
 
@@ -50,11 +51,14 @@ pke-linux: ## Cross-compile pke for linux
 
 .PHONY: gogenerate
 gogenerate: bin/templify ## Generate go files from template
-	export GOOS=linux && PATH=${PATH}:${PWD}/bin/ go generate ./cmd/...
+	GOOS=linux go generate ./cmd/...
+	GOOS=darwin go generate ./cmd/...
 
-bin/templify:
-	GOPATH=${BUILD_DIR}/templify go get github.com/wlbr/templify@${TEMPLIFY_VERSION}
-	@ln -sf ${BUILD_DIR}/templify/bin/templify bin/templify
+bin/templify: bin/templify-${TEMPLIFY_VERSION}
+	@ln -sf bin/templify-${TEMPLIFY_VERSION} bin/templify
+bin/templify-${TEMPLIFY_VERSION}:
+	go get github.com/wlbr/templify@${TEMPLIFY_VERSION}
+	@cp ${GOPATH}/bin/templify bin/templify-${TEMPLIFY_VERSION}
 
 .PHONY: check
 check: test lint ## Run tests and linters
