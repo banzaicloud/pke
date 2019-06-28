@@ -93,7 +93,7 @@ bin/golangci-lint-${GOLANGCI_VERSION}:
 
 .PHONY: lint
 lint: bin/golangci-lint ## Run linter
-	bin/golangci-lint run
+	bin/golangci-lint run --skip-files '.*\.(json|toml|yaml)\.go'
 
 bin/licensei: bin/licensei-${LICENSEI_VERSION}
 	@ln -sf licensei-${LICENSEI_VERSION} bin/licensei
