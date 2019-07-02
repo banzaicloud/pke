@@ -51,6 +51,7 @@ pke-linux: ## Cross-compile pke for linux
 
 .PHONY: gogenerate
 gogenerate: bin/templify ## Generate go files from template
+	export PATH=${PATH}:${GOPATH}/bin
 	GOOS=linux go generate ./cmd/...
 	GOOS=darwin go generate ./cmd/...
 
