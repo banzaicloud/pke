@@ -7,7 +7,7 @@ CERTHASH="$3"
 
 systemctl is-active kubelet || ( \
     /banzaicloud/pke version -o yaml || ( \
-        curl -v https://banzaicloud.com/downloads/pke/pke-0.4.9 -o /banzaicloud/pke && \
+        curl -v https://banzaicloud.com/downloads/pke/pke-latest -o /banzaicloud/pke && \
         chmod +x /usr/local/bin/pke
     ) && \
 
