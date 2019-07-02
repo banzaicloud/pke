@@ -278,8 +278,9 @@ func (n *Node) install(out io.Writer) error {
 	}
 
 	for i := 0; i < maxJoinRetries; i++ {
+		var ll string
 		// kubeadm join 10.240.0.11:6443 --token 0uk28q.e5i6ewi7xb0g8ye9 --discovery-token-ca-cert-hash sha256:a1a74c00ecccf947b69b49172390018096affbbae25447c4bd0c0906273c1482 --cri-socket=unix:///run/containerd/containerd.sock
-		ll, err := runner.Cmd(out, cmdKubeadm, "join", "--config="+kubeadmConfig).CombinedOutputAsync()
+		ll, err = runner.Cmd(out, cmdKubeadm, "join", "--config="+kubeadmConfig).CombinedOutputAsync()
 		if err == nil {
 			break
 		}
@@ -290,6 +291,9 @@ func (n *Node) install(out io.Writer) error {
 		}
 		_, _ = fmt.Fprintf(out, "[%s] re-run %q command\n", use, cmdKubeadm)
 		time.Sleep(time.Second)
+	}
+	if err != nil {
+		return err
 	}
 
 	return linux.SystemctlEnableAndStart(out, "kubelet")
