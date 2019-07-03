@@ -44,8 +44,8 @@ type Node struct {
 	kubernetesVersion string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &Node{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&Node{})
 }
 
 func (*Node) Use() string {
@@ -109,7 +109,7 @@ func (n *Node) upgrade(out io.Writer, from, to *semver.Version) error {
 		"--kubelet-version",
 		to.String(),
 	}
-	err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
+	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}

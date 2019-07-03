@@ -28,6 +28,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+//go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Alpha3 kubeadm_v1alpha3.yaml.tmpl
+//go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
+
 func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
@@ -65,9 +68,11 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	var conf string
 	switch ver.Minor() {
 	case 12, 13:
-		conf = kubeadmConfigV1Alpha3()
+		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
+		conf = kubeadmConfigV1Alpha3Template()
 	case 14:
-		conf = kubeadmConfigV1Beta1()
+		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
+		conf = kubeadmConfigV1Beta1Template()
 	default:
 		return errors.Errorf("unsupported Kubernetes version %q for kubeadm", n.kubernetesVersion)
 	}
@@ -112,90 +117,4 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	}
 
 	return tmpl.Execute(w, d)
-}
-
-func kubeadmConfigV1Beta1() string {
-	// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
-	return `apiVersion: kubeadm.k8s.io/v1beta1
-kind: JoinConfiguration
-{{if and .APIServerAdvertiseAddress .APIServerBindPort }}
-controlPlane:
-  localAPIEndpoint:
-    advertiseAddress: "{{ .APIServerAdvertiseAddress }}"
-    bindPort: {{ .APIServerBindPort }}{{end}}
-nodeRegistration:
-  criSocket: "unix:///run/containerd/containerd.sock"
-  taints:{{if not .Taints}} []{{end}}{{range .Taints}}
-    - key: "{{.Key}}"
-      value: "{{.Value}}"
-      effect: "{{.Effect}}"{{end}}
-  kubeletExtraArgs:
-{{if .Nodepool }}
-    node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
-{{if .CloudProvider }}
-    cloud-provider: "{{ .CloudProvider }}"{{end}}
-    {{if eq .CloudProvider "azure" }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
-    read-only-port: "0"
-    anonymous-auth: "false"
-    streaming-connection-idle-timeout: "5m"
-    protect-kernel-defaults: "true"
-    event-qps: "0"
-    client-ca-file: "/etc/kubernetes/pki/ca.crt"
-    feature-gates: "RotateKubeletServerCertificate=true"
-    rotate-certificates: "true"
-    tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
-    authorization-mode: "Webhook"
-discovery:
-  bootstrapToken:
-    apiServerEndpoint: "{{ .ControlPlaneEndpoint }}"
-    token: {{ .Token }}
-    caCertHashes:
-      - {{ .CACertHash }}
----
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serverTLSBootstrap: true
-`
-}
-
-func kubeadmConfigV1Alpha3() string {
-	// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
-	return `apiVersion: kubeadm.k8s.io/v1alpha3
-kind: JoinConfiguration
-{{if and .APIServerAdvertiseAddress .APIServerBindPort }}controlPlane: true
-apiEndpoint:
-  advertiseAddress: "{{ .APIServerAdvertiseAddress }}"
-  bindPort: {{ .APIServerBindPort }}{{end}}
-nodeRegistration:
-  criSocket: "unix:///run/containerd/containerd.sock"
-  taints:{{if not .Taints}} []{{end}}{{range .Taints}}
-    - key: "{{.Key}}"
-      value: "{{.Value}}"
-      effect: "{{.Effect}}"{{end}}
-  kubeletExtraArgs:
-{{if .Nodepool }}
-    node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
-{{if .CloudProvider }}
-    cloud-provider: "{{ .CloudProvider }}"{{end}}
-    {{if eq .CloudProvider "azure" }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
-    read-only-port: "0"
-    anonymous-auth: "false"
-    streaming-connection-idle-timeout: "5m"
-    protect-kernel-defaults: "true"
-    event-qps: "0"
-    client-ca-file: "/etc/kubernetes/pki/ca.crt"
-    feature-gates: "RotateKubeletServerCertificate=true"
-    rotate-certificates: "true"
-    tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
-    authorization-mode: "Webhook"
-discoveryTokenAPIServers:
-  - {{ .ControlPlaneEndpoint }}
-token: {{ .Token }}
-discoveryTokenCACertHashes:
-  - {{ .CACertHash }}
----
-apiVersion: kubelet.config.k8s.io/v1beta1
-kind: KubeletConfiguration
-serverTLSBootstrap: true
-`
 }

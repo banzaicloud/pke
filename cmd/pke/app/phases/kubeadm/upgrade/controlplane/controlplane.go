@@ -45,8 +45,8 @@ type ControlPlane struct {
 	kubernetesAdditionalControlPlane bool
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &ControlPlane{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&ControlPlane{})
 }
 
 func (*ControlPlane) Use() string {
@@ -123,7 +123,7 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 			to.String(),
 		}
 	}
-	err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
+	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}

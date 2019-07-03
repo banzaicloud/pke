@@ -19,11 +19,11 @@ type CreatePkeOnAzureClusterRequest struct {
 	SshSecretId string `json:"sshSecretId,omitempty"`
 	ScaleOptions ScaleOptions `json:"scaleOptions,omitempty"`
 	Type string `json:"type"`
-	Kubernetes map[string]interface{} `json:"kubernetes"`
+	Kubernetes CreatePkeClusterKubernetes `json:"kubernetes"`
 	// Non-existent resources will be created in this location. Existing resources that must have the same location as the cluster will be validated against this.
 	Location string `json:"location,omitempty"`
 	// Required resources will be created in this resource group.
 	ResourceGroup string `json:"resourceGroup"`
-	Network map[string]interface{} `json:"network,omitempty"`
-	Nodepools []map[string]interface{} `json:"nodepools,omitempty"`
+	Network PkeOnAzureClusterNetwork `json:"network,omitempty"`
+	Nodepools []PkeOnAzureNodePool `json:"nodepools,omitempty"`
 }

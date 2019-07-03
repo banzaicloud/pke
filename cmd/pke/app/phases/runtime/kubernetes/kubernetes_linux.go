@@ -120,6 +120,8 @@ func (r *Runtime) installRuntime(out io.Writer, kubernetesVersion string) error 
 	return nil
 }
 
+//go:generate templify -t ${GOTMPL} -p kubernetes -f kubeletKernelParams kubelet_kernel_params.yaml.tmpl
+
 func writeKubeletKernelParams(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
 
@@ -129,10 +131,5 @@ func writeKubeletKernelParams(out io.Writer, filename string) error {
 		return err
 	}
 
-	conf := `vm.overcommit_memory=1
-kernel.panic=10
-kernel.panic_on_oops=1
-`
-
-	return file.Overwrite(filename, conf)
+	return file.Overwrite(filename, kubeletKernelParamsTemplate())
 }

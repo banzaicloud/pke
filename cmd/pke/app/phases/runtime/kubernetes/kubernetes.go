@@ -37,8 +37,8 @@ type Runtime struct {
 	kubernetesVersion string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &Runtime{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&Runtime{})
 }
 
 func (r *Runtime) Use() string {
@@ -72,7 +72,7 @@ func (r *Runtime) Validate(cmd *cobra.Command) error {
 }
 
 func (r *Runtime) Run(out io.Writer) error {
-	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", r.Use())
+	_, _ = fmt.Fprintf(out, "[%s] running\n", r.Use())
 
 	return r.installRuntime(out, r.kubernetesVersion)
 }

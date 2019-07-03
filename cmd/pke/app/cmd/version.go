@@ -17,7 +17,6 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"runtime"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
@@ -37,19 +36,19 @@ type ClientVersion struct {
 }
 
 // NewCmdVersion provides the version information of banzai-cloud-pke.
-func NewCmdVersion(out io.Writer, gitVersion, gitCommit, gitTreeState, buildDate string) *cobra.Command {
+func NewCmdVersion(gitVersion, gitCommit, gitTreeState, buildDate string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print tool version",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return RunVersion(out, cmd, gitVersion, gitCommit, gitTreeState, buildDate)
+			return RunVersion(cmd, gitVersion, gitCommit, gitTreeState, buildDate)
 		},
 	}
 	cmd.Flags().StringP(constants.FlagOutput, constants.FlagOutputShort, "", "Output format; available options are 'yaml', 'json' and 'short'")
 	return cmd
 }
 
-func RunVersion(out io.Writer, cmd *cobra.Command, gitVersion, gitCommit, gitTreeState, buildDate string) error {
+func RunVersion(cmd *cobra.Command, gitVersion, gitCommit, gitTreeState, buildDate string) error {
 	of, err := cmd.Flags().GetString(constants.FlagOutput)
 	if err != nil {
 		return err
@@ -69,21 +68,21 @@ func RunVersion(out io.Writer, cmd *cobra.Command, gitVersion, gitCommit, gitTre
 
 	switch of {
 	case "":
-		_, _ = fmt.Fprintf(out, "kubeadm version: %#v\n", v)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "kubeadm version: %#v\n", v)
 	case "short":
-		_, _ = fmt.Fprintf(out, "%s\n", v.GitVersion)
+		_, _ = fmt.Fprintf(cmd.OutOrStdout(), "%s\n", v.GitVersion)
 	case "yaml":
 		y, err := yaml.Marshal(&v)
 		if err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintln(out, string(y))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(y))
 	case "json":
 		y, err := json.MarshalIndent(&v, "", "  ")
 		if err != nil {
 			return err
 		}
-		_, _ = fmt.Fprintln(out, string(y))
+		_, _ = fmt.Fprintln(cmd.OutOrStdout(), string(y))
 	default:
 		return errors.Errorf("invalid output format: %s", of)
 	}

@@ -14,6 +14,7 @@ COMMIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null)
 BUILD_DATE ?= $(shell date +%FT%T%z)
 GIT_TREE_STATE ?= $(shell if [[ -z `git status --porcelain 2>/dev/null` ]]; then echo "clean"; else echo "dirty"; fi )
 LDFLAGS += -X main.Version=${VERSION} -X main.CommitHash=${COMMIT_HASH} -X main.BuildDate=${BUILD_DATE} -X main.GitTreeState=${GIT_TREE_STATE}
+GOPATH ?= `go env GOPATH`
 
 PIPELINE_VERSION = master
 
@@ -23,14 +24,17 @@ GOLANGCI_VERSION = 1.16.0
 LICENSEI_VERSION = 0.1.0
 GORELEASER_VERSION = 0.105.0
 OPENAPI_GENERATOR_VERSION = PR1869
+TEMPLIFY_VERSION = 7fafacc
 
 GOLANG_VERSION = 1.12
+
+export GOTMPL = ${PWD}/go.tmpl
 
 .PHONY: build
 build: pke ## Build project
 
 .PHONY: pke
-pke: ## Build PKE binary
+pke: gogenerate ## Build PKE binary
 ifneq (${IGNORE_GOLANG_VERSION_REQ}, 1)
 	@printf "${GOLANG_VERSION}\n$$(go version | awk '{sub(/^go/, "", $$3);print $$3}')" | sort -t '.' -k 1,1 -k 2,2 -k 3,3 -g | head -1 | grep -q -E "^${GOLANG_VERSION}$$" || (printf "Required Go version is ${GOLANG_VERSION}\nInstalled: `go version`" && exit 1)
 endif
@@ -44,6 +48,18 @@ pke-docs: ## Generate documentation for PKE
 .PHONY: pke-linux
 pke-linux: ## Cross-compile pke for linux
 	env GOOS=linux GOARCH=amd64 ${MAKE} pke BINARY_NAME=pke-linux
+
+.PHONY: gogenerate
+gogenerate: bin/templify ## Generate go files from template
+	export PATH=${PATH}:${GOPATH}/bin
+	GOOS=linux go generate ./cmd/...
+	GOOS=darwin go generate ./cmd/...
+
+bin/templify: bin/templify-${TEMPLIFY_VERSION}
+	@ln -sf bin/templify-${TEMPLIFY_VERSION} bin/templify
+bin/templify-${TEMPLIFY_VERSION}:
+	go get github.com/wlbr/templify@${TEMPLIFY_VERSION}
+	@cp ${GOPATH}/bin/templify bin/templify-${TEMPLIFY_VERSION}
 
 .PHONY: check
 check: test lint ## Run tests and linters
@@ -78,7 +94,7 @@ bin/golangci-lint-${GOLANGCI_VERSION}:
 
 .PHONY: lint
 lint: bin/golangci-lint ## Run linter
-	bin/golangci-lint run
+	bin/golangci-lint run --skip-files '.*\.(json|toml|yaml)\.go'
 
 bin/licensei: bin/licensei-${LICENSEI_VERSION}
 	@ln -sf licensei-${LICENSEI_VERSION} bin/licensei

@@ -272,7 +272,7 @@ paths:
                     gke:
                       $ref: '#/components/schemas/CreateGKEProperties'
             schema:
-              $ref: '#/components/schemas/CreateClusterRequest'
+              type: object
         required: true
       responses:
         202:
@@ -521,7 +521,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateClusterRequest'
+              type: object
         required: true
       responses:
         202:
@@ -1530,19 +1530,11 @@ paths:
         schema:
           type: string
         style: simple
-      - description: Mark policy as active
-        explode: true
-        in: query
-        name: active
-        required: false
-        schema:
-          type: boolean
-        style: form
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PolicyBundleRecord'
+              $ref: '#/components/schemas/PolicyBundleActivate'
         required: true
       responses:
         200:
@@ -5531,6 +5523,44 @@ paths:
       tags:
       - ark
   /api/v1/orgs/{orgId}/clusters/{id}/backupservice/status:
+    get:
+      description: Check ARK service status
+      operationId: CheckARKStatusGET
+      parameters:
+      - description: Organization identification
+        explode: false
+        in: path
+        name: orgId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Selected cluster identification (number)
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupServiceStatusResponse'
+          description: ARK service running
+        401:
+          description: Unauthorized
+        404:
+          description: ARK service not deployed
+      security:
+      - bearerAuth: []
+      summary: Check ARK service status
+      tags:
+      - ark
     head:
       description: Check ARK service status
       operationId: CheckARKStatus
@@ -6864,7 +6894,1107 @@ paths:
       summary: Get ARK restore results
       tags:
       - ark-restores
+  /api/v1/orgs/{orgid}/clustergroups:
+    get:
+      description: retrieve list of cluster groups of an organization
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/api.ClusterGroup'
+                type: array
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: List Cluster Groups of an Organization
+      tags:
+      - clustergroups
+    post:
+      description: create a group of clusters, joining clusters together with a name
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api.CreateRequest'
+        description: Create Cluster Group Request
+        required: true
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.CreateResponse'
+          description: Created
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Not Found
+      security:
+      - bearerAuth: []
+      summary: Create Cluster Group
+      tags:
+      - clustergroups
+  /api/v1/orgs/{orgid}/clustergroups/{clusterGroupId}:
+    delete:
+      description: delete a cluster group, disable all enabled features, delete related deployments
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Delete Cluster Group
+      tags:
+      - clustergroups
+    get:
+      description: retrieve info about a cluster group, members, status of member clusters, features
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.ClusterGroup'
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Get Cluster Group
+      tags:
+      - clustergroups
+    put:
+      description: update name & member clusters for a cluster group
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api.UpdateRequest'
+        description: Update Cluster Group Request
+        required: true
+      responses:
+        202:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.UpdateResponse'
+          description: Accepted
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Not Found
+      security:
+      - bearerAuth: []
+      summary: Update Cluster Group
+      tags:
+      - clustergroups
+  /api/v1/orgs/{orgid}/clustergroups/{clusterGroupId}/deployments:
+    get:
+      description: retrieve all deployments from a cluster group
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/deployment.ListDeploymentResponse'
+                type: array
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Get All Deployments of a Cluster Group
+      tags:
+      - clustergroup deployments
+    post:
+      description: creates a new cluster group deployment, installs or upgrades deployment on each member cluster accordingly
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/deployment.ClusterGroupDeployment'
+        description: Deployment Create Request
+        required: true
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deployment.CreateUpdateDeploymentResponse'
+          description: Multi-cluster deployment has been created successfully. All install / upgrade operations on all targeted clusters returned with no errors.
+        207:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Partial failure, meaning that Multi-cluster deployment has been created successfully, however there was as least one failure on one of the target clusters
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Not Found
+      security:
+      - bearerAuth: []
+      summary: Create Cluster Group Deployment
+      tags:
+      - clustergroup deployments
+  /api/v1/orgs/{orgid}/clustergroups/{clusterGroupId}/deployments/{deploymentName}:
+    delete:
+      description: deletes a cluster group deployment, also deleting deployments from member clusters
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: release name of a cluster group deployment
+        explode: false
+        in: path
+        name: deploymentName
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: if true cluster group deployment gets deleted even if some deployments can not be deleted from each target cluster
+        explode: true
+        in: query
+        name: force
+        required: false
+        schema:
+          type: boolean
+        style: form
+      responses:
+        202:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deployment.TargetClusterStatus'
+          description: Multi-cluster deployment has been deleted successfully. All delete operations on all targeted clusters returned with no errors.
+        207:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Partial failure, meaning that there was as least one failure on one of the target clusters
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Delete Cluster Group Deployment
+      tags:
+      - clustergroup deployments
+    get:
+      description: retrieve info about a cluster group deployment and it's status on each member cluster
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: release name of a cluster group deployment
+        explode: false
+        in: path
+        name: deploymentName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deployment.DeploymentInfo'
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Get Cluster Group Deployment
+      tags:
+      - clustergroup deployments
+    put:
+      description: updates a cluster group deployment, installs or upgrades deployment on each member cluster accordingly
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: release name of a cluster group deployment
+        explode: false
+        in: path
+        name: deploymentName
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/deployment.ClusterGroupDeployment'
+        description: Deployment Update Request
+        required: true
+      responses:
+        202:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deployment.CreateUpdateDeploymentResponse'
+          description: Multi-cluster deployment has been updated successfully. All upgrade / install operations on all targeted clusters returned with no errors.
+        207:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Partial failure, meaning that Multi-cluster deployment has been update successfully, however there was as least one failure on one of the target clusters
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Not Found
+      security:
+      - bearerAuth: []
+      summary: Update Cluster Group Deployment
+      tags:
+      - clustergroup deployments
+  /api/v1/orgs/{orgid}/clustergroups/{clusterGroupId}/deployments/{deploymentName}/sync:
+    put:
+      description: install / upgrade deployment to target clusters where deployment is not found or has wrong
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: release name of a cluster group deployment
+        explode: false
+        in: path
+        name: deploymentName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        202:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/deployment.TargetClusterStatus'
+          description: Multi-cluster deployment has been synced successfully. All upgrade / install operations on all targeted clusters returned with no errors.
+        207:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Partial failure, meaning that there was as least one failure on one of the target clusters
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Synchronize Cluster Group Deployment
+      tags:
+      - clustergroup deployments
+  /api/v1/orgs/{orgid}/clustergroups/{clusterGroupId}/features:
+    get:
+      description: retrieve info about a cluster group feature and it's status on each member cluster
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Name of the future
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/api.FeatureResponse'
+                type: array
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Get All Features of Cluster Group
+      tags:
+      - clustergroup features
+  /api/v1/orgs/{orgid}/clustergroups/{clusterGroupId}/features/{featureName}:
+    delete:
+      description: disable feature on all members of a cluster group
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Name of the feature
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Disable Feature of Cluster Group
+      tags:
+      - clustergroup features
+    get:
+      description: retrieve info about a cluster group feature and it's status on each member cluster
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Name of the feature
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api.FeatureResponse'
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+      security:
+      - bearerAuth: []
+      summary: Get Feature of Cluster Group
+      tags:
+      - clustergroup features
+    post:
+      description: enable feature on all members of a cluster group
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Name of the feature
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/api.FeatureRequest'
+      responses:
+        202:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Accepted
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Not Found
+      security:
+      - bearerAuth: []
+      summary: Enable Feature of Cluster Group
+      tags:
+      - clustergroup features
+    put:
+      description: update properties of a feature
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgid
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster Group ID
+        explode: false
+        in: path
+        name: clusterGroupId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Name of the feature
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/api.FeatureRequest'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Bad Request
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/common.ErrorResponse'
+          description: Not Found
+      security:
+      - bearerAuth: []
+      summary: Update Feature of Cluster Group
+      tags:
+      - clustergroup features
+  /api/v1/orgs/{orgId}/clusters/{id}/features:
+    get:
+      operationId: ListClusterFeatures
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterFeatureList'
+          description: Success
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          description: Unauthorized
+        404:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Not found
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseError_500'
+          description: Internal server error
+      security:
+      - bearerAuth: []
+      summary: List enabled features of a cluster
+      tags:
+      - cluster features
+  /api/v1/orgs/{orgId}/clusters/{id}/features/{featureName}:
+    delete:
+      operationId: DeactivateClusterFeature
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Feature name
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        202:
+          description: Accepted
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          description: Unauthorized
+        404:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Not found
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseError_500'
+          description: Internal server error
+      security:
+      - bearerAuth: []
+      summary: Deactivate a cluster feature
+      tags:
+      - cluster features
+    get:
+      operationId: ClusterFeatureDetails
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Feature name
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterFeatureDetails'
+          description: Success
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          description: Unauthorized
+        404:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Not found
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseError_500'
+          description: Internal server error
+      security:
+      - bearerAuth: []
+      summary: Get details of a cluster feature
+      tags:
+      - cluster features
+    post:
+      operationId: ActivateClusterFeature
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Feature name
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivateClusterFeatureRequest'
+        required: true
+      responses:
+        202:
+          description: Accepted
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseError_400'
+          description: Bad request
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          description: Unauthorized
+        404:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Not found
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseError_500'
+          description: Internal server error
+      security:
+      - bearerAuth: []
+      summary: Activate a cluster feature
+      tags:
+      - cluster features
+    put:
+      operationId: UpdateClusterFeature
+      parameters:
+      - description: Organization ID
+        explode: false
+        in: path
+        name: orgId
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Cluster ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: Feature name
+        explode: false
+        in: path
+        name: featureName
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClusterFeatureRequest'
+        required: true
+      responses:
+        202:
+          description: Accepted
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseError_400'
+          description: Bad request
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized'
+          description: Unauthorized
+        404:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Not found
+        500:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BaseError_500'
+          description: Internal server error
+      security:
+      - bearerAuth: []
+      summary: Update a cluster feature
+      tags:
+      - cluster features
 components:
+  requestBodies:
+    api.FeatureRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/api.FeatureRequest'
+      description: Feature properties
+      required: true
   schemas:
     UpdateUserRequest:
       example:
@@ -7259,7 +8389,6 @@ components:
         kind:
           type: string
         params:
-          additionalProperties: true
           type: object
       required:
       - kind
@@ -7294,44 +8423,41 @@ components:
       required:
       - enabled
       type: object
+    CreatePKEClusterKubernetes:
+      properties:
+        version:
+          example: v1.12.2
+          type: string
+        rbac:
+          type: boolean
+        cri:
+          $ref: '#/components/schemas/CreatePKEClusterKubernetes_cri'
+        network:
+          $ref: '#/components/schemas/CreatePKEClusterKubernetesNetwork'
+      required:
+      - version
+      type: object
+    CreatePKEClusterKubernetesNetwork:
+      properties:
+        serviceCIDR:
+          example: 10.32.0.0/24
+          type: string
+        podCIDR:
+          example: 10.200.0.0/16
+          type: string
+        provider:
+          enum:
+          - weave
+          type: string
+        providerConfig:
+          type: object
+      type: object
     CreatePKEClusterRequestBase:
       allOf:
       - $ref: '#/components/schemas/CreateClusterRequestBase'
       - properties:
           kubernetes:
-            properties:
-              version:
-                example: v1.12.2
-                type: string
-              rbac:
-                type: boolean
-              cri:
-                properties:
-                  runtime:
-                    type: string
-                  runtimeConfig:
-                    additionalProperties: true
-                    type: object
-                type: object
-              network:
-                properties:
-                  serviceCIDR:
-                    example: 10.32.0.0/24
-                    type: string
-                  podCIDR:
-                    example: 10.200.0.0/16
-                    type: string
-                  provider:
-                    enum:
-                    - weave
-                    type: string
-                  providerConfig:
-                    additionalProperties: true
-                    type: object
-                type: object
-            required:
-            - version
-            type: object
+            $ref: '#/components/schemas/CreatePKEClusterKubernetes'
         required:
         - kubernetes
         type: object
@@ -7348,79 +8474,75 @@ components:
             example: my-resource-group-1
             type: string
           network:
-            properties:
-              name:
-                example: my-azure-virtual-network
-                type: string
-              cidr:
-                description: When referencing an already existing virtual network this field does not need to be specified.
-                example: 10.0.0.0/16
-                type: string
-            type: object
+            $ref: '#/components/schemas/PKEOnAzureClusterNetwork'
           nodepools:
             items:
-              properties:
-                name:
-                  type: string
-                roles:
-                  items:
-                    enum:
-                    - master
-                    - system
-                    - worker
-                    type: string
-                  type: array
-                labels:
-                  additionalProperties:
-                    type: string
-                  type: object
-                subnet:
-                  properties:
-                    name:
-                      example: my-azure-subnet
-                      type: string
-                    cidr:
-                      description: When referencing an already existing subnetwork this field does not need to be specified.
-                      example: 10.0.0.0/24
-                      type: string
-                  type: object
-                zones:
-                  example:
-                  - "1"
-                  - "3"
-                  items:
-                    enum:
-                    - "1"
-                    - "2"
-                    - "3"
-                    type: string
-                  type: array
-                autoscaling:
-                  type: boolean
-                minCount:
-                  format: int32
-                  minimum: 1
-                  type: integer
-                maxCount:
-                  format: int32
-                  minimum: 1
-                  type: integer
-                count:
-                  format: int32
-                  minimum: 1
-                  type: integer
-                instanceType:
-                  example: Standard_B2ms
-                  type: string
-              required:
-              - instanceType
-              - name
-              - roles
-              type: object
+              $ref: '#/components/schemas/PKEOnAzureNodePool'
             type: array
         required:
         - resourceGroup
         type: object
+    PKEOnAzureClusterNetwork:
+      properties:
+        name:
+          example: my-azure-virtual-network
+          type: string
+        cidr:
+          description: When referencing an already existing virtual network this field does not need to be specified.
+          example: 10.0.0.0/16
+          type: string
+      type: object
+    PKEOnAzureNodePool:
+      properties:
+        name:
+          type: string
+        roles:
+          items:
+            enum:
+            - master
+            - system
+            - worker
+            type: string
+          type: array
+        labels:
+          additionalProperties:
+            type: string
+          type: object
+        subnet:
+          $ref: '#/components/schemas/PKEOnAzureNodePool_subnet'
+        zones:
+          example:
+          - "1"
+          - "3"
+          items:
+            enum:
+            - "1"
+            - "2"
+            - "3"
+            type: string
+          type: array
+        autoscaling:
+          type: boolean
+        minCount:
+          format: int32
+          minimum: 1
+          type: integer
+        maxCount:
+          format: int32
+          minimum: 1
+          type: integer
+        count:
+          format: int32
+          minimum: 1
+          type: integer
+        instanceType:
+          example: Standard_B2ms
+          type: string
+      required:
+      - instanceType
+      - name
+      - roles
+      type: object
     CreateClusterRequestV2:
       discriminator:
         mapping:
@@ -7859,18 +8981,17 @@ components:
           example: Chart Not Found!
           type: string
       type: object
+    UpdateClusterRequestV2:
+      oneOf:
+      - $ref: '#/components/schemas/UpdatePKEOnAzureClusterRequest'
+    UpdatePKEOnAzureClusterRequest:
+      properties:
+        nodepools:
+          items:
+            $ref: '#/components/schemas/PKEOnAzureNodePool'
+          type: array
+      type: object
     UpdateClusterRequest:
-      example:
-        cloud: google
-        ttlMinutes: 120
-        properties:
-          google:
-            master:
-              version: master
-            nodePools:
-              pool1:
-                count: 2
-                instanceType: n1-standard-2
       properties:
         cloud:
           example: google
@@ -7958,6 +9079,17 @@ components:
           example: 2
           format: int32
           type: integer
+        instanceType:
+          example: Standard_B2ms
+          type: string
+        labels:
+          additionalProperties:
+            example: '{"example.io/label1":"value1"}'
+            type: string
+          type: object
+        vnetSubnetID:
+          example: /subscriptions/12345678-1234-5678-1234-123456789abc/resourceGroups/your-resource-group-name/providers/Microsoft.Network/virtualNetworks/your-vnet-name/subnets/your-vnet-subnet-name
+          type: string
       required:
       - count
       type: object
@@ -8334,39 +9466,52 @@ components:
       type: object
     ListDeploymentsResponse:
       items:
-        properties:
-          releaseName:
-            example: pipeline
-            type: string
-          chart:
-            example: pipeline-cluster-ingress-0.0.1
-            type: string
-          chartName:
-            example: pipeline-cluster-ingress
-            type: string
-          chartVersion:
-            example: 0.0.1
-            type: string
-          version:
-            example: 1
-            format: int32
-            type: integer
-          updatedAt:
-            example: 2018-07-03T14:23:19+02:00
-            type: string
-          status:
-            example: DEPLOYED
-            type: string
-          namespace:
-            example: default
-            type: string
-          createdAt:
-            example: 2018-07-03T14:23:19+02:00
-            type: string
-          supported:
-            type: boolean
-        type: object
+        $ref: '#/components/schemas/ListDeploymentsResponseItem'
       type: array
+    ListDeploymentsResponseItem:
+      example:
+        createdAt: 2018-07-03T14:23:19+02:00
+        chartName: pipeline-cluster-ingress
+        chartVersion: 0.0.1
+        releaseName: pipeline
+        namespace: default
+        chart: pipeline-cluster-ingress-0.0.1
+        version: 1
+        updatedAt: 2018-07-03T14:23:19+02:00
+        status: DEPLOYED
+        supported: true
+      properties:
+        releaseName:
+          example: pipeline
+          type: string
+        chart:
+          example: pipeline-cluster-ingress-0.0.1
+          type: string
+        chartName:
+          example: pipeline-cluster-ingress
+          type: string
+        chartVersion:
+          example: 0.0.1
+          type: string
+        version:
+          example: 1
+          format: int32
+          type: integer
+        updatedAt:
+          example: 2018-07-03T14:23:19+02:00
+          type: string
+        status:
+          example: DEPLOYED
+          type: string
+        namespace:
+          example: default
+          type: string
+        createdAt:
+          example: 2018-07-03T14:23:19+02:00
+          type: string
+        supported:
+          type: boolean
+      type: object
     CreateUpdateDeploymentRequest:
       example:
         wait: true
@@ -9129,7 +10274,10 @@ components:
         type: google
         error: Validation failed
         version: 1
-        updatedAt: 2018-07-01T08:27:23.2636996Z
+        updatedAt: 2000-01-23T04:56:07.000+00:00
+        tags:
+        - repo:pipeline
+        - tag2
       properties:
         name:
           example: My-google-secret
@@ -9144,7 +10292,7 @@ components:
           example: Validation failed
           type: string
         updatedAt:
-          example: 2018-07-01T08:27:23.2636996Z
+          format: date-time
           type: string
         updatedBy:
           example: username
@@ -9153,6 +10301,17 @@ components:
           example: 1
           format: int32
           type: integer
+        tags:
+          example:
+          - repo:pipeline
+          - tag2
+          items:
+            type: string
+          type: array
+      required:
+      - id
+      - name
+      - type
       type: object
     CreateSecretRequest:
       example:
@@ -10905,6 +12064,15 @@ components:
         policybundle:
           $ref: '#/components/schemas/PolicyBundle'
       type: object
+    PolicyBundleActivate:
+      description: Policy bundle activation
+      example:
+        params:
+          active: active
+      properties:
+        params:
+          $ref: '#/components/schemas/PolicyBundleActivate_params'
+      type: object
     PolicyBundleList:
       description: List of PolicyBundleRecord objects
       items:
@@ -11303,6 +12471,8 @@ components:
       $ref: '#/components/schemas/BackupResponse'
     CreateBackupBucketResponse:
       $ref: '#/components/schemas/BackupBucketResponse'
+    BackupServiceStatusResponse:
+      $ref: '#/components/schemas/BackupServiceResponse'
     ListBackupBucketsResponse:
       items:
         $ref: '#/components/schemas/BackupBucketResponse'
@@ -11998,6 +13168,425 @@ components:
       required:
       - hostname
       type: object
+    api.ClusterGroup:
+      example:
+        organizationId: 0
+        uid: uid
+        enabledFeatures:
+        - enabledFeatures
+        - enabledFeatures
+        members:
+        - cloud: google
+          name: clusterName
+          id: 1001
+          distribution: gke
+          status: status
+        - cloud: google
+          name: clusterName
+          id: 1001
+          distribution: gke
+          status: status
+        name: name
+        id: 10
+      properties:
+        enabledFeatures:
+          items:
+            type: string
+          type: array
+        id:
+          example: 10
+          format: int32
+          type: integer
+        members:
+          items:
+            $ref: '#/components/schemas/api.Member'
+          type: array
+        name:
+          type: string
+        organizationId:
+          format: int32
+          type: integer
+        uid:
+          type: string
+      type: object
+    api.CreateRequest:
+      properties:
+        members:
+          items:
+            format: int32
+            type: integer
+          type: array
+        name:
+          example: cluster_group_name
+          type: string
+      type: object
+    api.CreateResponse:
+      example:
+        name: cluster_group_name
+        id: 0
+      properties:
+        id:
+          format: int32
+          type: integer
+        name:
+          example: cluster_group_name
+          type: string
+      type: object
+    api.FeatureRequest:
+      type: object
+    api.FeatureResponse:
+      example:
+        lastReconcileError: lastReconcileError
+        clusterGroup:
+          organizationId: 0
+          uid: uid
+          enabledFeatures:
+          - enabledFeatures
+          - enabledFeatures
+          members:
+          - cloud: google
+            name: clusterName
+            id: 1001
+            distribution: gke
+            status: status
+          - cloud: google
+            name: clusterName
+            id: 1001
+            distribution: gke
+            status: status
+          name: name
+          id: 10
+        reconcileState: reconcileState
+        name: name
+        enabled: true
+        properties: '{}'
+        status: '{}'
+      properties:
+        clusterGroup:
+          $ref: '#/components/schemas/api.ClusterGroup'
+        enabled:
+          type: boolean
+        lastReconcileError:
+          type: string
+        name:
+          type: string
+        properties:
+          type: object
+        reconcileState:
+          type: string
+        status:
+          type: object
+      type: object
+    api.Member:
+      example:
+        cloud: google
+        name: clusterName
+        id: 1001
+        distribution: gke
+        status: status
+      properties:
+        cloud:
+          example: google
+          type: string
+        distribution:
+          example: gke
+          type: string
+        id:
+          example: 1001
+          format: int32
+          type: integer
+        name:
+          example: clusterName
+          type: string
+        status:
+          type: string
+      type: object
+    api.UpdateRequest:
+      properties:
+        members:
+          items:
+            format: int32
+            type: integer
+          type: array
+        name:
+          example: cluster_group_name
+          type: string
+      type: object
+    api.UpdateResponse:
+      example:
+        name: cluster_group_name
+        id: 0
+      properties:
+        id:
+          format: int32
+          type: integer
+        name:
+          example: cluster_group_name
+          type: string
+      type: object
+    common.ErrorResponse:
+      properties:
+        code:
+          format: int32
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+      type: object
+    deployment.ClusterGroupDeployment:
+      properties:
+        atomic:
+          type: boolean
+        dryrun:
+          type: boolean
+        name:
+          type: string
+        namespace:
+          type: string
+        package:
+          items:
+            format: int32
+            type: integer
+          type: array
+        releaseName:
+          type: string
+        reuseValues:
+          type: boolean
+        rollingMode:
+          type: boolean
+        valueOverrides:
+          type: object
+        values:
+          type: object
+        version:
+          type: string
+      required:
+      - name
+      type: object
+    deployment.CreateUpdateDeploymentResponse:
+      example:
+        releaseName: releaseName
+        targetClusters:
+        - cloud: cloud
+          stale: true
+          clusterName: clusterName
+          clusterId: 0
+          distribution: distribution
+          error: error
+          version: version
+          status: status
+        - cloud: cloud
+          stale: true
+          clusterName: clusterName
+          clusterId: 0
+          distribution: distribution
+          error: error
+          version: version
+          status: status
+      properties:
+        releaseName:
+          type: string
+        targetClusters:
+          items:
+            $ref: '#/components/schemas/deployment.TargetClusterStatus'
+          type: array
+      type: object
+    deployment.DeploymentInfo:
+      example:
+        createdAt: createdAt
+        chartName: chartName
+        chartVersion: chartVersion
+        releaseName: releaseName
+        values: '{}'
+        namespace: namespace
+        description: description
+        valueOverrides: '{}'
+        targetClusters:
+        - cloud: cloud
+          stale: true
+          clusterName: clusterName
+          clusterId: 0
+          distribution: distribution
+          error: error
+          version: version
+          status: status
+        - cloud: cloud
+          stale: true
+          clusterName: clusterName
+          clusterId: 0
+          distribution: distribution
+          error: error
+          version: version
+          status: status
+        chart: chart
+        version: 0
+        updatedAt: updatedAt
+      properties:
+        chart:
+          type: string
+        chartName:
+          type: string
+        chartVersion:
+          type: string
+        createdAt:
+          type: string
+        description:
+          type: string
+        namespace:
+          type: string
+        releaseName:
+          type: string
+        targetClusters:
+          items:
+            $ref: '#/components/schemas/deployment.TargetClusterStatus'
+          type: array
+        updatedAt:
+          type: string
+        valueOverrides:
+          type: object
+        values:
+          type: object
+        version:
+          format: int32
+          type: integer
+      type: object
+    deployment.ListDeploymentResponse:
+      example:
+        createdAt: createdAt
+        chartName: chartName
+        chartVersion: chartVersion
+        releaseName: releaseName
+        namespace: namespace
+        chart: chart
+        version: 0
+        updatedAt: updatedAt
+      properties:
+        chart:
+          type: string
+        chartName:
+          type: string
+        chartVersion:
+          type: string
+        createdAt:
+          type: string
+        namespace:
+          type: string
+        releaseName:
+          type: string
+        updatedAt:
+          type: string
+        version:
+          format: int32
+          type: integer
+      type: object
+    deployment.TargetClusterStatus:
+      example:
+        cloud: cloud
+        stale: true
+        clusterName: clusterName
+        clusterId: 0
+        distribution: distribution
+        error: error
+        version: version
+        status: status
+      properties:
+        cloud:
+          type: string
+        clusterId:
+          format: int32
+          type: integer
+        clusterName:
+          type: string
+        distribution:
+          type: string
+        error:
+          type: string
+        stale:
+          type: boolean
+        status:
+          type: string
+        version:
+          type: string
+      type: object
+    BackupServiceResponse:
+      example:
+        enabled: true
+      properties:
+        enabled:
+          type: boolean
+      type: object
+    ClusterFeatureList:
+      additionalProperties:
+        $ref: '#/components/schemas/ClusterFeatureDetails'
+      type: object
+    ActivateClusterFeatureRequest:
+      example:
+        spec: '{}'
+      properties:
+        spec:
+          type: object
+      required:
+      - spec
+      type: object
+    ClusterFeatureDetails:
+      example:
+        output: '{}'
+        spec: '{}'
+        status: inactive
+      properties:
+        output:
+          type: object
+        spec:
+          type: object
+        status:
+          enum:
+          - inactive
+          - pending
+          - active
+          type: string
+      required:
+      - status
+      type: object
+    UpdateClusterFeatureRequest:
+      example:
+        spec: '{}'
+      properties:
+        spec:
+          type: object
+      required:
+      - spec
+      type: object
+    ClusterFeatureSpec:
+      type: object
+    ClusterFeatureNotFound:
+      properties:
+        code:
+          example: 404
+          format: int32
+          type: integer
+        message:
+          example: Cluster feature not found
+          type: string
+        error:
+          example: No cluster feature exists with this name
+          type: string
+      type: object
+    CreatePKEClusterKubernetes_cri:
+      properties:
+        runtime:
+          type: string
+        runtimeConfig:
+          type: object
+    PKEOnAzureNodePool_subnet:
+      properties:
+        name:
+          example: my-azure-subnet
+          type: string
+        cidr:
+          description: When referencing an already existing subnetwork this field does not need to be specified.
+          example: 10.0.0.0/24
+          type: string
     CreateEKSProperties_eks:
       properties:
         version:
@@ -12813,6 +14402,12 @@ components:
       required:
       - name
       - value
+    PolicyBundleActivate_params:
+      example:
+        active: active
+      properties:
+        active:
+          type: string
     PKEClusterReadinessResponse_master:
       example:
         ready: true

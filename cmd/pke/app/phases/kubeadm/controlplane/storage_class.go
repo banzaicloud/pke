@@ -48,7 +48,7 @@ func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cl
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", storageClassConfig)
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	err = cmd.CombinedOutputAsync()
+	_, err = cmd.CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
@@ -56,22 +56,12 @@ func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cl
 	return nil
 }
 
+//go:generate templify -t ${GOTMPL} -p controlplane -f storageClassAmazon storage_class_amazon.yaml.tmpl
+
 func writeStorageClassAmazon(out io.Writer, filename string) error {
 	_, _ = fmt.Fprintf(out, "[%s] creating Amazon default storage class\n", use)
 	// https://kubernetes.io/docs/concepts/storage/storage-classes/#aws-ebs
-	conf := `kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: gp2
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-provisioner: kubernetes.io/aws-ebs
-parameters:
-  type: gp2
-  fsType: ext4
-`
-
-	tmpl, err := template.New("storage-class-amazon").Parse(conf)
+	tmpl, err := template.New("storage-class-amazon").Parse(storageClassAmazonTemplate())
 	if err != nil {
 		return err
 	}
@@ -113,6 +103,8 @@ func testEnableUUIDTrue(device string) (bool, error) {
 	return false, err
 }
 
+//go:generate templify -t ${GOTMPL} -p controlplane -f storageClassVsphere storage_class_vsphere.yaml.tmpl
+
 func writeStorageClassVsphere(out io.Writer, filename string) error {
 	ok, err := testEnableUUIDTrue("/dev/sda")
 	switch {
@@ -126,16 +118,6 @@ func writeStorageClassVsphere(out io.Writer, filename string) error {
 
 	_, _ = fmt.Fprintf(out, "[%s] creating vSphere default storage class\n", use)
 	// https://vmware.github.io/vsphere-storage-for-kubernetes/documentation/policy-based-mgmt.html#vmfs-and-nfs
-	conf := `kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: vsphere
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-provisioner: kubernetes.io/vsphere-volume
-parameters:
-  diskformat: thin
-`
 	// create and truncate write only file
 	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 	if err != nil {
@@ -143,29 +125,16 @@ parameters:
 	}
 	defer func() { _ = w.Close() }()
 
-	_, err = w.WriteString(conf)
+	_, err = w.WriteString(storageClassVsphereTemplate())
 	return err
 }
+
+//go:generate templify -t ${GOTMPL} -p controlplane -f storageClassAzure storage_class_azure.yaml.tmpl
 
 func writeStorageClassAzure(out io.Writer, filename string, storageAccountType, kind string) error {
 	_, _ = fmt.Fprintf(out, "[%s] creating Azure default storage class\n", use)
 	// https://kubernetes.io/docs/concepts/storage/storage-classes/#new-azure-disk-storage-class-starting-from-v1-7-2
-	conf := `kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: azure-disk
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-provisioner: kubernetes.io/azure-disk
-volumeBindingMode: WaitForFirstConsumer
-parameters:
-  storageaccounttype: {{ .StorageAccountType }}
-  kind: {{ .Kind }}
-`
-
-	tmpl, err := template.New("storage-class-azure").Parse(conf)
+	tmpl, err := template.New("storage-class-azure").Parse(storageClassAzureTemplate())
 	if err != nil {
 		return err
 	}
@@ -190,114 +159,12 @@ parameters:
 	return tmpl.Execute(w, d)
 }
 
+//go:generate templify -t ${GOTMPL} -p controlplane -f storageClassLocalPathStorage storage_class_local_path_storage.yaml.tmpl
+
 func writeStorageClassLocalPathStorage(out io.Writer, filename string) error {
 	_, _ = fmt.Fprintf(out, "[%s] creating local default storage class\n", use)
-	conf := `apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: local-path-provisioner-service-account
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  name: local-path-provisioner-role
-  namespace: kube-system
-rules:
-- apiGroups: [""]
-  resources: ["nodes", "persistentvolumeclaims"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: [""]
-  resources: ["endpoints", "persistentvolumes", "pods"]
-  verbs: ["*"]
-- apiGroups: [""]
-  resources: ["events"]
-  verbs: ["create", "patch"]
-- apiGroups: ["storage.k8s.io"]
-  resources: ["storageclasses"]
-  verbs: ["get", "list", "watch"]
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: local-path-provisioner-bind
-  namespace: kube-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: local-path-provisioner-role
-subjects:
-- kind: ServiceAccount
-  name: local-path-provisioner-service-account
-  namespace: kube-system
----
-apiVersion: apps/v1beta2
-kind: Deployment
-metadata:
-  name: local-path-provisioner
-  namespace: kube-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: local-path-provisioner
-  template:
-    metadata:
-      labels:
-        app: local-path-provisioner
-    spec:
-      serviceAccountName: local-path-provisioner-service-account
-      containers:
-      - name: local-path-provisioner
-        image: banzaicloud/local-path-provisioner:v0.0.5
-        imagePullPolicy: Always
-        command:
-        - local-path-provisioner
-        - --debug
-        - start
-        - --config
-        - /etc/config/config.json
-        volumeMounts:
-        - name: config-volume
-          mountPath: /etc/config/
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-      volumes:
-        - name: config-volume
-          configMap:
-            name: local-path-config
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: local-path
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-provisioner: banzaicloud.io/local-path
-volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Delete
----
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: local-path-config
-  namespace: kube-system
-data:
-  config.json: |-
-        {
-                "nodePathMap":[
-                {
-                        "node":"DEFAULT_PATH_FOR_NON_LISTED_NODES",
-                        "paths":["/opt/local-path-provisioner"]
-                }
-                ]
-        }
-`
 
-	tmpl, err := template.New("storage-class-local-path").Parse(conf)
+	tmpl, err := template.New("storage-class-local-path").Parse(storageClassLocalPathStorageTemplate())
 	if err != nil {
 		return err
 	}

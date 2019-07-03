@@ -30,7 +30,8 @@ func TestMapYumPackageVersion(t *testing.T) {
 		{kubectl, "1.14.0", "kubectl-1.14.0-0"},
 		{kubelet, "1.14.0", "kubelet-1.14.0-0"},
 		{kubernetescni, "1.14.0", "kubernetes-cni-0.7.5-0"},
-		{kubernetescni, "1.13.0", "kubernetes-cni-0.6.0-0"},
+		{kubernetescni, "1.13.0", "kubernetes-cni-0.7.5-0"},
+		{kubernetescni, "1.12.2", "kubernetes-cni-0.6.0-0"},
 	}
 	for _, tc := range testCases {
 		got := mapYumPackageVersion(tc.pkg, tc.kubernetesVersion)

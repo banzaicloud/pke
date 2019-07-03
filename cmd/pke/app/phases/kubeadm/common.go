@@ -37,6 +37,8 @@ const (
 	EncryptionProviderConfig = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 )
 
+//go:generate templify -t ${GOTMPL} -p kubeadm -f kubeadmAzureConfig kubeadm_azure_config.json.tmpl
+
 func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, subnetName, securityGroupName, vnetName, vnetResourceGroup, vmType, loadBalancerSku, routeTableName string, excludeMasterFromStandardLB bool) error {
 	if cloudProvider == constants.CloudProviderAzure {
 		if http.DefaultClient.Timeout < 10*time.Second {
@@ -83,26 +85,7 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
 			loadBalancerSku = "basic"
 		}
 
-		conf := `{
-    "cloud":"{{ .Cloud }}",
-    "tenantId": "{{ .TenantId }}",
-    "subscriptionId": "{{ .SubscriptionId }}",
-    "resourceGroup": "{{ .ResourceGroup }}",
-    "location": "{{ .Location }}",
-    "subnetName": "{{ .SubnetName }}",
-    "securityGroupName": "{{ .SecurityGroupName }}",
-    "vnetName": "{{ .VNetName }}",
-    "vnetResourceGroup": "{{ .VNetResourceGroup }}",
-    "vmType": "{{ .VMType }}",
-    "loadBalancerSku": "{{ .LoadBalancerSku }}",
-    "routeTableName": "{{ .RouteTableName }}",
-    "cloudProviderBackoff": false,
-    "useManagedIdentityExtension": true,
-    "useInstanceMetadata": true,
-    "excludeMasterFromStandardLB": {{ .ExcludeMasterFromStandardLB }}
-}`
-
-		tmpl, err := template.New("azure-config").Parse(conf)
+		tmpl, err := template.New("azure-config").Parse(kubeadmAzureConfigTemplate())
 		if err != nil {
 			return err
 		}
@@ -151,39 +134,14 @@ func WriteKubeadmAzureConfig(out io.Writer, filename, cloudProvider, tenantID, s
 	return nil
 }
 
+//go:generate templify -t ${GOTMPL} -p kubeadm -f kubeadmVsphereConfig kubeadm_vsphere_config.toml.tmpl
+
 func WriteKubeadmVsphereConfig(out io.Writer, filename, cloudProvider, server string, port int, fingerprint, datacenter, datastore, resourcePool, folder, username, password string) error {
 	if cloudProvider != constants.CloudProviderVsphere {
 		return nil
 	}
 
-	conf := `
-[Global]
-
-[VirtualCenter "{{ .Server }}"]
-port = "{{ .Port }}"
-datacenters = "{{ .Datacenter }}"
-{{ if .Fingerprint }}
-thumbprint = "{{ .Fingerprint }}"
-{{ end }}
-{{ if .Username }}
-user = "{{ .Username }}"
-{{ end }}
-{{ if .Password }}
-password = "{{ .Password }}"
-{{ end }}
-
-[Workspace]
-server = "{{ .Server }}"
-datacenter = "{{ .Datacenter }}"
-default-datastore = "{{ .Datastore }}"
-resourcepool-path = "{{ .ResourcePool }}"
-folder = "{{ .Folder }}"
-
-[Disk]
-scsicontrollertype = pvscsi	
-	`
-
-	tmpl, err := template.New("vsphere-config").Parse(conf)
+	tmpl, err := template.New("vsphere-config").Parse(kubeadmVsphereConfigTemplate())
 	if err != nil {
 		return err
 	}
@@ -229,6 +187,8 @@ scsicontrollertype = pvscsi
 	return tmpl.Execute(w, d)
 }
 
+//go:generate templify -t ${GOTMPL} -p kubeadm -f encryptionProvider encryption_provider.yaml.tmpl
+
 // WriteEncryptionProviderConfig creates configuration to encrypt Kubernetes secrets.
 // If encryptionSecret is not provided, but the configuration is already in place
 // secret will NOT be replaced with a newly generated one.
@@ -265,20 +225,7 @@ func WriteEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, e
 		apiVersion = "v1"
 	}
 
-	conf := `kind: {{ .Kind }}
-apiVersion: {{ .APIVersion }}
-resources:
-  - resources:
-    - secrets
-    providers:
-    - aescbc:
-        keys:
-        - name: key1
-          secret: "{{ .EncryptionSecret }}"
-    - identity: {}
-`
-
-	tmpl, err := template.New("admission-config").Parse(conf)
+	tmpl, err := template.New("admission-config").Parse(encryptionProviderTemplate())
 	if err != nil {
 		return err
 	}

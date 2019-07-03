@@ -60,8 +60,8 @@ type Certificates struct {
 	kubernetesVersion      string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &Certificates{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&Certificates{})
 }
 
 func (c *Certificates) Use() string {
@@ -109,7 +109,7 @@ func (c *Certificates) Run(out io.Writer) error {
 		return nil
 	}
 
-	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", c.Use())
+	_, _ = fmt.Fprintf(out, "[%s] running\n", c.Use())
 
 	if err := pipelineutil.ValidArgs(c.pipelineAPIEndpoint, c.pipelineAPIToken, c.pipelineAPIInsecure, c.pipelineOrganizationID, c.pipelineClusterID); err != nil {
 		_, _ = fmt.Fprintf(out, "[WARNING] Skipping %s phase due to missing Pipeline API endpoint. err: %v\n", use, err)

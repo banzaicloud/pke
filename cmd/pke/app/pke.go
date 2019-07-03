@@ -16,7 +16,6 @@ package app
 
 import (
 	"flag"
-	"os"
 	"syscall"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/cmd"
@@ -32,6 +31,6 @@ func Run(gitVersion, gitCommit, gitTreeState, buildDate string) error {
 	cobra.EnableCommandSorting = false
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 
-	c := cmd.NewPKECommand(os.Stdin, os.Stdout, gitVersion, gitCommit, gitTreeState, buildDate)
+	c := cmd.NewPKECommand(gitVersion, gitCommit, gitTreeState, buildDate)
 	return c.Execute()
 }

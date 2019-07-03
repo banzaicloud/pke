@@ -19,7 +19,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
+	"time"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
@@ -44,6 +46,7 @@ const (
 	cniDir             = "/etc/cni/net.d"
 	cniBridgeConfig    = "/etc/cni/net.d/10-bridge.conf"
 	cniLoopbackConfig  = "/etc/cni/net.d/99-loopback.conf"
+	maxJoinRetries     = 5
 )
 
 var _ phases.Runnable = (*Node)(nil)
@@ -68,8 +71,8 @@ type Node struct {
 	taints                 []string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &Node{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&Node{})
 }
 
 func (n *Node) Use() string {
@@ -149,7 +152,7 @@ func (n *Node) Validate(cmd *cobra.Command) error {
 }
 
 func (n *Node) Run(out io.Writer) error {
-	_, _ = fmt.Fprintf(out, "[RUNNING] %s\n", n.Use())
+	_, _ = fmt.Fprintf(out, "[%s] running\n", n.Use())
 
 	if err := n.install(out); err != nil {
 		if rErr := kubeadm.Reset(out); rErr != nil {
@@ -274,13 +277,29 @@ func (n *Node) install(out io.Writer) error {
 		return err
 	}
 
-	// kubeadm join 10.240.0.11:6443 --token 0uk28q.e5i6ewi7xb0g8ye9 --discovery-token-ca-cert-hash sha256:a1a74c00ecccf947b69b49172390018096affbbae25447c4bd0c0906273c1482 --cri-socket=unix:///run/containerd/containerd.sock
-	if err := runner.Cmd(out, cmdKubeadm, "join", "--config="+kubeadmConfig).CombinedOutputAsync(); err != nil {
+	for i := 0; i < maxJoinRetries; i++ {
+		var ll string
+		// kubeadm join 10.240.0.11:6443 --token 0uk28q.e5i6ewi7xb0g8ye9 --discovery-token-ca-cert-hash sha256:a1a74c00ecccf947b69b49172390018096affbbae25447c4bd0c0906273c1482 --cri-socket=unix:///run/containerd/containerd.sock
+		ll, err = runner.Cmd(out, cmdKubeadm, "join", "--config="+kubeadmConfig).CombinedOutputAsync()
+		if err == nil {
+			break
+		}
+
+		// re-run command on connection refused error
+		if !strings.Contains(ll, "connection refused") {
+			return err
+		}
+		_, _ = fmt.Fprintf(out, "[%s] re-run %q command\n", use, cmdKubeadm)
+		time.Sleep(time.Second)
+	}
+	if err != nil {
 		return err
 	}
 
 	return linux.SystemctlEnableAndStart(out, "kubelet")
 }
+
+//go:generate templify -t ${GOTMPL} -p node -f kubeProxyConfig kube_proxy_config.yaml.tmpl
 
 func writeKubeProxyConfig(out io.Writer, filename string) error {
 	dir := filepath.Dir(filename)
@@ -291,35 +310,17 @@ func writeKubeProxyConfig(out io.Writer, filename string) error {
 		return err
 	}
 
-	conf := `apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-`
-
-	return file.Overwrite(filename, conf)
+	return file.Overwrite(filename, kubeProxyConfigTemplate())
 }
+
+//go:generate templify -t ${GOTMPL} -p node -f cniBridge cni_bridge.json.tmpl
 
 func writeCNIBridge(out io.Writer, cloudProvider, podNetworkCIDR, filename string) error {
 	if cloudProvider != constants.CloudProviderAzure || podNetworkCIDR == "" {
 		return nil
 	}
 
-	conf := `{
-    "cniVersion": "0.3.1",
-    "name": "bridge",
-    "type": "bridge",
-    "bridge": "cnio0",
-    "isGateway": true,
-    "ipMasq": true,
-    "ipam": {
-        "type": "host-local",
-        "ranges": [
-          [{"subnet": "{{ .PodNetworkCIDR }}"}]
-        ],
-        "routes": [{"dst": "0.0.0.0/0"}]
-    }
-}`
-
-	tmpl, err := template.New("cni-bridge").Parse(conf)
+	tmpl, err := template.New("cni-bridge").Parse(cniBridgeTemplate())
 	if err != nil {
 		return err
 	}
@@ -342,15 +343,12 @@ func writeCNIBridge(out io.Writer, cloudProvider, podNetworkCIDR, filename strin
 	return tmpl.Execute(w, d)
 }
 
+//go:generate templify -t ${GOTMPL} -p node -f cniLoopback cni_loopback.json.tmpl
+
 func writeCNILoopback(out io.Writer, cloudProvider, filename string) error {
 	if cloudProvider != constants.CloudProviderAzure {
 		return nil
 	}
 
-	conf := `{
-    "cniVersion": "0.3.1",
-    "type": "loopback"
-}`
-
-	return file.Overwrite(filename, conf)
+	return file.Overwrite(filename, cniLoopbackTemplate())
 }

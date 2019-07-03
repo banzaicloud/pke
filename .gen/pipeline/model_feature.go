@@ -13,5 +13,5 @@ package pipeline
 
 type Feature struct {
 	Kind string `json:"kind"`
-	Params map[string]map[string]interface{} `json:"params,omitempty"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }

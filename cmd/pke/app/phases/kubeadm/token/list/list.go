@@ -49,8 +49,8 @@ type List struct {
 	o string
 }
 
-func NewCommand(out io.Writer) *cobra.Command {
-	return phases.NewCommand(out, &List{})
+func NewCommand() *cobra.Command {
+	return phases.NewCommand(&List{})
 }
 
 func (*List) Use() string {

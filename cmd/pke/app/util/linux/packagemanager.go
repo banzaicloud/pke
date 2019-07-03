@@ -22,3 +22,7 @@ type KubernetesPackages interface {
 	InstallKubernetesPackages(out io.Writer, kubernetesVersion string) error
 	InstallKubeadmPackage(out io.Writer, kubernetesVersion string) error
 }
+
+type ContainerDPackages interface {
+	InstallPrerequisites(out io.Writer, containerDVersion string) error
+}

@@ -15,8 +15,6 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/controlplane"
@@ -30,41 +28,41 @@ import (
 )
 
 // NewCmdInstall provides the version information of banzai-cloud-pke.
-func NewCmdInstall(out io.Writer) *cobra.Command {
+func NewCmdInstall() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine",
 		Args:  cobra.NoArgs,
 	}
 
-	cmd.AddCommand(single(out))
-	cmd.AddCommand(master(out))
-	cmd.AddCommand(worker(out))
+	cmd.AddCommand(single())
+	cmd.AddCommand(master())
+	cmd.AddCommand(worker())
 
 	return cmd
 }
 
-func master(out io.Writer) *cobra.Command {
+func master() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "master",
 		Short: "Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node",
 		RunE:  phases.RunEAllSubcommands,
 	}
 
-	cmd.AddCommand(version.NewCommand(out))
-	cmd.AddCommand(container.NewCommand(out))
-	cmd.AddCommand(kubernetes.NewCommand(out))
-	cmd.AddCommand(certificates.NewCommand(out))
-	cmd.AddCommand(controlplane.NewCommand(out))
-	cmd.AddCommand(ready.NewCommand(out, ready.RoleMaster))
+	cmd.AddCommand(version.NewCommand())
+	cmd.AddCommand(container.NewCommand())
+	cmd.AddCommand(kubernetes.NewCommand())
+	cmd.AddCommand(certificates.NewCommand())
+	cmd.AddCommand(controlplane.NewCommand())
+	cmd.AddCommand(ready.NewCommand(ready.RoleMaster))
 
 	phases.MakeRunnable(cmd)
 
 	return cmd
 }
 
-func single(out io.Writer) *cobra.Command {
-	m := master(out)
+func single() *cobra.Command {
+	m := master()
 	m.Use = "single"
 	m.Short = "Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) on a single machine"
 	_ = m.Flags().Set(constants.FlagClusterMode, "single")
@@ -72,18 +70,18 @@ func single(out io.Writer) *cobra.Command {
 	return m
 }
 
-func worker(out io.Writer) *cobra.Command {
+func worker() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "worker",
 		Short: "Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node",
 		RunE:  phases.RunEAllSubcommands,
 	}
 
-	cmd.AddCommand(version.NewCommand(out))
-	cmd.AddCommand(container.NewCommand(out))
-	cmd.AddCommand(kubernetes.NewCommand(out))
-	cmd.AddCommand(node.NewCommand(out))
-	cmd.AddCommand(ready.NewCommand(out, ready.RoleWorker))
+	cmd.AddCommand(version.NewCommand())
+	cmd.AddCommand(container.NewCommand())
+	cmd.AddCommand(kubernetes.NewCommand())
+	cmd.AddCommand(node.NewCommand())
+	cmd.AddCommand(ready.NewCommand(ready.RoleWorker))
 
 	phases.MakeRunnable(cmd)
 

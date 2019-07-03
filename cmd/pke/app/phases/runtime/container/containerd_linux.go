@@ -79,9 +79,10 @@ func installCentOS7(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "unable to load all sysctl rules from files")
 	}
 
-	// yum install -y libseccomp
-	if err := linux.YumInstall(out, []string{"libseccomp"}); err != nil {
-		return errors.Wrap(err, "unable to install libseccomp package")
+	var pm linux.ContainerDPackages
+	pm = linux.NewYumInstaller()
+	if err := pm.InstallPrerequisites(out, containerDVersion); err != nil {
+		return errors.Wrap(err, "unable to install ContainerD prerequisites")
 	}
 
 	_ = linux.SystemctlDisableAndStop(out, "containerd")
@@ -147,6 +148,8 @@ func installContainerD(out io.Writer, imageRepository string) error {
 	return writeContainerDConfig(out, containerDConf, imageRepository)
 }
 
+//go:generate templify -t ${GOTMPL} -p container -f containerdConfig containerd_config.toml.tmpl
+
 func writeContainerDConfig(out io.Writer, filename, imageRepository string) error {
 	dir := filepath.Dir(filename)
 
@@ -156,10 +159,7 @@ func writeContainerDConfig(out io.Writer, filename, imageRepository string) erro
 		return err
 	}
 
-	conf := `[plugins.cri]
-  sandbox_image = "{{ .ImageRepository }}/pause:3.1"`
-
-	tmpl, err := template.New("containerd-config").Parse(conf)
+	tmpl, err := template.New("containerd-config").Parse(containerdConfigTemplate())
 	if err != nil {
 		return err
 	}

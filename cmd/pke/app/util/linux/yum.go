@@ -42,7 +42,7 @@ var (
 )
 
 func YumInstall(out io.Writer, packages []string) error {
-	err := runner.Cmd(out, cmdYum, append([]string{"install", "-y"}, packages...)...).CombinedOutputAsync()
+	_, err := runner.Cmd(out, cmdYum, append([]string{"install", "-y"}, packages...)...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
@@ -106,6 +106,7 @@ func parseRpmPackageOutput(pkg string) (name, version, release, arch string, err
 }
 
 var _ KubernetesPackages = (*YumInstaller)(nil)
+var _ ContainerDPackages = (*YumInstaller)(nil)
 
 type YumInstaller struct{}
 
@@ -135,6 +136,15 @@ func (y *YumInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion st
 	return YumInstall(out, pkg)
 }
 
+func (y *YumInstaller) InstallPrerequisites(out io.Writer, containerDVersion string) error {
+	// yum install -y libseccomp
+	if err := YumInstall(out, []string{"libseccomp"}); err != nil {
+		return errors.Wrap(err, "unable to install libseccomp package")
+	}
+
+	return nil
+}
+
 func mapYumPackageVersion(pkg, kubernetesVersion string) string {
 	switch pkg {
 	case kubeadm:
@@ -148,7 +158,8 @@ func mapYumPackageVersion(pkg, kubernetesVersion string) string {
 
 	case kubernetescni:
 		ver, _ := semver.NewVersion(kubernetesVersion)
-		if !ver.LessThan(semver.MustParse("1.14.0")) {
+		c, _ := semver.NewConstraint(">=1.12.7,<1.13.x || >=1.13.5")
+		if c.Check(ver) {
 			return "kubernetes-cni-0.7.5-0"
 		}
 		return "kubernetes-cni-0.6.0-0"
