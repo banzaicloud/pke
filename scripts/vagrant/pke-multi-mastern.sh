@@ -12,7 +12,7 @@ systemctl is-active kubelet || ( \
     cp /banzaicloud/encryption-provider-config.yaml /etc/kubernetes/admission-control/encryption-provider-config.yaml && \
 
     /banzaicloud/pke version -o yaml || ( \
-        curl -v https://banzaicloud.com/downloads/pke/pke-latest -o /banzaicloud/pke && \
+        curl -vL https://banzaicloud.com/downloads/pke/latest -o /banzaicloud/pke && \
         chmod +x /banzaicloud/pke
     ) && \
 

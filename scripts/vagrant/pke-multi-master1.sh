@@ -4,7 +4,7 @@ KUBERNETES_VERSION=$1
 
 systemctl is-active kubelet || ( \
     /banzaicloud/pke version -o yaml || ( \
-        curl -v https://banzaicloud.com/downloads/pke/pke-latest -o /banzaicloud/pke && \
+        curl -vL https://banzaicloud.com/downloads/pke/latest -o /banzaicloud/pke && \
         chmod +x /banzaicloud/pke
     ) && \
 

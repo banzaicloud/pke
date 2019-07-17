@@ -23,7 +23,7 @@ Once the node is up follow these instructions:
 vagrant ssh node1
 sudo -s
 
-curl -v https://banzaicloud.com/downloads/pke/pke-latest -o /usr/local/bin/pke
+curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -47,7 +47,7 @@ Once the node is up follow these instructions:
 vagrant ssh node1  
 sudo -s
 
-curl -v https://banzaicloud.com/downloads/pke/pke-latest -o /usr/local/bin/pke
+curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -77,7 +77,7 @@ Take note that you'd need to export the TOKEN and CERTHASH environment variables
 vagrant ssh node2
 sudo -s
 
-curl -v https://banzaicloud.com/downloads/pke/pke-latest -o /usr/local/bin/pke
+curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
