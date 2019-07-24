@@ -38,7 +38,6 @@ func kubeadmConfigV1Beta1Template() string {
 		"    read-only-port: \"0\"\n" +
 		"    anonymous-auth: \"false\"\n" +
 		"    streaming-connection-idle-timeout: \"5m\"\n" +
-		"    protect-kernel-defaults: \"true\"\n" +
 		"    event-qps: \"0\"\n" +
 		"    client-ca-file: \"/etc/kubernetes/pki/ca.crt\"\n" +
 		"    feature-gates: \"RotateKubeletServerCertificate=true\"\n" +
@@ -148,6 +147,20 @@ func kubeadmConfigV1Beta1Template() string {
 		"apiVersion: kubelet.config.k8s.io/v1beta1\n" +
 		"kind: KubeletConfiguration\n" +
 		"serverTLSBootstrap: true\n" +
+		"systemReserved:\n" +
+		"  cpu: 200m\n" +
+		"  memory: 500Mi\n" +
+		"  ephemeral-storage: 1Gi\n" +
+		"kubeReserved:\n" +
+		"  cpu: 200m\n" +
+		"  memory: 250Mi\n" +
+		"  ephemeral-storage: 1Gi\n" +
+		"evictionHard:\n" +
+		"  imagefs.available: 15%\n" +
+		"  memory.available: 100Mi\n" +
+		"  nodefs.available: 10%\n" +
+		"  nodefs.inodesFree: 5%\n" +
+		"protectKernelDefaults: true\n" +
 		""
 	return tmpl
 }

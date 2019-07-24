@@ -20,7 +20,6 @@ nodeRegistration:
     read-only-port: "0"
     anonymous-auth: "false"
     streaming-connection-idle-timeout: "5m"
-    protect-kernel-defaults: "true"
     event-qps: "0"
     client-ca-file: "/etc/kubernetes/pki/ca.crt"
     feature-gates: "RotateKubeletServerCertificate=true"
@@ -37,3 +36,17 @@ discovery:
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 serverTLSBootstrap: true
+systemReserved:
+  cpu: 200m
+  memory: 500Mi
+  ephemeral-storage: 1Gi
+kubeReserved:
+  cpu: 200m
+  memory: 250Mi
+  ephemeral-storage: 1Gi
+evictionHard:
+  imagefs.available: 15%
+  memory.available: 100Mi
+  nodefs.available: 10%
+  nodefs.inodesFree: 5%
+protectKernelDefaults: true

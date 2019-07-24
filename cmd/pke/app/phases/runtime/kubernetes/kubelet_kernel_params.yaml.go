@@ -17,8 +17,11 @@ package kubernetes
 // kubeletKernelParamsTemplate is a generated function returning the template as a string.
 func kubeletKernelParamsTemplate() string {
 	var tmpl = "vm.overcommit_memory=1\n" +
+		"# vm.overcommit_ratio=100\n" +
+		"vm.oom_kill_allocating_task=1\n" +
 		"kernel.panic=10\n" +
 		"kernel.panic_on_oops=1\n" +
+		"vm.swappiness=0\n" +
 		""
 	return tmpl
 }
