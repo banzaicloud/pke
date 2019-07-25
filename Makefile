@@ -51,12 +51,13 @@ pke-linux: ## Cross-compile pke for linux
 
 .PHONY: gogenerate
 gogenerate: bin/templify ## Generate go files from template
-	export PATH=${PATH}:${GOPATH}/bin
+	PATH=${PATH}:${PWD}/bin \
 	GOOS=linux go generate ./cmd/...
+	PATH=${PATH}:${PWD}/bin \
 	GOOS=darwin go generate ./cmd/...
 
 bin/templify: bin/templify-${TEMPLIFY_VERSION}
-	@ln -sf bin/templify-${TEMPLIFY_VERSION} bin/templify
+	@ln -sf templify-${TEMPLIFY_VERSION} bin/templify
 bin/templify-${TEMPLIFY_VERSION}:
 	go get github.com/wlbr/templify@${TEMPLIFY_VERSION}
 	@cp ${GOPATH}/bin/templify bin/templify-${TEMPLIFY_VERSION}
