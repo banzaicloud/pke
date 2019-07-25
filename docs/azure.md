@@ -162,6 +162,11 @@ Create a Virtual Machine for the Kubernetes Controller.
 > From now on we will use a private static IP address for every machine for the ease of this tutorial.
 
 ```bash
+az vm availability-set create -g $RG \
+        -n $CLUSTER_NAME \
+        --location $LOCATION \
+        --validate
+
 az network nic create -g $RG \
         -n controller-0-nic \
         --private-ip-address 10.240.0.10 \
@@ -174,6 +179,7 @@ az network nic create -g $RG \
 az vm create -g $RG \
         -n controller-0 \
         --location $LOCATION \
+        --availability-set $CLUSTER_NAME \
         --image $IMAGE \
         --size Standard_B2s \
         --storage-sku Standard_LRS \
@@ -238,6 +244,7 @@ az network nic create -g $RG \
 az vm create -g $RG \
         -n worker-${i} \
         --location $LOCATION \
+        --availability-set $CLUSTER_NAME \
         --image $IMAGE \
         --size Standard_B2s \
         --storage-sku Standard_LRS \
