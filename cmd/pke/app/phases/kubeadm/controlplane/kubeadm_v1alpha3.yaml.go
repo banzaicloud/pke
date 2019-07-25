@@ -45,6 +45,7 @@ func kubeadmConfigV1Alpha3Template() string {
 		"    rotate-certificates: \"true\"\n" +
 		"    tls-cipher-suites: \"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256\"\n" +
 		"    authorization-mode: \"Webhook\"\n" +
+		"    experimental-kernel-memcg-notification: \"true\"\n" +
 		"---\n" +
 		"apiVersion: kubeadm.k8s.io/v1alpha3\n" +
 		"kind: ClusterConfiguration\n" +
@@ -145,6 +146,19 @@ func kubeadmConfigV1Alpha3Template() string {
 		"apiVersion: kubelet.config.k8s.io/v1beta1\n" +
 		"kind: KubeletConfiguration\n" +
 		"serverTLSBootstrap: true\n" +
+		"systemReserved:\n" +
+		"  cpu: 200m\n" +
+		"  memory: 500Mi\n" +
+		"  ephemeral-storage: 1Gi\n" +
+		"kubeReserved:\n" +
+		"  cpu: 200m\n" +
+		"  memory: 250Mi\n" +
+		"  ephemeral-storage: 1Gi\n" +
+		"evictionHard:\n" +
+		"  imagefs.available: 15%\n" +
+		"  memory.available: 100Mi\n" +
+		"  nodefs.available: 10%\n" +
+		"  nodefs.inodesFree: 5%\n" +
 		""
 	return tmpl
 }

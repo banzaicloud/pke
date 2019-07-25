@@ -38,13 +38,13 @@ func kubeadmConfigV1Beta1Template() string {
 		"    read-only-port: \"0\"\n" +
 		"    anonymous-auth: \"false\"\n" +
 		"    streaming-connection-idle-timeout: \"5m\"\n" +
-		"    protect-kernel-defaults: \"true\"\n" +
 		"    event-qps: \"0\"\n" +
 		"    client-ca-file: \"/etc/kubernetes/pki/ca.crt\"\n" +
 		"    feature-gates: \"RotateKubeletServerCertificate=true\"\n" +
 		"    rotate-certificates: \"true\"\n" +
 		"    tls-cipher-suites: \"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256\"\n" +
 		"    authorization-mode: \"Webhook\"\n" +
+		"    experimental-kernel-memcg-notification: \"true\"\n" +
 		"discovery:\n" +
 		"  bootstrapToken:\n" +
 		"    apiServerEndpoint: \"{{ .ControlPlaneEndpoint }}\"\n" +
@@ -55,6 +55,20 @@ func kubeadmConfigV1Beta1Template() string {
 		"apiVersion: kubelet.config.k8s.io/v1beta1\n" +
 		"kind: KubeletConfiguration\n" +
 		"serverTLSBootstrap: true\n" +
+		"systemReserved:\n" +
+		"  cpu: 200m\n" +
+		"  memory: 500Mi\n" +
+		"  ephemeral-storage: 1Gi\n" +
+		"kubeReserved:\n" +
+		"  cpu: 200m\n" +
+		"  memory: 250Mi\n" +
+		"  ephemeral-storage: 1Gi\n" +
+		"evictionHard:\n" +
+		"  imagefs.available: 15%\n" +
+		"  memory.available: 100Mi\n" +
+		"  nodefs.available: 10%\n" +
+		"  nodefs.inodesFree: 5%\n" +
+		"protectKernelDefaults: true\n" +
 		""
 	return tmpl
 }

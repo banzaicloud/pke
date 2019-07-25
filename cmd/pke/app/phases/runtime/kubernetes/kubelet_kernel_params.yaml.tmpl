@@ -1,3 +1,12 @@
 vm.overcommit_memory=1
+
+# vm.oom_kill_allocating_task
+# If this is set to zero, the OOM killer will scan through the entire
+# tasklist and select a task based on heuristics to kill.
+# If this is set to non-zero, the OOM killer simply kills the task that
+# triggered the out-of-memory condition.
+# The default value is 0.
+vm.oom_kill_allocating_task=1
+
 kernel.panic=10
 kernel.panic_on_oops=1
