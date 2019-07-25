@@ -44,6 +44,7 @@ func kubeadmConfigV1Alpha3Template() string {
 		"    rotate-certificates: \"true\"\n" +
 		"    tls-cipher-suites: \"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256\"\n" +
 		"    authorization-mode: \"Webhook\"\n" +
+		"    experimental-kernel-memcg-notification: \"true\"\n" +
 		"discoveryTokenAPIServers:\n" +
 		"  - {{ .ControlPlaneEndpoint }}\n" +
 		"token: {{ .Token }}\n" +
