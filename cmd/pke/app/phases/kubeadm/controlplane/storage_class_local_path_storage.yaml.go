@@ -73,7 +73,7 @@ func storageClassLocalPathStorageTemplate() string {
 		"      serviceAccountName: local-path-provisioner-service-account\n" +
 		"      containers:\n" +
 		"      - name: local-path-provisioner\n" +
-		"        image: banzaicloud/local-path-provisioner:v0.0.5\n" +
+		"        image: banzaicloud/local-path-provisioner:v0.0.9\n" +
 		"        imagePullPolicy: Always\n" +
 		"        command:\n" +
 		"        - local-path-provisioner\n" +
