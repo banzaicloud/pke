@@ -55,7 +55,7 @@ spec:
       serviceAccountName: local-path-provisioner-service-account
       containers:
       - name: local-path-provisioner
-        image: banzaicloud/local-path-provisioner:v0.0.5
+        image: banzaicloud/local-path-provisioner:v0.0.9
         imagePullPolicy: Always
         command:
         - local-path-provisioner
@@ -63,6 +63,7 @@ spec:
         - start
         - --config
         - /etc/config/config.json
+        - --provisioner-name=banzaicloud.io/local-path
         volumeMounts:
         - name: config-volume
           mountPath: /etc/config/
