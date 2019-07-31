@@ -63,6 +63,7 @@ spec:
         - start
         - --config
         - /etc/config/config.json
+        - --provisioner-name=banzaicloud.io/local-path
         volumeMounts:
         - name: config-volume
           mountPath: /etc/config/

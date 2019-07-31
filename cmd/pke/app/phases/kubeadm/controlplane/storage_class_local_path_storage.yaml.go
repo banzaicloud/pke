@@ -81,6 +81,7 @@ func storageClassLocalPathStorageTemplate() string {
 		"        - start\n" +
 		"        - --config\n" +
 		"        - /etc/config/config.json\n" +
+		"        - --provisioner-name=banzaicloud.io/local-path\n" +
 		"        volumeMounts:\n" +
 		"        - name: config-volume\n" +
 		"          mountPath: /etc/config/\n" +
