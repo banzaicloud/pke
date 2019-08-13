@@ -74,6 +74,8 @@ const (
 	FlagPodNetworkCIDR = "kubernetes-pod-network-cidr"
 	// FlagInfrastructureCIDR range of IP addresses from which the advertise address can be calculated using system's network interfaces.
 	FlagInfrastructureCIDR = "kubernetes-infrastructure-cidr"
+	// FlagMTU maximum transmission unit. 0 means default value of the Kubernetes network provider is used.
+	FlagMTU = "kubernetes-mtu"
 
 	// FlagCloudProvider cloud provider for kubeadm.
 	FlagCloudProvider = "kubernetes-cloud-provider"

@@ -27,6 +27,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -89,6 +90,7 @@ type ControlPlane struct {
 	clusterName                      string
 	serviceCIDR                      string
 	podNetworkCIDR                   string
+	mtu                              uint
 	cloudProvider                    string
 	nodepool                         string
 	controllerManagerSigningCA       string
@@ -165,6 +167,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAPIServerHostPort, "", "Kubernetes API Server host port")
 	flags.String(constants.FlagServiceCIDR, "10.10.0.0/16", "range of IP address for service VIPs")
 	flags.String(constants.FlagPodNetworkCIDR, "10.20.0.0/16", "range of IP addresses for the pod network")
+	flags.Uint(constants.FlagMTU, 0, "maximum transmission unit. 0 means default value of the Kubernetes network provider is used")
 	// Kubernetes cluster name
 	flags.String(constants.FlagClusterName, "pke", "Kubernetes cluster name")
 	// Kubernetes certificates
@@ -453,11 +456,11 @@ func (c *ControlPlane) Run(out io.Writer) error {
 
 	switch c.networkProvider {
 	case "weave":
-		if err := installWeave(out, c.cloudProvider, c.podNetworkCIDR, kubeConfig); err != nil {
+		if err := installWeave(out, c.cloudProvider, c.podNetworkCIDR, kubeConfig, c.mtu); err != nil {
 			return err
 		}
 	case "calico":
-		if err := installCalico(out, c.podNetworkCIDR, kubeConfig); err != nil {
+		if err := installCalico(out, c.podNetworkCIDR, kubeConfig, c.mtu); err != nil {
 			return err
 		}
 	}
@@ -538,6 +541,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.podNetworkCIDR, err = cmd.Flags().GetString(constants.FlagPodNetworkCIDR)
+	if err != nil {
+		return
+	}
+	c.mtu, err = cmd.Flags().GetUint(constants.FlagMTU)
 	if err != nil {
 		return
 	}
@@ -827,7 +834,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	return nil
 }
 
-func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string) error {
+func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string, mtu uint) error {
 	resp, err := http.Get(calicoUrl)
 	if err != nil {
 		return err
@@ -842,6 +849,9 @@ func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string) error {
 		return emperror.Wrap(err, "failed to download Calico manifest")
 	}
 	input := strings.ReplaceAll(buf.String(), "192.168.0.0/16", podNetworkCIDR)
+	if mtu > 0 {
+		input = strings.ReplaceAll(input, `veth_mtu: "1440"`, fmt.Sprintf(`veth_mtu: "%d"`, mtu))
+	}
 
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", "-")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
@@ -850,7 +860,7 @@ func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string) error {
 	return err
 }
 
-func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig string) error {
+func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig string, mtu uint) error {
 	// kubectl version
 	cmd := runner.Cmd(out, cmdKubectl, "version")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
@@ -871,6 +881,9 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 	q.Set("k8s-version", ver)
 	if cloudProvider != constants.CloudProviderAzure {
 		q.Set("env.IPALLOC_RANGE", podNetworkCIDR)
+	}
+	if mtu > 0 {
+		q.Set("env.WEAVE_MTU", strconv.FormatUint(uint64(mtu), 10))
 	}
 	u.RawQuery = q.Encode()
 
