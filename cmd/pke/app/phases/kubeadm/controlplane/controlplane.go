@@ -59,7 +59,7 @@ const (
 	cmdKubeadm                    = "/bin/kubeadm"
 	cmdKubectl                    = "/bin/kubectl"
 	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
-	calicoUrl                     = "https://docs.projectcalico.org/v3.7/manifests/calico.yaml"
+	calicoUrl                     = "https://docs.projectcalico.org/v3.8/manifests/calico.yaml"
 	kubeConfig                    = "/etc/kubernetes/admin.conf"
 	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
 	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
