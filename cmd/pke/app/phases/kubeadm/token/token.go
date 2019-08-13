@@ -76,16 +76,26 @@ func Get(out io.Writer, secret, certHash string) (*Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	t, err := time.Parse(time.RFC3339, string(exp))
-	if err != nil {
-		return nil, err
+
+	var (
+		t       time.Time
+		ttl     int
+		expired bool
+	)
+	if exps := string(exp); exps != "" {
+		t, err = time.Parse(time.RFC3339, exps)
+		if err != nil {
+			return nil, err
+		}
+		ttl = int(t.Sub(time.Now()).Hours())
+		expired = t.Sub(time.Now()) <= 0
 	}
 
 	return &Token{
 		Token:    fmt.Sprintf("%s.%s", tid, ts),
-		TTL:      int(t.Sub(time.Now()).Hours()),
+		TTL:      ttl,
 		Expires:  t,
-		Expired:  t.Sub(time.Now()) <= 0,
+		Expired:  expired,
 		CertHash: certHash,
 	}, nil
 }
