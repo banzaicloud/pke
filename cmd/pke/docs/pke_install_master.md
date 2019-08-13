@@ -43,6 +43,7 @@ pke install master [flags]
       --kubernetes-infrastructure-cidr string             network CIDR for the actual machine (default "192.168.64.0/20")
       --kubernetes-join-control-plane                     Join an another control plane node
       --kubernetes-master-mode string                     Kubernetes cluster mode (default "default")
+      --kubernetes-mtu uint                               maximum transmission unit. 0 means default value of the Kubernetes network provider is used
       --kubernetes-network-provider string                Kubernetes network provider (default "weave")
       --kubernetes-node-token string                      PKE join token
       --kubernetes-oidc-client-id string                  A client ID that all OIDC tokens must be issued for
