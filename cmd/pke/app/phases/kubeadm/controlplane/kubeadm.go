@@ -26,6 +26,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
+	"github.com/pbnjay/memory"
 	"github.com/pkg/errors"
 )
 
@@ -107,6 +108,12 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		kubeletCloudConfig = true
 	}
 
+	// kube reserved resources
+	var (
+		kubeReservedCPU    = "100m"
+		kubeReservedMemory = kubeadm.KubeReservedMemory(memory.TotalMemory())
+	)
+
 	type data struct {
 		APIServerAdvertiseAddress   string
 		APIServerBindPort           string
@@ -136,6 +143,8 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		EtcdCertFile                string
 		EtcdKeyFile                 string
 		EtcdPrefix                  string
+		KubeReservedCPU             string
+		KubeReservedMemory          string
 	}
 
 	d := data{
@@ -167,6 +176,8 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		EtcdCertFile:                c.etcdCertFile,
 		EtcdKeyFile:                 c.etcdKeyFile,
 		EtcdPrefix:                  c.etcdPrefix,
+		KubeReservedCPU:             kubeReservedCPU,
+		KubeReservedMemory:          kubeReservedMemory,
 	}
 
 	return tmpl.Execute(w, d)

@@ -20,3 +20,8 @@ linters:
 linters-settings:
     golint:
         min-confidence: 0.1
+
+issues:
+    exclude:
+        - Using the variable on range scope `tt` in function literal
+        - Using the variable on range scope `tc` in function literal

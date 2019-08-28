@@ -14,7 +14,11 @@
 
 package kubeadm
 
-import "net"
+import (
+	"fmt"
+	"math"
+	"net"
+)
 
 func SplitHostPort(hostport, defaultPort string) (host, port string, err error) {
 	host, port, err = net.SplitHostPort(hostport)
@@ -25,4 +29,38 @@ func SplitHostPort(hostport, defaultPort string) (host, port string, err error) 
 		}
 	}
 	return
+}
+
+func KubeReservedMemory(totalMemoryBytes uint64) string {
+	// convert bytes to MiB
+	mem := totalMemoryBytes >> 20
+
+	var multiplier float64
+
+	switch {
+	case mem > 200000:
+		multiplier = 0.06
+	case mem > 100000:
+		multiplier = 0.076
+	case mem > 50000:
+		multiplier = 0.092
+	case mem > 25000:
+		multiplier = 0.123
+	case mem > 15000:
+		multiplier = 0.166
+	case mem > 7500:
+		multiplier = 0.225
+	case mem > 3750:
+		multiplier = 0.243
+	case mem > 1700:
+		multiplier = 0.256
+	case mem > 700:
+		multiplier = 0.3
+	case mem <= 700 && mem > 100:
+		multiplier = 0.4
+	default:
+		multiplier = 0
+	}
+
+	return fmt.Sprintf("%dMi", uint64(math.Round(float64(mem)*multiplier)))
 }

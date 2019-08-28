@@ -15,6 +15,7 @@ require (
 	github.com/goph/emperror v0.17.1
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/lestrrat-go/backoff v0.0.0-20190107202757-0bc2a4274cd0
+	github.com/pbnjay/memory v0.0.0-20190104145345-974d429e7ae4
 	github.com/pkg/errors v0.8.1
 	github.com/russross/blackfriday v1.5.1 // indirect
 	github.com/spf13/cobra v0.0.3
