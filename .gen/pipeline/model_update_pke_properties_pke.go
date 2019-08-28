@@ -11,6 +11,6 @@
 
 package pipeline
 
-type AddClusterProfileEks struct {
-	Eks ClusterProfileEksEks `json:"eks,omitempty"`
+type UpdatePkePropertiesPke struct {
+	NodePools map[string]UpdateNodePoolsPke `json:"nodePools"`
 }

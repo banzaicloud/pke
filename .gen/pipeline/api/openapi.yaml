@@ -17,8 +17,6 @@ tags:
   name: spotguides
 - description: Deployment related functions for a cluster
   name: deployments
-- description: Cluster profiles related functions
-  name: profiles
 - description: Auth related functions
   name: auth
 - description: Secrets related functions
@@ -50,6 +48,18 @@ tags:
 - description: 'ARK: restores related functions'
   name: ark-restores
 paths:
+  /api/version:
+    get:
+      description: Return Pipeline build and deployment info
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+          description: Version info
+      tags:
+      - common
   /api/v1/orgs/{orgId}/domain:
     get:
       description: Return the base domain
@@ -2745,205 +2755,6 @@ paths:
       summary: Create / Update Deployment Scaling
       tags:
       - hpa
-  /api/v1/orgs/{orgId}/profiles/cluster/{distribution}:
-    get:
-      description: Listing cluster profiles by cloud type
-      operationId: ListProfiles
-      parameters:
-      - description: Organization identification
-        explode: false
-        in: path
-        name: orgId
-        required: true
-        schema:
-          format: int32
-          type: integer
-        style: simple
-      - description: Distribution type
-        explode: false
-        in: path
-        name: distribution
-        required: true
-        schema:
-          type: string
-        style: simple
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProfileListResponse'
-          description: Profiles listed
-        400:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BaseError_400'
-          description: Error during delete deployment
-        401:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          description: Unauthorized
-      security:
-      - bearerAuth: []
-      summary: List cluster profiles
-      tags:
-      - profiles
-  /api/v1/orgs/{orgId}/profiles/cluster:
-    post:
-      description: Add cluster profile
-      operationId: AddProfiles
-      parameters:
-      - description: Organization identification
-        explode: false
-        in: path
-        name: orgId
-        required: true
-        schema:
-          format: int32
-          type: integer
-        style: simple
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddClusterProfileRequest'
-        required: true
-      responses:
-        201:
-          description: Cluster profile created successfully
-        400:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BaseError_400'
-          description: Error during delete deployment
-        401:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          description: Unauthorized
-      security:
-      - bearerAuth: []
-      summary: Add cluster profiles
-      tags:
-      - profiles
-    put:
-      description: Update an existing cluster profile
-      operationId: UpdateProfiles
-      parameters:
-      - description: Organization identification
-        explode: false
-        in: path
-        name: orgId
-        required: true
-        schema:
-          format: int32
-          type: integer
-        style: simple
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddClusterProfileRequest'
-        required: true
-      responses:
-        201:
-          description: Cluster profile updated successfully
-        400:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BaseError_400'
-          description: Error during updating cluster profile
-        401:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          description: Unauthorized
-        404:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClusterProfileNotFound'
-          description: Cluster profile not found
-        500:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BaseError_500'
-          description: Internal server error
-      security:
-      - bearerAuth: []
-      summary: Update cluster profiles
-      tags:
-      - profiles
-  /api/v1/orgs/{orgId}/profiles/cluster/{distribution}/{name}:
-    delete:
-      description: Delete cluster profiles by cloud type and name
-      operationId: DeleteProfiles
-      parameters:
-      - description: Organization identification
-        explode: false
-        in: path
-        name: orgId
-        required: true
-        schema:
-          format: int32
-          type: integer
-        style: simple
-      - description: Distribution type
-        explode: false
-        in: path
-        name: distribution
-        required: true
-        schema:
-          type: string
-        style: simple
-      - description: Cluster profile name
-        explode: false
-        in: path
-        name: name
-        required: true
-        schema:
-          type: string
-        style: simple
-      responses:
-        201:
-          description: Cluster profile deleted successfully
-        400:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BaseError_400'
-          description: Error during deleting cluster profile
-        401:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Unauthorized'
-          description: Unauthorized
-        404:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClusterProfileNotFound'
-          description: Cluster profile not found
-        500:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BaseError_500'
-          description: Internal server error
-      security:
-      - bearerAuth: []
-      summary: Delete cluster profiles
-      tags:
-      - profiles
   /api/v1/tokens:
     get:
       description: List all API tokens
@@ -4211,6 +4022,14 @@ paths:
         explode: true
         in: query
         name: storageAccount
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: The region to delete the bucket from. Required on Amazon, Oracle and Alibaba cloud providers.
+        explode: true
+        in: query
+        name: location
         required: false
         schema:
           type: string
@@ -7768,8 +7587,8 @@ paths:
           type: string
         style: simple
       responses:
-        202:
-          description: Accepted
+        204:
+          description: No Content
         401:
           content:
             application/json:
@@ -7996,6 +7815,35 @@ components:
       description: Feature properties
       required: true
   schemas:
+    VersionResponse:
+      description: Pipeline build and deployment info
+      example:
+        build_date: build_date
+        os: os
+        arch: arch
+        go_version: go_version
+        compiler: compiler
+        instance_uuid: instance_uuid
+        version: version
+        commit_hash: commit_hash
+      properties:
+        version:
+          type: string
+        commit_hash:
+          type: string
+        build_date:
+          type: string
+        go_version:
+          type: string
+        os:
+          type: string
+        arch:
+          type: string
+        compiler:
+          type: string
+        instance_uuid:
+          type: string
+      type: object
     UpdateUserRequest:
       example:
         gitHubToken: b8d9cfb5df15fd513bf3351719876ffff4b310d2
@@ -8077,8 +7925,17 @@ components:
         pipeline: '{}'
         cluster:
           cloud: google
-          profileName: profileName
           secretName: my-aws-secret
+          scaleOptions:
+            desiredMem: 1.602745618307040320615897144307382404804229736328125
+            onDemandPct: 59
+            excludes:
+            - excludes
+            - excludes
+            desiredCpu: 1.080082819046101150206595775671303272247314453125
+            keepDesiredCapacity: true
+            desiredGpu: 0
+            enabled: true
           secretIds:
           - 62bc3c75-91fb-4670-bad4-24b401a9deac
           - 4378ae32-2355-12ed-b984-1234567804ed
@@ -8276,8 +8133,17 @@ components:
     CreateClusterRequest:
       example:
         cloud: google
-        profileName: profileName
         secretName: my-aws-secret
+        scaleOptions:
+          desiredMem: 1.602745618307040320615897144307382404804229736328125
+          onDemandPct: 59
+          excludes:
+          - excludes
+          - excludes
+          desiredCpu: 1.080082819046101150206595775671303272247314453125
+          keepDesiredCapacity: true
+          desiredGpu: 0
+          enabled: true
         secretIds:
         - 62bc3c75-91fb-4670-bad4-24b401a9deac
         - 4378ae32-2355-12ed-b984-1234567804ed
@@ -8335,8 +8201,8 @@ components:
               region: region
               secretId: 62bc3c75-91fb-4670-bad4-24b401a9deac
           type: object
-        profileName:
-          type: string
+        scaleOptions:
+          $ref: '#/components/schemas/ScaleOptions'
         properties:
           example:
             gke:
@@ -8394,6 +8260,16 @@ components:
       - kind
       type: object
     ScaleOptions:
+      example:
+        desiredMem: 1.602745618307040320615897144307382404804229736328125
+        onDemandPct: 59
+        excludes:
+        - excludes
+        - excludes
+        desiredCpu: 1.080082819046101150206595775671303272247314453125
+        keepDesiredCapacity: true
+        desiredGpu: 0
+        enabled: true
       properties:
         enabled:
           type: boolean
@@ -8726,10 +8602,21 @@ components:
       type: string
     CreatePKEProperties:
       properties:
-        clusterTopology:
-          $ref: '#/components/schemas/CreatePKEProperties_clusterTopology'
+        network:
+          $ref: '#/components/schemas/CreatePKEProperties_network'
+        nodePools:
+          items:
+            $ref: '#/components/schemas/NodePoolsPKE'
+          type: array
+        kubernetes:
+          $ref: '#/components/schemas/CreatePKEProperties_kubernetes'
+        cri:
+          $ref: '#/components/schemas/CreatePKEProperties_cri'
       required:
-      - clusterTopology
+      - cri
+      - kubernetes
+      - network
+      - nodePools
       type: object
     NodePoolsPKE:
       properties:
@@ -8743,6 +8630,15 @@ components:
           items:
             type: string
           type: array
+        labels:
+          additionalProperties:
+            example: '{"example.io/label1":"value1"}'
+            type: string
+          description: user provided custom node labels to be placed onto the nodes of the node pool
+          type: object
+        autoscaling:
+          description: Enables/disables autoscaling of this node pool through Kubernetes cluster autoscaler.
+          type: boolean
         provider:
           example: amazon
           type: string
@@ -8753,7 +8649,7 @@ components:
             $ref: '#/components/schemas/PKEHosts'
           type: array
       required:
-      - hosts
+      - autoscaling
       - name
       - provider
       - providerConfig
@@ -8955,19 +8851,6 @@ components:
             clusters....
           type: string
       type: object
-    ClusterProfileNotFound:
-      properties:
-        code:
-          example: 404
-          format: int32
-          type: integer
-        message:
-          example: Profile not found
-          type: string
-        error:
-          example: record not found
-          type: string
-      type: object
     ChartNotFound:
       properties:
         code:
@@ -9126,6 +9009,49 @@ components:
           type: string
       required:
       - count
+      type: object
+    UpdatePKEProperties:
+      properties:
+        pke:
+          $ref: '#/components/schemas/UpdatePKEProperties_pke'
+      required:
+      - pke
+      type: object
+    UpdateNodePoolsPKE:
+      properties:
+        instanceType:
+          description: Instance type for the nodes in the node pool. This field is ignored when existing node pool is updated as instance type can not be changed.
+          example: c4.large
+          type: string
+        spotPrice:
+          description: The spot price for a node in the node pool. Provide "" or "0" for on-demand nodes.
+          example: "0.2"
+          type: string
+        autoscaling:
+          description: Whether to enable Kubernetes cluster autoscaler for this node pool.
+          type: boolean
+        minCount:
+          description: If cluster autoscaler is enabled for this node pool it sets the minimum node count the cluster autoscaler can downscale the node pool to.
+          example: 1
+          format: int32
+          type: integer
+        maxCount:
+          description: If cluster autoscaler is enabled for this node pool it sets the maximum node count the cluster autoscaler can upscale the node pool to.
+          example: 2
+          format: int32
+          type: integer
+        count:
+          description: If cluster autoscaler is not enabled this specifies the desired ndoe count in the node pool. If cluster autoscaler is enabled this specifies the initial node count in the ndoe pool.
+          example: 1
+          format: int32
+          type: integer
+        subnets:
+          description: The subnet to create the node pool into. If this field is omitted than the subnet from the cluster level network configuration is used.
+          example:
+          - subnet-0d16a21e9655486af
+          items:
+            type: string
+          type: array
       type: object
     ClusterDelete_200:
       example:
@@ -9695,6 +9621,8 @@ components:
           type: string
         upgrade:
           type: boolean
+        force_upgrade:
+          type: boolean
         service_account:
           type: string
         canary_image:
@@ -10022,122 +9950,6 @@ components:
       required:
       - name
       - sourcing
-      type: object
-    ProfileListResponse:
-      example:
-        cloud: google
-        name: default
-        ttlMinutes: 120
-        location: us-central1-a
-        properties:
-          gke:
-            master:
-              version: master
-            nodeVersion: "1.10"
-            nodePools:
-              pool1:
-                count: 1
-                instanceType: n1-standard-1
-      properties:
-        name:
-          example: default
-          type: string
-        location:
-          example: us-central1-a
-          type: string
-        cloud:
-          example: google
-          type: string
-        ttlMinutes:
-          description: The lifespan of the cluster expressed in minutes after which it is automatically deleted. Zero value means the cluster is never automatically deleted.
-          example: 120
-          format: int32
-          minimum: 0
-          type: integer
-        properties:
-          example:
-            gke:
-              master:
-                version: master
-              nodeVersion: "1.10"
-              nodePools:
-                pool1:
-                  count: 1
-                  instanceType: n1-standard-1
-          type: object
-      type: object
-    ClusterProfileEKS:
-      properties:
-        eks:
-          $ref: '#/components/schemas/ClusterProfileEKS_eks'
-      type: object
-    ClusterProfileAKS:
-      properties:
-        aks:
-          $ref: '#/components/schemas/ClusterProfileAKS_aks'
-      type: object
-    ClusterProfileGKE:
-      properties:
-        gke:
-          $ref: '#/components/schemas/ClusterProfileGKE_gke'
-      type: object
-    AddClusterProfileRequest:
-      example:
-        cloud: google
-        name: myCluster-profile
-        ttlMinutes: 120
-        location: us-central1-a
-        properties:
-          gke:
-            master:
-              version: master
-            nodeVersion: 1.8.7-gke.1
-            nodePools:
-              pool1:
-                count: 1
-                instanceType: n1-standard-1
-      properties:
-        name:
-          example: myCluster-profile
-          type: string
-        location:
-          example: us-central1-a
-          type: string
-        cloud:
-          example: google
-          type: string
-        ttlMinutes:
-          description: The lifespan of the cluster expressed in minutes after which it is automatically deleted. Zero value means the cluster is never automatically deleted.
-          example: 120
-          format: int32
-          minimum: 0
-          type: integer
-        properties:
-          example:
-            gke:
-              master:
-                version: master
-              nodeVersion: 1.8.7-gke.1
-              nodePools:
-                pool1:
-                  count: 1
-                  instanceType: n1-standard-1
-          type: object
-      type: object
-    AddClusterProfileEKS:
-      properties:
-        eks:
-          $ref: '#/components/schemas/ClusterProfileEKS_eks'
-      type: object
-    AddClusterProfileAKS:
-      properties:
-        aks:
-          $ref: '#/components/schemas/AddClusterProfileAKS_aks'
-      type: object
-    AddClusterProfileGKE:
-      properties:
-        gke:
-          $ref: '#/components/schemas/ClusterProfileGKE_gke'
       type: object
     TokenCreateRequest:
       example:
@@ -10788,8 +10600,10 @@ components:
         name: mybucket
         secretId: secretId
         properties:
-          alibaba:
+          amazon:
             location: eu-west-1
+          alibaba:
+            location: eu-central-1
           oracle:
             location: location
           google:
@@ -10815,8 +10629,10 @@ components:
       type: object
     CreateObjectStoreBucketProperties:
       example:
-        alibaba:
+        amazon:
           location: eu-west-1
+        alibaba:
+          location: eu-central-1
         oracle:
           location: location
         google:
@@ -10827,6 +10643,8 @@ components:
           storageAccount: mystorageaccount
       properties:
         alibaba:
+          $ref: '#/components/schemas/CreateAlibabaObjectStoreBucketProperties'
+        amazon:
           $ref: '#/components/schemas/CreateAmazonObjectStoreBucketProperties'
         azure:
           $ref: '#/components/schemas/CreateAzureObjectStoreBucketProperties'
@@ -10834,6 +10652,17 @@ components:
           $ref: '#/components/schemas/CreateGoogleObjectStoreBucketProperties'
         oracle:
           $ref: '#/components/schemas/CreateOracleObjectStoreBucketProperties'
+      type: object
+    CreateAlibabaObjectStoreBucketProperties:
+      example:
+        location: eu-central-1
+      nullable: true
+      properties:
+        location:
+          example: eu-central-1
+          type: string
+      required:
+      - location
       type: object
     CreateAmazonObjectStoreBucketProperties:
       example:
@@ -10910,18 +10739,22 @@ components:
       type: object
     BucketInfo:
       example:
+        cloud: amazon
         notes: There's no secret with this ID
+        oracle:
+          namespace: namespace
         managed: true
         name: mybucket
+        aks:
+          resourceGroup: resourceGroup
+          storageAccount: storageAccount
+        location: eu-west-1
         secret:
           accessId: cc051aeaf686444e2f125d0e79eb051aaaf4fb73384f7b0f8c89e84a0502dcef
           accessName: myaccesssecretname
           name: mysecretname
           id: cc051aeaf686444e2f125d0e79eb051aaaf4fb73384f7b0f8c89e84a0502dca1
         statusMessage: statusMessage
-        azure:
-          resourceGroup: resourceGroup
-          storageAccount: storageAccount
         status: CREATING
       properties:
         name:
@@ -10931,14 +10764,24 @@ components:
         managed:
           description: true if the bucket has been created via pipeline
           type: boolean
+        cloud:
+          description: cloud provider of the bucket
+          example: amazon
+          type: string
+        location:
+          description: location of the bucket
+          example: eu-west-1
+          type: string
         notes:
-          description: true if the bucket has been created via pipeline
+          description: notes for the bucket
           example: There's no secret with this ID
           type: string
         secret:
           $ref: '#/components/schemas/BucketInfo_secret'
-        azure:
+        aks:
           $ref: '#/components/schemas/AzureBlobStorageProps'
+        oracle:
+          $ref: '#/components/schemas/OracleStorageProps'
         status:
           description: the status of the bucket
           enum:
@@ -10953,6 +10796,7 @@ components:
           type: string
       required:
       - cloud
+      - location
       - managed
       - name
       - status
@@ -11058,6 +10902,15 @@ components:
       required:
       - resourceGroup
       - storageAccount
+      type: object
+    OracleStorageProps:
+      example:
+        namespace: namespace
+      properties:
+        namespace:
+          type: string
+      required:
+      - namespace
       type: object
     PodDetailsResponse:
       items:
@@ -13691,7 +13544,7 @@ components:
       required:
       - nodePools
       - version
-    CreatePKEProperties_clusterTopology_network:
+    CreatePKEProperties_network:
       properties:
         apiServerAddress:
           example: 10.240.0.204
@@ -13710,46 +13563,29 @@ components:
       - podCIDR
       - provider
       - serviceCIDR
-    CreatePKEProperties_clusterTopology_kubernetes_rbac:
+    CreatePKEProperties_kubernetes_rbac:
       properties:
         enabled:
           type: boolean
       required:
       - enabled
-    CreatePKEProperties_clusterTopology_kubernetes:
+    CreatePKEProperties_kubernetes:
       properties:
         version:
           example: v1.12.2
           type: string
         rbac:
-          $ref: '#/components/schemas/CreatePKEProperties_clusterTopology_kubernetes_rbac'
+          $ref: '#/components/schemas/CreatePKEProperties_kubernetes_rbac'
       required:
       - rbac
       - version
-    CreatePKEProperties_clusterTopology_cri:
+    CreatePKEProperties_cri:
       properties:
         runtime:
           example: containerd
           type: string
       required:
       - runtime
-    CreatePKEProperties_clusterTopology:
-      properties:
-        network:
-          $ref: '#/components/schemas/CreatePKEProperties_clusterTopology_network'
-        nodePools:
-          items:
-            $ref: '#/components/schemas/NodePoolsPKE'
-          type: array
-        kubernetes:
-          $ref: '#/components/schemas/CreatePKEProperties_clusterTopology_kubernetes'
-        cri:
-          $ref: '#/components/schemas/CreatePKEProperties_clusterTopology_cri'
-      required:
-      - cri
-      - kubernetes
-      - network
-      - nodePools
     AmazonAutoScalingGroup_size:
       properties:
         min:
@@ -13789,6 +13625,14 @@ components:
       properties:
         version:
           type: string
+    UpdatePKEProperties_pke:
+      properties:
+        nodePools:
+          additionalProperties:
+            $ref: '#/components/schemas/UpdateNodePoolsPKE'
+          type: object
+      required:
+      - nodePools
     ListNodesResponse_metadata:
       example:
         resourceVersion: "30123"
@@ -14260,49 +14104,6 @@ components:
           items:
             type: string
           type: array
-    ClusterProfileEKS_eks:
-      properties:
-        version:
-          example: "1.11"
-          type: string
-        nodePools:
-          additionalProperties:
-            $ref: '#/components/schemas/NodePoolsAmazon'
-          type: object
-    ClusterProfileAKS_aks:
-      properties:
-        kubernetesVersion:
-          example: 1.9.2
-          type: string
-        nodePools:
-          additionalProperties:
-            $ref: '#/components/schemas/NodePoolsAzure'
-          type: object
-    ClusterProfileGKE_gke_master:
-      properties:
-        version:
-          example: 1.8.7-gke.1
-          type: string
-    ClusterProfileGKE_gke:
-      properties:
-        master:
-          $ref: '#/components/schemas/ClusterProfileGKE_gke_master'
-        nodeVersion:
-          example: 1.8.7-gke.1
-          type: string
-        nodePools:
-          additionalProperties:
-            $ref: '#/components/schemas/NodePoolsGoogle'
-          type: object
-    AddClusterProfileAKS_aks:
-      properties:
-        nodePools:
-          additionalProperties:
-            $ref: '#/components/schemas/NodePoolsAzure'
-          type: object
-        kubernetesVersion:
-          example: 1.8.2
-          type: string
     AllowedSecretTypeResponse_fields:
       example:
         name: name

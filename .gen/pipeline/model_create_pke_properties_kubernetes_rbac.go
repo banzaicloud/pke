@@ -11,6 +11,6 @@
 
 package pipeline
 
-type AddClusterProfileGke struct {
-	Gke ClusterProfileGkeGke `json:"gke,omitempty"`
+type CreatePkePropertiesKubernetesRbac struct {
+	Enabled bool `json:"enabled"`
 }

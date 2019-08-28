@@ -108,6 +108,7 @@ Class | Method | HTTP request | Description
 *ClustersApi* | [**PostReadyPKENode**](docs/ClustersApi.md#postreadypkenode) | **Post** /api/v1/orgs/{orgId}/clusters/{id}/pke/ready | Report to Pipeline that a new node is ready (to be called by PKE installer)
 *ClustersApi* | [**UpdateCluster**](docs/ClustersApi.md#updatecluster) | **Put** /api/v1/orgs/{orgId}/clusters/{id} | Update cluster
 *ClustersApi* | [**UpdateMonitoring**](docs/ClustersApi.md#updatemonitoring) | **Post** /api/v1/orgs/{orgId}/clusters/{id}/monitoring | Update monitoring
+*CommonApi* | [**ApiVersionGet**](docs/CommonApi.md#apiversionget) | **Get** /api/version | 
 *CommonApi* | [**ListEndpoints**](docs/CommonApi.md#listendpoints) | **Get** /api | List Pipeline API endpoints
 *DeploymentsApi* | [**CreateDeployment**](docs/DeploymentsApi.md#createdeployment) | **Post** /api/v1/orgs/{orgId}/clusters/{id}/deployments | Create a Helm deployment
 *DeploymentsApi* | [**DeleteDeployment**](docs/DeploymentsApi.md#deletedeployment) | **Delete** /api/v1/orgs/{orgId}/clusters/{id}/deployments/{name} | Delete deployment
@@ -148,10 +149,6 @@ Class | Method | HTTP request | Description
 *PoliciesApi* | [**GetPolicy**](docs/PoliciesApi.md#getpolicy) | **Get** /api/v1/orgs/{orgId}/clusters/{id}/policies/{policyId} | Get specific policy
 *PoliciesApi* | [**ListPolicies**](docs/PoliciesApi.md#listpolicies) | **Get** /api/v1/orgs/{orgId}/clusters/{id}/policies | List policies
 *PoliciesApi* | [**UpdatePolicy**](docs/PoliciesApi.md#updatepolicy) | **Put** /api/v1/orgs/{orgId}/clusters/{id}/policies/{policyId} | Update policy
-*ProfilesApi* | [**AddProfiles**](docs/ProfilesApi.md#addprofiles) | **Post** /api/v1/orgs/{orgId}/profiles/cluster | Add cluster profiles
-*ProfilesApi* | [**DeleteProfiles**](docs/ProfilesApi.md#deleteprofiles) | **Delete** /api/v1/orgs/{orgId}/profiles/cluster/{distribution}/{name} | Delete cluster profiles
-*ProfilesApi* | [**ListProfiles**](docs/ProfilesApi.md#listprofiles) | **Get** /api/v1/orgs/{orgId}/profiles/cluster/{distribution} | List cluster profiles
-*ProfilesApi* | [**UpdateProfiles**](docs/ProfilesApi.md#updateprofiles) | **Put** /api/v1/orgs/{orgId}/profiles/cluster | Update cluster profiles
 *ProjectsApi* | [**GetProjects**](docs/ProjectsApi.md#getprojects) | **Get** /api/v1/orgs/{orgId}/google/projects | Retrieves projects visible for the user identified by the secret id
 *ScanlogApi* | [**ListScans**](docs/ScanlogApi.md#listscans) | **Get** /api/v1/orgs/{orgId}/clusters/{id}/scanlog | List scans
 *ScanlogApi* | [**ListScansByRelease**](docs/ScanlogApi.md#listscansbyrelease) | **Get** /api/v1/orgs/{orgId}/clusters/{id}/scanlog/{releaseName} | List scans by release
@@ -187,11 +184,6 @@ Class | Method | HTTP request | Description
 ## Documentation For Models
 
  - [ActivateClusterFeatureRequest](docs/ActivateClusterFeatureRequest.md)
- - [AddClusterProfileAks](docs/AddClusterProfileAks.md)
- - [AddClusterProfileAksAks](docs/AddClusterProfileAksAks.md)
- - [AddClusterProfileEks](docs/AddClusterProfileEks.md)
- - [AddClusterProfileGke](docs/AddClusterProfileGke.md)
- - [AddClusterProfileRequest](docs/AddClusterProfileRequest.md)
  - [AllowedSecretTypeResponse](docs/AllowedSecretTypeResponse.md)
  - [AllowedSecretTypeResponseFields](docs/AllowedSecretTypeResponseFields.md)
  - [AmazonAutoScalingGroup](docs/AmazonAutoScalingGroup.md)
@@ -224,20 +216,13 @@ Class | Method | HTTP request | Description
  - [ClusterFeatureNotFound](docs/ClusterFeatureNotFound.md)
  - [ClusterImage](docs/ClusterImage.md)
  - [ClusterNotFound](docs/ClusterNotFound.md)
- - [ClusterProfileAks](docs/ClusterProfileAks.md)
- - [ClusterProfileAksAks](docs/ClusterProfileAksAks.md)
- - [ClusterProfileEks](docs/ClusterProfileEks.md)
- - [ClusterProfileEksEks](docs/ClusterProfileEksEks.md)
- - [ClusterProfileGke](docs/ClusterProfileGke.md)
- - [ClusterProfileGkeGke](docs/ClusterProfileGkeGke.md)
- - [ClusterProfileGkeGkeMaster](docs/ClusterProfileGkeGkeMaster.md)
- - [ClusterProfileNotFound](docs/ClusterProfileNotFound.md)
  - [CommonErrorResponse](docs/CommonErrorResponse.md)
  - [Conflict](docs/Conflict.md)
  - [CreateAckProperties](docs/CreateAckProperties.md)
  - [CreateAckPropertiesAck](docs/CreateAckPropertiesAck.md)
  - [CreateAksProperties](docs/CreateAksProperties.md)
  - [CreateAksPropertiesAks](docs/CreateAksPropertiesAks.md)
+ - [CreateAlibabaObjectStoreBucketProperties](docs/CreateAlibabaObjectStoreBucketProperties.md)
  - [CreateAmazonObjectStoreBucketProperties](docs/CreateAmazonObjectStoreBucketProperties.md)
  - [CreateAzureObjectStoreBucketProperties](docs/CreateAzureObjectStoreBucketProperties.md)
  - [CreateBackupBucketRequest](docs/CreateBackupBucketRequest.md)
@@ -265,11 +250,10 @@ Class | Method | HTTP request | Description
  - [CreatePkeClusterRequestBase](docs/CreatePkeClusterRequestBase.md)
  - [CreatePkeOnAzureClusterRequest](docs/CreatePkeOnAzureClusterRequest.md)
  - [CreatePkeProperties](docs/CreatePkeProperties.md)
- - [CreatePkePropertiesClusterTopology](docs/CreatePkePropertiesClusterTopology.md)
- - [CreatePkePropertiesClusterTopologyCri](docs/CreatePkePropertiesClusterTopologyCri.md)
- - [CreatePkePropertiesClusterTopologyKubernetes](docs/CreatePkePropertiesClusterTopologyKubernetes.md)
- - [CreatePkePropertiesClusterTopologyKubernetesRbac](docs/CreatePkePropertiesClusterTopologyKubernetesRbac.md)
- - [CreatePkePropertiesClusterTopologyNetwork](docs/CreatePkePropertiesClusterTopologyNetwork.md)
+ - [CreatePkePropertiesCri](docs/CreatePkePropertiesCri.md)
+ - [CreatePkePropertiesKubernetes](docs/CreatePkePropertiesKubernetes.md)
+ - [CreatePkePropertiesKubernetesRbac](docs/CreatePkePropertiesKubernetesRbac.md)
+ - [CreatePkePropertiesNetwork](docs/CreatePkePropertiesNetwork.md)
  - [CreateResourceGroup](docs/CreateResourceGroup.md)
  - [CreateRestoreRequest](docs/CreateRestoreRequest.md)
  - [CreateRestoreResponse](docs/CreateRestoreResponse.md)
@@ -368,6 +352,7 @@ Class | Method | HTTP request | Description
  - [NodePoolsGoogle](docs/NodePoolsGoogle.md)
  - [NodePoolsOracle](docs/NodePoolsOracle.md)
  - [NodePoolsPke](docs/NodePoolsPke.md)
+ - [OracleStorageProps](docs/OracleStorageProps.md)
  - [OrganizationListItemResponse](docs/OrganizationListItemResponse.md)
  - [OrganizationNotFound](docs/OrganizationNotFound.md)
  - [PkeClusterReadinessResponse](docs/PkeClusterReadinessResponse.md)
@@ -390,7 +375,6 @@ Class | Method | HTTP request | Description
  - [PostLeaderElectionRequest](docs/PostLeaderElectionRequest.md)
  - [PostLeaderElectionResponse](docs/PostLeaderElectionResponse.md)
  - [PostReadyPkeNodeRequest](docs/PostReadyPkeNodeRequest.md)
- - [ProfileListResponse](docs/ProfileListResponse.md)
  - [ProjectDetails](docs/ProjectDetails.md)
  - [RecordNotFound](docs/RecordNotFound.md)
  - [ReleaseWhiteListItem](docs/ReleaseWhiteListItem.md)
@@ -443,10 +427,14 @@ Class | Method | HTTP request | Description
  - [UpdateNodePoolsAzure](docs/UpdateNodePoolsAzure.md)
  - [UpdateNodePoolsEks](docs/UpdateNodePoolsEks.md)
  - [UpdateNodePoolsGoogle](docs/UpdateNodePoolsGoogle.md)
+ - [UpdateNodePoolsPke](docs/UpdateNodePoolsPke.md)
  - [UpdatePkeOnAzureClusterRequest](docs/UpdatePkeOnAzureClusterRequest.md)
+ - [UpdatePkeProperties](docs/UpdatePkeProperties.md)
+ - [UpdatePkePropertiesPke](docs/UpdatePkePropertiesPke.md)
  - [UpdateUserRequest](docs/UpdateUserRequest.md)
  - [UrlItem](docs/UrlItem.md)
  - [User](docs/User.md)
+ - [VersionResponse](docs/VersionResponse.md)
  - [VpcNetworkInfo](docs/VpcNetworkInfo.md)
  - [Vulnerability](docs/Vulnerability.md)
  - [VulnerabilityResponse](docs/VulnerabilityResponse.md)
