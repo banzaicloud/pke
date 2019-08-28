@@ -25,6 +25,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
+	"github.com/pbnjay/memory"
 	"github.com/pkg/errors"
 )
 
@@ -94,6 +95,12 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		return err
 	}
 
+	// kube reserved resources
+	var (
+		kubeReservedCPU    = "100m"
+		kubeReservedMemory = kubeadm.KubeReservedMemory(memory.TotalMemory())
+	)
+
 	type data struct {
 		APIServerAdvertiseAddress string
 		APIServerBindPort         string
@@ -103,6 +110,8 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		CloudProvider             string
 		Nodepool                  string
 		Taints                    []kubernetes.Taint
+		KubeReservedCPU           string
+		KubeReservedMemory        string
 	}
 
 	d := data{
@@ -114,6 +123,8 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		CloudProvider:             n.cloudProvider,
 		Nodepool:                  n.nodepool,
 		Taints:                    taints,
+		KubeReservedCPU:           kubeReservedCPU,
+		KubeReservedMemory:        kubeReservedMemory,
 	}
 
 	return tmpl.Execute(w, d)

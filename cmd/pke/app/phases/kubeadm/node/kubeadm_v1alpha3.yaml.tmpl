@@ -37,12 +37,12 @@ apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 serverTLSBootstrap: true
 systemReserved:
-  cpu: 200m
-  memory: 500Mi
+  cpu: 50m
+  memory: 50Mi
   ephemeral-storage: 1Gi
 kubeReserved:
-  cpu: 200m
-  memory: 250Mi
+  cpu: {{ .KubeReservedCPU }}
+  memory: {{ .KubeReservedMemory }}
   ephemeral-storage: 1Gi
 evictionHard:
   imagefs.available: 15%

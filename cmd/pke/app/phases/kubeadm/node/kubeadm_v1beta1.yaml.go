@@ -56,12 +56,12 @@ func kubeadmConfigV1Beta1Template() string {
 		"kind: KubeletConfiguration\n" +
 		"serverTLSBootstrap: true\n" +
 		"systemReserved:\n" +
-		"  cpu: 200m\n" +
-		"  memory: 500Mi\n" +
+		"  cpu: 50m\n" +
+		"  memory: 50Mi\n" +
 		"  ephemeral-storage: 1Gi\n" +
 		"kubeReserved:\n" +
-		"  cpu: 200m\n" +
-		"  memory: 250Mi\n" +
+		"  cpu: {{ .KubeReservedCPU }}\n" +
+		"  memory: {{ .KubeReservedMemory }}\n" +
 		"  ephemeral-storage: 1Gi\n" +
 		"evictionHard:\n" +
 		"  imagefs.available: 15%\n" +
