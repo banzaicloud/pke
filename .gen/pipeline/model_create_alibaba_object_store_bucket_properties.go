@@ -11,6 +11,6 @@
 
 package pipeline
 
-type ClusterProfileGkeGkeMaster struct {
-	Version string `json:"version,omitempty"`
+type CreateAlibabaObjectStoreBucketProperties struct {
+	Location string `json:"location"`
 }

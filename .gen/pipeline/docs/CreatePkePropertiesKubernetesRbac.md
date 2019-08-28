@@ -1,9 +1,9 @@
-# ClusterProfileEks
+# CreatePkePropertiesKubernetesRbac
 
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Eks** | [**ClusterProfileEksEks**](ClusterProfileEKS_eks.md) |  | [optional] 
+**Enabled** | **bool** |  | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

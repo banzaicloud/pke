@@ -11,8 +11,9 @@
 
 package pipeline
 
-type ClusterProfileNotFound struct {
-	Code int32 `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-	Error string `json:"error,omitempty"`
+type CreatePkePropertiesNetwork struct {
+	ApiServerAddress string `json:"apiServerAddress"`
+	ServiceCIDR string `json:"serviceCIDR"`
+	PodCIDR string `json:"podCIDR"`
+	Provider string `json:"provider"`
 }

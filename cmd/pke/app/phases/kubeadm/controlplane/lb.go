@@ -25,7 +25,7 @@ import (
 
 const (
 	metalLbConfig   = "/etc/kubernetes/metallb-config.yaml"
-	metalLbManifest = "https://raw.githubusercontent.com/google/metallb/v0.7.3/manifests/metallb.yaml"
+	metalLbManifest = "https://raw.githubusercontent.com/google/metallb/v0.8.1/manifests/metallb.yaml"
 )
 
 func applyLbRange(out io.Writer, lbRange, cloudProvider string) error {

@@ -11,9 +11,6 @@
 
 package pipeline
 
-type CreatePkePropertiesClusterTopologyNetwork struct {
-	ApiServerAddress string `json:"apiServerAddress"`
-	ServiceCIDR string `json:"serviceCIDR"`
-	PodCIDR string `json:"podCIDR"`
-	Provider string `json:"provider"`
+type CreatePkePropertiesCri struct {
+	Runtime string `json:"runtime"`
 }

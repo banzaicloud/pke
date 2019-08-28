@@ -11,6 +11,6 @@
 
 package pipeline
 
-type ClusterProfileGke struct {
-	Gke ClusterProfileGkeGke `json:"gke,omitempty"`
+type OracleStorageProps struct {
+	Namespace string `json:"namespace"`
 }

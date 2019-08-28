@@ -11,7 +11,7 @@
 
 package pipeline
 
-type ClusterProfileEksEks struct {
-	Version string `json:"version,omitempty"`
-	NodePools map[string]NodePoolsAmazon `json:"nodePools,omitempty"`
+type CreatePkePropertiesKubernetes struct {
+	Version string `json:"version"`
+	Rbac CreatePkePropertiesKubernetesRbac `json:"rbac"`
 }
