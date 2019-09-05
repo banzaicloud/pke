@@ -35,14 +35,6 @@ import (
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
 
 func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
-	dir := filepath.Dir(filename)
-
-	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0750)
-	if err != nil {
-		return err
-	}
-
 	// API server advertisement
 	bindPort := "6443"
 	if c.advertiseAddress != "" {
@@ -182,14 +174,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		KubeReservedMemory:          kubeReservedMemory,
 	}
 
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f auditV1Beta1 audit_v1beta1.yaml.tmpl

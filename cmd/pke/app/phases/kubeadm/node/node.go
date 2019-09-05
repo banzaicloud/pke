@@ -325,13 +325,6 @@ func writeCNIBridge(out io.Writer, cloudProvider, podNetworkCIDR, filename strin
 		return err
 	}
 
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
 	type data struct {
 		PodNetworkCIDR string
 	}
@@ -340,7 +333,7 @@ func writeCNIBridge(out io.Writer, cloudProvider, podNetworkCIDR, filename strin
 		PodNetworkCIDR: podNetworkCIDR,
 	}
 
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }
 
 //go:generate templify -t ${GOTMPL} -p node -f cniLoopback cni_loopback.json.tmpl

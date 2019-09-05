@@ -22,6 +22,7 @@ import (
 	"text/template"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/pkg/errors"
 )
@@ -69,18 +70,11 @@ func writeStorageClassAmazon(out io.Writer, filename string) error {
 		return err
 	}
 
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
 	type data struct{}
 
 	d := data{}
 
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }
 
 func testEnableUUIDTrue(device string) (bool, error) {
@@ -121,15 +115,12 @@ func writeStorageClassVsphere(out io.Writer, filename string) error {
 
 	_, _ = fmt.Fprintf(out, "[%s] creating vSphere default storage class\n", use)
 	// https://vmware.github.io/vsphere-storage-for-kubernetes/documentation/policy-based-mgmt.html#vmfs-and-nfs
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	tmpl, err := template.New("vshpere-storage-class").Parse(storageClassVsphereTemplate())
 	if err != nil {
 		return err
 	}
-	defer func() { _ = w.Close() }()
 
-	_, err = w.WriteString(storageClassVsphereTemplate())
-	return err
+	return file.WriteTemplate(filename, tmpl, nil)
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f storageClassAzure storage_class_azure.yaml.tmpl
@@ -142,13 +133,6 @@ func writeStorageClassAzure(out io.Writer, filename string, storageAccountType, 
 		return err
 	}
 
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
 	type data struct {
 		StorageAccountType string
 		Kind               string
@@ -159,7 +143,7 @@ func writeStorageClassAzure(out io.Writer, filename string, storageAccountType, 
 		Kind:               kind,
 	}
 
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f storageClassLocalPathStorage storage_class_local_path_storage.yaml.tmpl
@@ -172,16 +156,9 @@ func writeStorageClassLocalPathStorage(out io.Writer, filename string) error {
 		return err
 	}
 
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
 	type data struct{}
 
 	d := data{}
 
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }

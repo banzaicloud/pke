@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
-	"path/filepath"
 	"text/template"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
@@ -151,25 +150,10 @@ func installContainerD(out io.Writer, imageRepository string) error {
 //go:generate templify -t ${GOTMPL} -p container -f containerdConfig containerd_config.toml.tmpl
 
 func writeContainerDConfig(out io.Writer, filename, imageRepository string) error {
-	dir := filepath.Dir(filename)
-
-	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0750)
-	if err != nil {
-		return err
-	}
-
 	tmpl, err := template.New("containerd-config").Parse(containerdConfigTemplate())
 	if err != nil {
 		return err
 	}
-
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
 
 	type data struct {
 		ImageRepository string
@@ -179,5 +163,5 @@ func writeContainerDConfig(out io.Writer, filename, imageRepository string) erro
 		ImageRepository: imageRepository,
 	}
 
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }
