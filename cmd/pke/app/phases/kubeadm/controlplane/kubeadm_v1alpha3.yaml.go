@@ -32,9 +32,8 @@ func kubeadmConfigV1Alpha3Template() string {
 		"    {{ if .Nodepool }}\n" +
 		"    node-labels: \"nodepool.banzaicloud.io/name={{ .Nodepool }}\"{{end}}\n" +
 		"    # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker\n" +
-		"    {{ if .CloudProvider }}\n" +
-		"    cloud-provider: \"{{ .CloudProvider }}\"{{end}}\n" +
-		"    {{if .KubeletCloudConfig }}cloud-config: \"/etc/kubernetes/{{ .CloudProvider }}.conf\"{{end}}\n" +
+		"    {{ if .CloudProvider }}cloud-provider: \"{{ .CloudProvider }}\"\n" +
+		"    {{ if .KubeletCloudConfig }}cloud-config: \"/etc/kubernetes/{{ .CloudProvider }}.conf\"{{end}}{{end}}\n" +
 		"    read-only-port: \"0\"\n" +
 		"    anonymous-auth: \"false\"\n" +
 		"    streaming-connection-idle-timeout: \"5m\"\n" +
@@ -87,7 +86,7 @@ func kubeadmConfigV1Alpha3Template() string {
 		"  oidc-groups-claim: \"groups\"{{end}}\n" +
 		"  {{ if .CloudProvider }}\n" +
 		"  cloud-provider: \"{{ .CloudProvider }}\"\n" +
-		"  cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}\n" +
+		"  {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}\n" +
 		"schedulerExtraArgs:\n" +
 		"  profiling: \"false\"\n" +
 		"apiServerExtraVolumes:\n" +
@@ -111,7 +110,7 @@ func kubeadmConfigV1Alpha3Template() string {
 		"    mountPath: /etc/kubernetes/admission-control/\n" +
 		"    writable: false\n" +
 		"    pathType: Directory\n" +
-		"  {{ if .CloudProvider }}\n" +
+		"  {{ if and .CloudProvider .CloudConfig }}\n" +
 		"  - name: cloud-config\n" +
 		"    hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf\n" +
 		"    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}\n" +
@@ -123,11 +122,11 @@ func kubeadmConfigV1Alpha3Template() string {
 		"  {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}\n" +
 		"  {{ if .CloudProvider }}\n" +
 		"  cloud-provider: \"{{ .CloudProvider }}\"\n" +
-		"  cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf\n" +
+		"  {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf\n" +
 		"controllerManagerExtraVolumes:\n" +
 		"  - name: cloud-config\n" +
 		"    hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf\n" +
-		"    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}\n" +
+		"    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}{{end}}\n" +
 		"etcd:\n" +
 		"  {{ if .EtcdEndpoints }}\n" +
 		"  external:\n" +

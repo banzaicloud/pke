@@ -80,6 +80,15 @@ const (
 	// FlagCloudProvider cloud provider for kubeadm.
 	FlagCloudProvider = "kubernetes-cloud-provider"
 
+	// CloudProviderAmazon Amazon Web Services
+	CloudProviderAmazon = "aws"
+	// CloudProviderAzure Azure Cloud Services
+	CloudProviderAzure = "azure"
+	// CloudProviderVsphere VMware vSphere platform
+	CloudProviderVsphere = "vsphere"
+	// CloudProviderExternal External cloud provider
+	CloudProviderExternal = "external"
+
 	// FlagClusterName cluster name
 	FlagClusterName = "kubernetes-cluster-name"
 
@@ -94,13 +103,6 @@ const (
 	FlagControlPlaneJoin = "kubernetes-join-control-plane"
 	// FlagAdditionalControlPlane upgrade additional control plane node.
 	FlagAdditionalControlPlane = "kubernetes-additional-control-plane"
-
-	// CloudProviderAmazon Amazon Web Services
-	CloudProviderAmazon = "aws"
-	// CloudProviderAzure Azure Cloud Services
-	CloudProviderAzure = "azure"
-	// CloudProviderVsphere VMware vSphere platform
-	CloudProviderVsphere = "vsphere"
 
 	// FlagImageRepository prefix for image repository.
 	FlagImageRepository = "image-repository"

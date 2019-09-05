@@ -23,6 +23,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/semver"
+	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
@@ -89,26 +90,25 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		return err
 	}
 
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
 	taints, err := kubernetes.ParseTaints(c.taints)
 	if err != nil {
 		return err
 	}
 
-	// decide if kubelet needs the cloud-provider config
-	kubeletCloudConfig := false
+	// Cloud provider configuration
+	var (
+		cloudConfig        bool // Cloud config for: kube-apiserver and kube-controller-manager
+		kubeletCloudConfig bool // Cloud config for: kubelet
+	)
+	// Cloud provider configuration file is provided or not
+	cloudConfig = c.cloudProvider != "" && c.cloudProvider != constants.CloudProviderExternal
+	// Decide if kubelet needs the cloud-provider config
 	switch c.cloudProvider {
-	case "azure", "vsphere":
+	case constants.CloudProviderAzure, constants.CloudProviderVsphere:
 		kubeletCloudConfig = true
 	}
 
-	// kube reserved resources
+	// Kube reserved resources
 	var (
 		kubeReservedCPU    = "100m"
 		kubeReservedMemory = kubeadm.KubeReservedMemory(memory.TotalMemory())
@@ -126,6 +126,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ServiceCIDR                 string
 		PodCIDR                     string
 		CloudProvider               string
+		CloudConfig                 bool
 		KubeletCloudConfig          bool
 		Nodepool                    string
 		ControllerManagerSigningCA  string
@@ -159,6 +160,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ServiceCIDR:                 c.serviceCIDR,
 		PodCIDR:                     c.podNetworkCIDR,
 		CloudProvider:               c.cloudProvider,
+		CloudConfig:                 cloudConfig,
 		KubeletCloudConfig:          kubeletCloudConfig,
 		Nodepool:                    c.nodepool,
 		ControllerManagerSigningCA:  c.controllerManagerSigningCA,
@@ -179,6 +181,13 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		KubeReservedCPU:             kubeReservedCPU,
 		KubeReservedMemory:          kubeReservedMemory,
 	}
+
+	// create and truncate write only file
+	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = w.Close() }()
 
 	return tmpl.Execute(w, d)
 }

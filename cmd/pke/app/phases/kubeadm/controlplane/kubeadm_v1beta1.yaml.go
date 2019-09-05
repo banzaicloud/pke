@@ -32,9 +32,8 @@ func kubeadmConfigV1Beta1Template() string {
 		"    {{ if .Nodepool }}\n" +
 		"    node-labels: \"nodepool.banzaicloud.io/name={{ .Nodepool }}\"{{end}}\n" +
 		"    # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker\n" +
-		"    {{ if .CloudProvider }}\n" +
-		"    cloud-provider: \"{{ .CloudProvider }}\"{{end}}\n" +
-		"    {{if .KubeletCloudConfig }}cloud-config: \"/etc/kubernetes/{{ .CloudProvider }}.conf\"{{end}}\n" +
+		"    {{ if .CloudProvider }}cloud-provider: \"{{ .CloudProvider }}\"\n" +
+		"    {{ if .KubeletCloudConfig }}cloud-config: \"/etc/kubernetes/{{ .CloudProvider }}.conf\"{{end}}{{end}}\n" +
 		"    read-only-port: \"0\"\n" +
 		"    anonymous-auth: \"false\"\n" +
 		"    streaming-connection-idle-timeout: \"5m\"\n" +
@@ -85,9 +84,8 @@ func kubeadmConfigV1Beta1Template() string {
 		"    oidc-username-claim: \"email\"\n" +
 		"    oidc-username-prefix: \"oidc:\"\n" +
 		"    oidc-groups-claim: \"groups\"{{end}}\n" +
-		"    {{ if .CloudProvider }}\n" +
-		"    cloud-provider: \"{{ .CloudProvider }}\"\n" +
-		"    cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}\n" +
+		"    {{ if .CloudProvider }}cloud-provider: \"{{ .CloudProvider }}\"\n" +
+		"    {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}{{end}}\n" +
 		"  extraVolumes:\n" +
 		"    {{ if .WithAuditLog }}\n" +
 		"    - name: audit-log-dir\n" +
@@ -109,7 +107,7 @@ func kubeadmConfigV1Beta1Template() string {
 		"      mountPath: /etc/kubernetes/admission-control/\n" +
 		"      readOnly: true\n" +
 		"      pathType: Directory\n" +
-		"    {{ if .CloudProvider }}\n" +
+		"    {{ if and .CloudProvider .CloudConfig }}\n" +
 		"    - name: cloud-config\n" +
 		"      hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf\n" +
 		"      mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}\n" +
@@ -123,13 +121,12 @@ func kubeadmConfigV1Beta1Template() string {
 		"    terminated-pod-gc-threshold: \"10\"\n" +
 		"    feature-gates: \"RotateKubeletServerCertificate=true\"\n" +
 		"    {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}\n" +
-		"    {{ if .CloudProvider }}\n" +
-		"    cloud-provider: \"{{ .CloudProvider }}\"\n" +
-		"    cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf\n" +
+		"    {{ if .CloudProvider }}cloud-provider: \"{{ .CloudProvider }}\"\n" +
+		"    {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf\n" +
 		"  extraVolumes:\n" +
 		"    - name: cloud-config\n" +
 		"      hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf\n" +
-		"      mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}\n" +
+		"      mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}{{end}}\n" +
 		"etcd:\n" +
 		"  {{ if .EtcdEndpoints }}\n" +
 		"  external:\n" +
