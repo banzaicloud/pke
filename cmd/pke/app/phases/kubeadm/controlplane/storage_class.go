@@ -42,7 +42,7 @@ func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cl
 		err = writeStorageClassVsphere(out, storageClassConfig)
 	case constants.CloudProviderExternal:
 		// TODO: out-of-tree CSI volume plugins
-		break
+		return nil
 	default:
 		err = writeStorageClassLocalPathStorage(out, storageClassConfig)
 	}
