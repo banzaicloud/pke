@@ -11,8 +11,7 @@ nodeRegistration:
       value: "{{.Value}}"
       effect: "{{.Effect}}"{{end}}
   kubeletExtraArgs:
-    {{ if .Nodepool }}
-    node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
+    {{ if .NodeLabels }}node-labels: "{{ .NodeLabels }}"{{end}}
     # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker
     {{ if .CloudProvider }}cloud-provider: "{{ .CloudProvider }}"
     {{ if .KubeletCloudConfig }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}{{end}}

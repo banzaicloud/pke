@@ -22,6 +22,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/upgrade"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/flags"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
@@ -79,6 +80,8 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	}
 
 	c.kubernetesAdditionalControlPlane, err = cmd.Flags().GetBool(constants.FlagAdditionalControlPlane)
+
+	flags.PrintFlags(cmd.OutOrStdout(), c.Use(), cmd.Flags())
 
 	return err
 }

@@ -39,6 +39,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/node"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/flags"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/network"
 	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
@@ -128,6 +129,7 @@ type ControlPlane struct {
 	lbRange                          string
 	disableDefaultStorageClass       bool
 	taints                           []string
+	labels                           []string
 	etcdEndpoints                    []string
 	etcdCAFile                       string
 	etcdCertFile                     string
@@ -224,6 +226,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagLbRange, "", "Advertise the specified IPv4 range via ARP and allocate addresses for LoadBalancer Services (non-cloud only, example: 192.168.0.100-192.168.0.110)")
 	// Taints
 	flags.StringSlice(constants.FlagTaints, []string{"node-role.kubernetes.io/master:NoSchedule"}, "Specifies the taints the Node should be registered with")
+	// Labels
+	flags.StringSlice(constants.FlagLabels, nil, "Specifies the labels the Node should be registered with")
 	// External Etcd
 	flags.StringSlice(constants.FlagExternalEtcdEndpoints, []string{}, "Endpoints of etcd members")
 	flags.String(constants.FlagExternalEtcdCAFile, "", "An SSL Certificate Authority file used to secure etcd communication")
@@ -315,6 +319,8 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	default:
 		return errors.New("Not supported --" + constants.FlagClusterMode + ". Possible values: single, default or ha.")
 	}
+
+	flags.PrintFlags(cmd.OutOrStdout(), c.Use(), cmd.Flags())
 
 	return nil
 }
@@ -621,6 +627,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
+	if err != nil {
+		return
+	}
+	c.labels, err = cmd.Flags().GetStringSlice(constants.FlagLabels)
 	if err != nil {
 		return
 	}

@@ -17,6 +17,7 @@ package node
 import (
 	"io"
 	"net"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/semver"
@@ -84,6 +85,12 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		kubeReservedMemory = kubeadm.KubeReservedMemory(memory.TotalMemory())
 	)
 
+	// Node labels
+	nodeLabels := n.labels
+	if n.nodepool != "" {
+		nodeLabels = append(nodeLabels, "nodepool.banzaicloud.io/name="+n.nodepool)
+	}
+
 	type data struct {
 		APIServerAdvertiseAddress string
 		APIServerBindPort         string
@@ -91,7 +98,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		Token                     string
 		CACertHash                string
 		CloudProvider             string
-		Nodepool                  string
+		NodeLabels                string
 		Taints                    []kubernetes.Taint
 		KubeReservedCPU           string
 		KubeReservedMemory        string
@@ -104,7 +111,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		Token:                     n.kubeadmToken,
 		CACertHash:                n.caCertHash,
 		CloudProvider:             n.cloudProvider,
-		Nodepool:                  n.nodepool,
+		NodeLabels:                strings.Join(nodeLabels, ","),
 		Taints:                    taints,
 		KubeReservedCPU:           kubeReservedCPU,
 		KubeReservedMemory:        kubeReservedMemory,

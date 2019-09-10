@@ -165,6 +165,9 @@ const (
 	// FlagTaints specifies the taints the Node should be registered with.
 	FlagTaints = "taints"
 
+	// FlagLabels specifies the labels the Node should be registered with.
+	FlagLabels = "kubernetes-node-labels"
+
 	// Etcd specific flags
 	// FlagExternalEtcdEndpoints endpoints of etcd members.
 	FlagExternalEtcdEndpoints = "etcd-endpoints"

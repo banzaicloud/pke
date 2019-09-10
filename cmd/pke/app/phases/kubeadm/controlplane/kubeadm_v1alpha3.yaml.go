@@ -29,8 +29,7 @@ func kubeadmConfigV1Alpha3Template() string {
 		"      value: \"{{.Value}}\"\n" +
 		"      effect: \"{{.Effect}}\"{{end}}\n" +
 		"  kubeletExtraArgs:\n" +
-		"    {{ if .Nodepool }}\n" +
-		"    node-labels: \"nodepool.banzaicloud.io/name={{ .Nodepool }}\"{{end}}\n" +
+		"    {{ if .NodeLabels }}node-labels: \"{{ .NodeLabels }}\"{{end}}\n" +
 		"    # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker\n" +
 		"    {{ if .CloudProvider }}cloud-provider: \"{{ .CloudProvider }}\"\n" +
 		"    {{ if .KubeletCloudConfig }}cloud-config: \"/etc/kubernetes/{{ .CloudProvider }}.conf\"{{end}}{{end}}\n" +

@@ -20,6 +20,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/semver"
@@ -106,6 +107,12 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		kubeReservedMemory = kubeadm.KubeReservedMemory(memory.TotalMemory())
 	)
 
+	// Node labels
+	nodeLabels := c.labels
+	if c.nodepool != "" {
+		nodeLabels = append(nodeLabels, "nodepool.banzaicloud.io/name="+c.nodepool)
+	}
+
 	type data struct {
 		APIServerAdvertiseAddress   string
 		APIServerBindPort           string
@@ -120,7 +127,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		CloudProvider               string
 		CloudConfig                 bool
 		KubeletCloudConfig          bool
-		Nodepool                    string
+		NodeLabels                  string
 		ControllerManagerSigningCA  string
 		OIDCIssuerURL               string
 		OIDCClientID                string
@@ -154,7 +161,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		CloudProvider:               c.cloudProvider,
 		CloudConfig:                 cloudConfig,
 		KubeletCloudConfig:          kubeletCloudConfig,
-		Nodepool:                    c.nodepool,
+		NodeLabels:                  strings.Join(nodeLabels, ","),
 		ControllerManagerSigningCA:  c.controllerManagerSigningCA,
 		OIDCIssuerURL:               c.oidcIssuerURL,
 		OIDCClientID:                c.oidcClientID,

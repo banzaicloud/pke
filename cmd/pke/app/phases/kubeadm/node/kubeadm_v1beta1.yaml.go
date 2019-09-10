@@ -30,10 +30,8 @@ func kubeadmConfigV1Beta1Template() string {
 		"      value: \"{{.Value}}\"\n" +
 		"      effect: \"{{.Effect}}\"{{end}}\n" +
 		"  kubeletExtraArgs:\n" +
-		"{{ if .Nodepool }}\n" +
-		"    node-labels: \"nodepool.banzaicloud.io/name={{ .Nodepool }}\"{{end}}\n" +
-		"{{ if .CloudProvider }}\n" +
-		"    cloud-provider: \"{{ .CloudProvider }}\"{{end}}\n" +
+		"    {{ if .NodeLabels }}node-labels: \"{{ .NodeLabels }}\"{{end}}\n" +
+		"    {{ if .CloudProvider }}cloud-provider: \"{{ .CloudProvider }}\"{{end}}\n" +
 		"    {{if eq .CloudProvider \"azure\" }}cloud-config: \"/etc/kubernetes/{{ .CloudProvider }}.conf\"{{end}}\n" +
 		"    read-only-port: \"0\"\n" +
 		"    anonymous-auth: \"false\"\n" +

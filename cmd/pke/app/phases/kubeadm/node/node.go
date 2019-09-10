@@ -27,6 +27,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/flags"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
@@ -69,6 +70,7 @@ type Node struct {
 	azureLoadBalancerSku   string
 	azureRouteTableName    string
 	taints                 []string
+	labels                 []string
 }
 
 func NewCommand() *cobra.Command {
@@ -116,6 +118,8 @@ func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAzureRouteTableName, "kubernetes-routes", "The name of the route table attached to the subnet that the cluster is deployed in")
 	// Taints
 	flags.StringSlice(constants.FlagTaints, nil, "Specifies the taints the Node should be registered with")
+	// Labels
+	flags.StringSlice(constants.FlagLabels, nil, "Specifies the labels the Node should be registered with")
 }
 
 func (n *Node) Validate(cmd *cobra.Command) error {
@@ -147,6 +151,8 @@ func (n *Node) Validate(cmd *cobra.Command) error {
 			return err
 		}
 	}
+
+	flags.PrintFlags(cmd.OutOrStdout(), n.Use(), cmd.Flags())
 
 	return nil
 }
@@ -239,6 +245,10 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 		return
 	}
 	n.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
+	if err != nil {
+		return
+	}
+	n.labels, err = cmd.Flags().GetStringSlice(constants.FlagLabels)
 
 	return
 }

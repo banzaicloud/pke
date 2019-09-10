@@ -25,6 +25,7 @@ pke install worker kubernetes-node [flags]
       --kubernetes-api-server string                Kubernetes API Server host port
       --kubernetes-api-server-ca-cert-hash string   CA cert hash
       --kubernetes-cloud-provider string            cloud provider. example: aws
+      --kubernetes-node-labels strings              Specifies the labels the Node should be registered with
       --kubernetes-node-token string                PKE join token
       --kubernetes-pod-network-cidr string          range of IP addresses for the pod network on the current node
       --kubernetes-version string                   Kubernetes version (default "1.14.3")
