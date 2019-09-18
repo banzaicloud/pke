@@ -11,12 +11,10 @@ nodeRegistration:
       value: "{{.Value}}"
       effect: "{{.Effect}}"{{end}}
   kubeletExtraArgs:
-    {{ if .Nodepool }}
-    node-labels: "nodepool.banzaicloud.io/name={{ .Nodepool }}"{{end}}
+    {{ if .NodeLabels }}node-labels: "{{ .NodeLabels }}"{{end}}
     # pod-infra-container-image: {{ .ImageRepository }}/pause:3.1 # only needed by docker
-    {{ if .CloudProvider }}
-    cloud-provider: "{{ .CloudProvider }}"{{end}}
-    {{if .KubeletCloudConfig }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}
+    {{ if .CloudProvider }}cloud-provider: "{{ .CloudProvider }}"
+    {{ if .KubeletCloudConfig }}cloud-config: "/etc/kubernetes/{{ .CloudProvider }}.conf"{{end}}{{end}}
     read-only-port: "0"
     anonymous-auth: "false"
     streaming-connection-idle-timeout: "5m"
@@ -69,7 +67,7 @@ apiServerExtraArgs:
   oidc-groups-claim: "groups"{{end}}
   {{ if .CloudProvider }}
   cloud-provider: "{{ .CloudProvider }}"
-  cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
+  {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
 schedulerExtraArgs:
   profiling: "false"
 apiServerExtraVolumes:
@@ -93,7 +91,7 @@ apiServerExtraVolumes:
     mountPath: /etc/kubernetes/admission-control/
     writable: false
     pathType: Directory
-  {{ if .CloudProvider }}
+  {{ if and .CloudProvider .CloudConfig }}
   - name: cloud-config
     hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
     mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
@@ -105,11 +103,11 @@ controllerManagerExtraArgs:
   {{ if .ControllerManagerSigningCA }}cluster-signing-cert-file: {{ .ControllerManagerSigningCA }}{{end}}
   {{ if .CloudProvider }}
   cloud-provider: "{{ .CloudProvider }}"
-  cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf
+  {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf
 controllerManagerExtraVolumes:
   - name: cloud-config
     hostPath: /etc/kubernetes/{{ .CloudProvider }}.conf
-    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
+    mountPath: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}{{end}}
 etcd:
   {{ if .EtcdEndpoints }}
   external:

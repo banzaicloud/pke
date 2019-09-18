@@ -15,15 +15,14 @@
 package node
 
 import (
-	"fmt"
 	"io"
 	"net"
-	"os"
-	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
 	"github.com/pbnjay/memory"
 	"github.com/pkg/errors"
@@ -33,14 +32,6 @@ import (
 //go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
 
 func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
-	dir := filepath.Dir(filename)
-
-	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0750)
-	if err != nil {
-		return err
-	}
-
 	// API server advertisement
 	bindPort := "6443"
 	if n.advertiseAddress != "" {
@@ -83,13 +74,6 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		return err
 	}
 
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
-
 	taints, err := kubernetes.ParseTaints(n.taints)
 	if err != nil {
 		return err
@@ -101,6 +85,12 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		kubeReservedMemory = kubeadm.KubeReservedMemory(memory.TotalMemory())
 	)
 
+	// Node labels
+	nodeLabels := n.labels
+	if n.nodepool != "" {
+		nodeLabels = append(nodeLabels, "nodepool.banzaicloud.io/name="+n.nodepool)
+	}
+
 	type data struct {
 		APIServerAdvertiseAddress string
 		APIServerBindPort         string
@@ -108,7 +98,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		Token                     string
 		CACertHash                string
 		CloudProvider             string
-		Nodepool                  string
+		NodeLabels                string
 		Taints                    []kubernetes.Taint
 		KubeReservedCPU           string
 		KubeReservedMemory        string
@@ -121,11 +111,11 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 		Token:                     n.kubeadmToken,
 		CACertHash:                n.caCertHash,
 		CloudProvider:             n.cloudProvider,
-		Nodepool:                  n.nodepool,
+		NodeLabels:                strings.Join(nodeLabels, ","),
 		Taints:                    taints,
 		KubeReservedCPU:           kubeReservedCPU,
 		KubeReservedMemory:        kubeReservedMemory,
 	}
 
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }

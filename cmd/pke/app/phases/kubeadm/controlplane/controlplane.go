@@ -39,6 +39,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/node"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/flags"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/network"
 	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
@@ -128,6 +129,7 @@ type ControlPlane struct {
 	lbRange                          string
 	disableDefaultStorageClass       bool
 	taints                           []string
+	labels                           []string
 	etcdEndpoints                    []string
 	etcdCAFile                       string
 	etcdCertFile                     string
@@ -224,6 +226,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagLbRange, "", "Advertise the specified IPv4 range via ARP and allocate addresses for LoadBalancer Services (non-cloud only, example: 192.168.0.100-192.168.0.110)")
 	// Taints
 	flags.StringSlice(constants.FlagTaints, []string{"node-role.kubernetes.io/master:NoSchedule"}, "Specifies the taints the Node should be registered with")
+	// Labels
+	flags.StringSlice(constants.FlagLabels, nil, "Specifies the labels the Node should be registered with")
 	// External Etcd
 	flags.StringSlice(constants.FlagExternalEtcdEndpoints, []string{}, "Endpoints of etcd members")
 	flags.String(constants.FlagExternalEtcdCAFile, "", "An SSL Certificate Authority file used to secure etcd communication")
@@ -315,6 +319,8 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	default:
 		return errors.New("Not supported --" + constants.FlagClusterMode + ". Possible values: single, default or ha.")
 	}
+
+	flags.PrintFlags(cmd.OutOrStdout(), c.Use(), cmd.Flags())
 
 	return nil
 }
@@ -624,6 +630,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
+	c.labels, err = cmd.Flags().GetStringSlice(constants.FlagLabels)
+	if err != nil {
+		return
+	}
 
 	return c.etcdParameters(cmd)
 }
@@ -895,61 +905,53 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 }
 
 func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) error {
-	if cloudProvider == constants.CloudProviderAmazon {
-		if http.DefaultClient.Timeout < 10*time.Second {
-			http.DefaultClient.Timeout = 10 * time.Second
-		}
+	if cloudProvider != constants.CloudProviderAmazon {
+		return nil
+	}
 
-		// printf "[GLOBAL]\nZone="$(curl -q -s http://169.254.169.254/latest/meta-data/placement/availability-zone) > /etc/kubernetes/aws.conf
-		resp, err := http.Get(urlAWSAZ)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != http.StatusOK {
-			return errors.Errorf("failed to get aws availability zone. http status code: %d", resp.StatusCode)
-		}
-		defer func() { _ = resp.Body.Close() }()
+	if http.DefaultClient.Timeout < 10*time.Second {
+		http.DefaultClient.Timeout = 10 * time.Second
+	}
 
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errors.Wrap(err, "failed to read response body")
-		}
+	// printf "[GLOBAL]\nZone="$(curl -q -s http://169.254.169.254/latest/meta-data/placement/availability-zone) > /etc/kubernetes/aws.conf
+	resp, err := http.Get(urlAWSAZ)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("failed to get aws availability zone. http status code: %d", resp.StatusCode)
+	}
+	defer func() { _ = resp.Body.Close() }()
 
-		w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = w.Close() }()
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to read response body")
+	}
 
-		_, err = fmt.Fprintf(w, "[GLOBAL]\nZone=%s\n", b)
+	tmpl, err := template.New("amazon").Parse(`[GLOBAL]
+Zone={{ .Zone }}`)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	type data struct {
+		Zone string
+	}
+
+	d := data{
+		Zone: string(b),
+	}
+
+	return file.WriteTemplate(filename, tmpl, d)
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f admissionConfiguration admission_configuration.yaml.tmpl
 
 func writeAdmissionConfiguration(out io.Writer, filename, rateLimitConfigFile string) error {
-	dir := filepath.Dir(filename)
-
-	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
-	err := os.MkdirAll(dir, 0750)
-	if err != nil {
-		return err
-	}
-
 	tmpl, err := template.New("admission-config").Parse(admissionConfigurationTemplate())
 	if err != nil {
 		return err
 	}
-
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = w.Close() }()
 
 	type data struct {
 		RateLimitConfigFile string
@@ -959,7 +961,7 @@ func writeAdmissionConfiguration(out io.Writer, filename, rateLimitConfigFile st
 		RateLimitConfigFile: rateLimitConfigFile,
 	}
 
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeProxyConfig kube_proxy_config.yaml.tmpl

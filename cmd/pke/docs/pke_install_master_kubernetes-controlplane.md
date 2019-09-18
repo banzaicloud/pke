@@ -45,6 +45,7 @@ pke install master kubernetes-controlplane [flags]
       --kubernetes-master-mode string                     Kubernetes cluster mode (default "default")
       --kubernetes-mtu uint                               maximum transmission unit. 0 means default value of the Kubernetes network provider is used
       --kubernetes-network-provider string                Kubernetes network provider (default "weave")
+      --kubernetes-node-labels strings                    Specifies the labels the Node should be registered with
       --kubernetes-node-token string                      PKE join token
       --kubernetes-oidc-client-id string                  A client ID that all OIDC tokens must be issued for
       --kubernetes-oidc-issuer-url string                 URL of the OIDC provider which allows the API server to discover public signing keys

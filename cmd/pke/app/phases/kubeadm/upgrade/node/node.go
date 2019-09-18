@@ -22,6 +22,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/upgrade"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/flags"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
@@ -74,6 +75,8 @@ func (n *Node) Validate(cmd *cobra.Command) error {
 	}); err != nil {
 		return err
 	}
+
+	flags.PrintFlags(cmd.OutOrStdout(), n.Use(), cmd.Flags())
 
 	return nil
 }

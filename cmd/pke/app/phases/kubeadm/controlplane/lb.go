@@ -20,6 +20,7 @@ import (
 	"text/template"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
 
@@ -59,16 +60,13 @@ func writeLbRangeConfig(out io.Writer, filename, lbRange string) error {
 		return err
 	}
 
-	// create and truncate write only file
-	w, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
-	if err != nil {
-		return err
+	type data struct {
+		Range string
 	}
-	defer func() { _ = w.Close() }()
 
-	type data struct{ Range string }
+	d := data{
+		Range: lbRange,
+	}
 
-	d := data{Range: lbRange}
-
-	return tmpl.Execute(w, d)
+	return file.WriteTemplate(filename, tmpl, d)
 }
