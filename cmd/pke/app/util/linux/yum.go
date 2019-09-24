@@ -15,6 +15,7 @@
 package linux
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
@@ -39,38 +40,94 @@ const (
 
 var (
 	errorUnableToParseRPMOutput = errors.New("Unable to parse rpm output")
+	errorNotInstalled           = errors.New("package is not installed")
 )
 
 func YumInstall(out io.Writer, packages []string) error {
+	// check packages are already installed or not
+	n := 0
+	p := make([]string, 0)
+	for _, pkg := range packages {
+		if !validPacakageName(pkg) {
+			p = append(p, pkg)
+			continue
+		}
+		n++
+
+		name, ver, rel, arch, err := rpmQuery(out, pkg)
+		if err != nil {
+			if err == errorNotInstalled {
+				// package not installed, add it to the list to be installed
+				p = append(p, pkg)
+				continue
+			}
+			return err
+		}
+
+		if matchPackage(pkg, name, ver, rel, arch) {
+			n--
+			continue
+		}
+		p = append(p, pkg)
+	}
+
+	if n == 0 {
+		return nil
+	}
+	packages = p
+
+	// install packages
+	// TODO: handle downgrade
 	_, err := runner.Cmd(out, cmdYum, append([]string{"install", "-y"}, packages...)...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
 
+	// validate package version after installation
 	for _, pkg := range packages {
-		if pkg[:1] == "-" {
+		if !validPacakageName(pkg) {
 			continue
 		}
 
-		name, ver, rel, arch, err := rpmQuery(out, pkg)
-		if err != nil {
+		if err = validateInstalledPackage(out, pkg); err != nil {
 			return err
 		}
-		if name == pkg ||
-			name+"-"+ver == pkg ||
-			name+"-"+ver+"-"+rel == pkg ||
-			name+"-"+ver+"-"+rel+"."+arch == pkg {
-			continue
-		}
-		return errors.New(fmt.Sprintf("expected packgae version after installation: %q, got: %q", pkg, name+"-"+ver+"-"+rel+"."+arch))
 	}
 
+	// everything is installed
 	return nil
+}
+
+func validPacakageName(pkg string) bool {
+	// starts with '-', not a valid package name
+	return pkg != "" && strings.TrimLeft(pkg, " ")[:1] != "-"
+}
+
+func matchPackage(pkg, name, ver, rel, arch string) bool {
+	return name == pkg ||
+		name+"-"+ver == pkg ||
+		name+"-"+ver+"-"+rel == pkg ||
+		name+"-"+ver+"-"+rel+"."+arch == pkg
+}
+
+func validateInstalledPackage(out io.Writer, pkg string) error {
+	name, ver, rel, arch, err := rpmQuery(out, pkg)
+	if err != nil {
+		return err
+	}
+	if matchPackage(pkg, name, ver, rel, arch) {
+		return nil
+	}
+	return errors.New(fmt.Sprintf("expected packgae version after installation: %q, got: %q", pkg, name+"-"+ver+"-"+rel+"."+arch))
 }
 
 func rpmQuery(out io.Writer, pkg string) (name, version, release, arch string, err error) {
 	b, err := runner.Cmd(out, cmdRpm, []string{"-q", pkg}...).Output()
 	if err != nil {
+		if bytes.Contains(b, []byte("is not installed")) {
+			err = errorNotInstalled
+			return
+		}
 		return
 	}
 
@@ -131,7 +188,7 @@ func (y *YumInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion st
 		mapYumPackageVersion(kubeadm, kubernetesVersion),
 		mapYumPackageVersion(kubelet, kubernetesVersion),       // kubeadm dependency
 		mapYumPackageVersion(kubernetescni, kubernetesVersion), // kubeadm dependency
-		"--disableexcludes=kubernetes",
+		disableExcludesKubernetes,
 	}
 	return YumInstall(out, pkg)
 }
