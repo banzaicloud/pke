@@ -27,8 +27,9 @@ import (
 )
 
 const (
-	k8sRepoFile = "/etc/yum.repos.d/kubernetes.repo"
-	k8sRepo     = `[kubernetes]
+	banzaiCloudRepo = "/etc/yum.repos.d/banzaicloud.repo"
+	k8sRepoFile     = "/etc/yum.repos.d/kubernetes.repo"
+	k8sRepo         = `[kubernetes]
 name=Kubernetes
 baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
 enabled=1
@@ -91,20 +92,22 @@ func (r *Runtime) installRuntime(out io.Writer, kubernetesVersion string) error 
 		return errors.Wrapf(err, "unable to load all sysctl rules from files")
 	}
 
-	// Add kubernetes repo
-	// cat <<EOF > /etc/yum.repos.d/kubernetes.repo
-	// [kubernetes]
-	// name=Kubernetes
-	// baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
-	// enabled=1
-	// gpgcheck=1
-	// repo_gpgcheck=1
-	// gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-	// exclude=kube*
-	// EOF
-	err = file.Overwrite(k8sRepoFile, k8sRepo)
-	if err != nil {
-		return err
+	if _, err := os.Stat(banzaiCloudRepo); err != nil {
+		// Add kubernetes repo
+		// cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+		// [kubernetes]
+		// name=Kubernetes
+		// baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+		// enabled=1
+		// gpgcheck=1
+		// repo_gpgcheck=1
+		// gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+		// exclude=kube*
+		// EOF
+		err = file.Overwrite(k8sRepoFile, k8sRepo)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Install kubelet kubeadm and kubectl.
