@@ -162,7 +162,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
 	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
 	// Kubernetes network
-	flags.String(constants.FlagNetworkProvider, "weave", "Kubernetes network provider")
+	flags.String(constants.FlagNetworkProvider, "calico", "Kubernetes network provider")
 	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
 	flags.String(constants.FlagAPIServerHostPort, "", "Kubernetes API Server host port")
 	flags.String(constants.FlagServiceCIDR, "10.10.0.0/16", "range of IP address for service VIPs")
