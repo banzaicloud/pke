@@ -15,7 +15,6 @@
 package controlplane
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
@@ -60,7 +59,6 @@ const (
 	cmdKubeadm                    = "/bin/kubeadm"
 	cmdKubectl                    = "/bin/kubectl"
 	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
-	calicoUrl                     = "https://docs.projectcalico.org/v3.8/manifests/calico.yaml"
 	kubeConfig                    = "/etc/kubernetes/admin.conf"
 	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
 	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
@@ -164,7 +162,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
 	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
 	// Kubernetes network
-	flags.String(constants.FlagNetworkProvider, "weave", "Kubernetes network provider")
+	flags.String(constants.FlagNetworkProvider, "calico", "Kubernetes network provider")
 	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
 	flags.String(constants.FlagAPIServerHostPort, "", "Kubernetes API Server host port")
 	flags.String(constants.FlagServiceCIDR, "10.10.0.0/16", "range of IP address for service VIPs")
@@ -844,21 +842,11 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	return nil
 }
 
-func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string, mtu uint) error {
-	resp, err := http.Get(calicoUrl)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("failed to download Calico manifest: unhandled http status code: %d", resp.StatusCode)
-	}
-	defer func() { _ = resp.Body.Close() }()
+//go:generate templify -t ${GOTMPL} -p controlplane -f calico calico.yaml.tmpl
 
-	buf := new(bytes.Buffer)
-	if _, err := buf.ReadFrom(resp.Body); err != nil {
-		return emperror.Wrap(err, "failed to download Calico manifest")
-	}
-	input := strings.ReplaceAll(buf.String(), "192.168.0.0/16", podNetworkCIDR)
+func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string, mtu uint) error {
+	input := calicoTemplate()
+	input = strings.ReplaceAll(input, "192.168.0.0/16", podNetworkCIDR)
 	if mtu > 0 {
 		input = strings.ReplaceAll(input, `veth_mtu: "1440"`, fmt.Sprintf(`veth_mtu: "%d"`, mtu))
 	}
@@ -866,7 +854,7 @@ func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string, mtu uint) e
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", "-")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	cmd.Stdin = strings.NewReader(input)
-	_, err = cmd.CombinedOutputAsync()
+	_, err := cmd.CombinedOutputAsync()
 	return err
 }
 
