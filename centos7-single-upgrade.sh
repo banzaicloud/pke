@@ -5,4 +5,4 @@ GOOS=linux make pke
 
 KUBERNETES_VERSION="${1:-v1.14.3}"
 
-vagrant ssh node1 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION'"
+vagrant ssh centos1 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION'"

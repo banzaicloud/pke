@@ -7,20 +7,20 @@ KUBERNETES_VERSION="${1:-v1.14.3}"
 
 # upgrade first master node
 echo ""
-echo "= node1 ========================================================================"
-vagrant ssh node1 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION'"
+echo "= centos1 ========================================================================"
+vagrant ssh centos1 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION'"
 
 # upgrade second master node
 echo ""
-echo "= node2 ========================================================================"
-vagrant ssh node2 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION' --kubernetes-additional-control-plane"
+echo "= centos2 ========================================================================"
+vagrant ssh centos2 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION' --kubernetes-additional-control-plane"
 
 # upgrade third master node
 echo ""
-echo "= node3 ========================================================================"
-vagrant ssh node3 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION' --kubernetes-additional-control-plane"
+echo "= centos3 ========================================================================"
+vagrant ssh centos3 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION' --kubernetes-additional-control-plane"
 
 # upgrade worker node
 echo ""
-echo "= node4 ========================================================================"
-vagrant ssh node4 -c "sudo /banzaicloud/pke upgrade worker --kubernetes-version='$KUBERNETES_VERSION'"
+echo "= centos4 ========================================================================"
+vagrant ssh centos4 -c "sudo /banzaicloud/pke upgrade worker --kubernetes-version='$KUBERNETES_VERSION'"

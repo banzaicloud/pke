@@ -15,15 +15,15 @@ Vagrant.configure("2") do |config|
 
     $num_instances = 4
 
-    # nodes
+    # centos 7 nodes
     (1..$num_instances).each do |n|
-        config.vm.define "node#{n}" do |node|
+        config.vm.define "centos#{n}" do |node|
             node.vm.box = "centos/7"
             node.vm.network "private_network", ip: "192.168.64.#{n+10}"
-            node.vm.hostname = "node#{n}"
+            node.vm.hostname = "centos#{n}"
 
             node.vm.provider "virtualbox" do |vb|
-                vb.name = "node#{n}"
+                vb.name = "centos#{n}"
                 vb.memory = "2048"
                 vb.cpus = "2"
                 vb.customize ["modifyvm", :id, "--audio", "none"]
@@ -41,14 +41,14 @@ Vagrant.configure("2") do |config|
 
                 echo 'set host name resolution'
                 cat >> /etc/hosts <<EOF
-192.168.64.11 node1
-192.168.64.12 node2
-192.168.64.13 node3
-192.168.64.14 node4
+192.168.64.11 centos1
+192.168.64.12 centos2
+192.168.64.13 centos3
+192.168.64.14 centos4
 EOF
                 cat /etc/hosts
 
-                hostnamectl set-hostname node#{n}
+                hostnamectl set-hostname centos#{n}
 
                 SHELL
             end
