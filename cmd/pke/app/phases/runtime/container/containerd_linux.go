@@ -62,7 +62,7 @@ func installCentOS7(out io.Writer, imageRepository string) error {
 	}
 
 	// modprobe br_netfilter
-	if err := linux.ModprobeBFNetFilter(out); err != nil {
+	if err := linux.ModprobeBRNetFilter(out); err != nil {
 		return errors.Wrap(err, "missing br_netfilter Linux Kernel module")
 	}
 
