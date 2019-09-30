@@ -160,7 +160,7 @@ func (c *ControlPlane) Short() string {
 
 func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
 	// Kubernetes network
 	flags.String(constants.FlagNetworkProvider, "calico", "Kubernetes network provider")
 	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
