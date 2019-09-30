@@ -50,10 +50,29 @@ func (r *Runtime) installRuntime(out io.Writer) error {
 		return constants.ErrUnsupportedOS
 	}
 
+	if distro, err := linux.LSBReleaseDistributorID(out); err == nil {
+		if distro == "Ubuntu" {
+			relNum, err := linux.LSBReleaseReleaseNumber(out)
+			if err == nil {
+				if relNum == "18.04" {
+					return installUbuntu1804(out, r.imageRepository)
+				}
+			}
+		}
+		return constants.ErrUnsupportedOS
+	}
 	return constants.ErrUnsupportedOS
 }
 
 func installCentOS7(out io.Writer, imageRepository string) error {
+	return install(out, imageRepository, linux.NewYumInstaller())
+}
+
+func installUbuntu1804(out io.Writer, imageRepository string) error {
+	return install(out, imageRepository, linux.NewAptInstaller())
+}
+
+func install(out io.Writer, imageRepository string, pm linux.ContainerDPackages) error {
 	// modprobe overlay
 	if err := linux.ModprobeOverlay(out); err != nil {
 		return errors.Wrap(err, "missing overlay Linux Kernel module")
@@ -78,8 +97,6 @@ func installCentOS7(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "unable to load all sysctl rules from files")
 	}
 
-	var pm linux.ContainerDPackages
-	pm = linux.NewYumInstaller()
 	if err := pm.InstallPrerequisites(out, containerDVersion); err != nil {
 		return errors.Wrap(err, "unable to install ContainerD prerequisites")
 	}

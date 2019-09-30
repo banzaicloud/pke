@@ -17,6 +17,7 @@ package linux
 import (
 	"bytes"
 	"io"
+	"strings"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/pkg/errors"
@@ -61,4 +62,22 @@ func RedHatVersion(w io.Writer) (string, error) {
 	}
 
 	return "", errors.Errorf("unhandled RedHat release output: %s", o)
+}
+
+func LSBReleaseDistributorID(w io.Writer) (string, error) {
+	o, err := runner.Cmd(w, "/usr/bin/lsb_release", "-si").Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(o)), nil
+}
+
+func LSBReleaseReleaseNumber(w io.Writer) (string, error) {
+	o, err := runner.Cmd(w, "/usr/bin/lsb_release", "-sr").Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(o)), nil
 }
