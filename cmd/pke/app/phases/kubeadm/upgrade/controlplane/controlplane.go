@@ -36,7 +36,7 @@ const (
 	short = "Kubernetes Control Plane upgrade"
 
 	kubeConfig = "/etc/kubernetes/admin.conf"
-	cmdKubeadm = "/bin/kubeadm"
+	cmdKubeadm = "kubeadm"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)

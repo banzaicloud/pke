@@ -32,7 +32,7 @@ const (
 	use   = "image-pull"
 	short = "Pull images used bye PKE tool"
 
-	cmdKubeadm    = "/bin/kubeadm"
+	cmdKubeadm    = "kubeadm"
 	kubeadmConfig = "/etc/kubernetes/kubeadm.conf"
 )
 

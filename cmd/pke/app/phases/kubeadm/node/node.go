@@ -40,7 +40,7 @@ const (
 	use   = "kubernetes-node"
 	short = "Kubernetes worker node installation"
 
-	cmdKubeadm         = "/bin/kubeadm"
+	cmdKubeadm         = "kubeadm"
 	kubeProxyConfig    = "/var/lib/kube-proxy/config.conf"
 	kubeadmConfig      = "/etc/kubernetes/kubeadm.conf"
 	kubeadmAzureConfig = "/etc/kubernetes/azure.conf"

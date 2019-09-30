@@ -39,7 +39,7 @@ const (
 	use   = "create"
 	short = "Create Kubernetes bootstrap token"
 
-	cmdKubeadm = "/bin/kubeadm"
+	cmdKubeadm = "kubeadm"
 	kubeConfig = "/etc/kubernetes/admin.conf"
 	caCertFile = "/etc/kubernetes/pki/ca.crt"
 )

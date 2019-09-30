@@ -56,8 +56,8 @@ const (
 	use   = "kubernetes-controlplane"
 	short = "Kubernetes Control Plane installation"
 
-	cmdKubeadm                    = "/bin/kubeadm"
-	cmdKubectl                    = "/bin/kubectl"
+	cmdKubeadm                    = "kubeadm"
+	cmdKubectl                    = "kubectl"
 	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
 	kubeConfig                    = "/etc/kubernetes/admin.conf"
 	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"

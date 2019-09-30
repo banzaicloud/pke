@@ -36,7 +36,7 @@ const (
 	short = "Kubernetes worker node upgrade"
 
 	kubeConfig = "/etc/kubernetes/kubelet.conf"
-	cmdKubeadm = "/bin/kubeadm"
+	cmdKubeadm = "kubeadm"
 )
 
 var _ phases.Runnable = (*Node)(nil)
