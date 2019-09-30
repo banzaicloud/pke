@@ -98,9 +98,11 @@ func (n *Node) upgradePatch(out io.Writer, from, to *semver.Version) error {
 }
 
 func (n *Node) upgrade(out io.Writer, from, to *semver.Version) error {
-	var pm linux.KubernetesPackages
-	pm = linux.NewYumInstaller()
-	err := pm.InstallKubeadmPackage(out, to.String())
+	pm, err := linux.KubernetesPackagesImpl(out)
+	if err != nil {
+		return err
+	}
+	err = pm.InstallKubeadmPackage(out, to.String())
 	if err != nil {
 		return errors.Wrapf(err, "failed to upgrade kubeadm to version %s", to)
 	}

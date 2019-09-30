@@ -74,5 +74,5 @@ func (r *Runtime) Validate(cmd *cobra.Command) error {
 func (r *Runtime) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", r.Use())
 
-	return r.installRuntime(out, r.kubernetesVersion)
+	return r.installRuntime(out)
 }

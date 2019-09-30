@@ -55,7 +55,7 @@ func storageClassLocalPathStorageTemplate() string {
 		"  name: local-path-provisioner-service-account\n" +
 		"  namespace: kube-system\n" +
 		"---\n" +
-		"apiVersion: apps/v1beta2\n" +
+		"apiVersion: apps/v1\n" +
 		"kind: Deployment\n" +
 		"metadata:\n" +
 		"  name: local-path-provisioner\n" +

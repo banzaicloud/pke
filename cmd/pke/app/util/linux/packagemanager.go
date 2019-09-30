@@ -19,6 +19,7 @@ import (
 )
 
 type KubernetesPackages interface {
+	InstallKubernetesPrerequisites(out io.Writer, kubernetesVersion string) error
 	InstallKubernetesPackages(out io.Writer, kubernetesVersion string) error
 	InstallKubeadmPackage(out io.Writer, kubernetesVersion string) error
 }

@@ -1,8 +1,9 @@
 #!/bin/bash -e
 
 KUBERNETES_VERSION=$1
-TOKEN="$2"
-CERTHASH="$3"
+APISERVER_ADDRESS="${2:-192.168.64.11:6443}"
+TOKEN="$3"
+CERTHASH="$4"
 
 
 systemctl is-active kubelet || ( \
@@ -15,7 +16,7 @@ systemctl is-active kubelet || ( \
 
     /banzaicloud/pke install worker \
       --kubernetes-version="${KUBERNETES_VERSION}" \
-      --kubernetes-api-server=192.168.64.11:6443 \
+      --kubernetes-api-server="${APISERVER_ADDRESS}" \
       --kubernetes-node-token ${TOKEN} \
       --kubernetes-api-server-ca-cert-hash ${CERTHASH}
 )

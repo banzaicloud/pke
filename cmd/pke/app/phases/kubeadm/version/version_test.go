@@ -26,13 +26,8 @@ func TestValidVersion(t *testing.T) {
 		valid   bool
 	}{
 		{"0.0.1", false},
-		{"1.12.0", true},
-		{"1.12.1", true},
-		{"1.12.2", true},
-		{"1.12.3", true},
-		{"1.12.4", true},
-		{"1.12.5", true},
-		{"1.12.6", true},
+		{"1.12.0", false},
+		{"1.12.6", false},
 		{"1.13.0", true},
 		{"1.13.1", true},
 		{"1.13.2", true},
@@ -43,7 +38,8 @@ func TestValidVersion(t *testing.T) {
 		{"1.14.1", true},
 		{"v1.14.1-beta.0", true},
 		{"v1.15.0", true},
-		{"v1.16.0", false},
+		{"v1.16.0", true},
+		{"v1.17.0", false},
 	}
 
 	for _, tc := range testCases {

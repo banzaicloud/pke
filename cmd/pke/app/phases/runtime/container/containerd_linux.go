@@ -22,7 +22,6 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/pkg/errors"
@@ -43,33 +42,11 @@ net.ipv4.ip_forward                 = 1
 )
 
 func (r *Runtime) installRuntime(out io.Writer) error {
-	if ver, err := linux.CentOSVersion(out); err == nil {
-		if ver == "7" {
-			return installCentOS7(out, r.imageRepository)
-		}
-		return constants.ErrUnsupportedOS
+	pm, err := linux.ContainerdPackagesImpl(out)
+	if err != nil {
+		return err
 	}
-
-	if distro, err := linux.LSBReleaseDistributorID(out); err == nil {
-		if distro == "Ubuntu" {
-			relNum, err := linux.LSBReleaseReleaseNumber(out)
-			if err == nil {
-				if relNum == "18.04" {
-					return installUbuntu1804(out, r.imageRepository)
-				}
-			}
-		}
-		return constants.ErrUnsupportedOS
-	}
-	return constants.ErrUnsupportedOS
-}
-
-func installCentOS7(out io.Writer, imageRepository string) error {
-	return install(out, imageRepository, linux.NewYumInstaller())
-}
-
-func installUbuntu1804(out io.Writer, imageRepository string) error {
-	return install(out, imageRepository, linux.NewAptInstaller())
+	return install(out, r.imageRepository, pm)
 }
 
 func install(out io.Writer, imageRepository string, pm linux.ContainerdPackages) error {

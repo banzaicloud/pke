@@ -12,7 +12,7 @@ KUBERNETES_VERSION="${1:-v1.16.0}"
 echo ""
 echo "= centos1 ========================================================================"
 vagrant up centos1
-vagrant ssh centos1 -c "sudo /scripts/pke-multi-master1.sh '$KUBERNETES_VERSION'"
+vagrant ssh centos1 -c "sudo /scripts/pke-multi-master1.sh '$KUBERNETES_VERSION' '192.168.64.11:6443'"
 vagrant ssh centos1 -c 'sudo cat /etc/kubernetes/admin.conf' > pke-multi-config.yaml
 vagrant ssh centos1 -c "sudo /banzaicloud/pke token list -o json" > build/token.json
 
@@ -26,19 +26,19 @@ echo "Using '$TOKEN' and '$CERTHASH' to join other nodes to the cluster"
 echo ""
 echo "= centos2 ========================================================================"
 vagrant up centos2
-vagrant ssh centos2 -c "sudo /scripts/pke-multi-mastern.sh '$KUBERNETES_VERSION' '$TOKEN' '$CERTHASH' 192.168.64.12"
+vagrant ssh centos2 -c "sudo /scripts/pke-multi-mastern.sh '$KUBERNETES_VERSION' '192.168.64.11:6443' '$TOKEN' '$CERTHASH' 192.168.64.12"
 
 # install third master node
 echo ""
 echo "= centos3 ========================================================================"
 vagrant up centos3
-vagrant ssh centos3 -c "sudo /scripts/pke-multi-mastern.sh '$KUBERNETES_VERSION' '$TOKEN' '$CERTHASH' 192.168.64.13"
+vagrant ssh centos3 -c "sudo /scripts/pke-multi-mastern.sh '$KUBERNETES_VERSION' '192.168.64.11:6443' '$TOKEN' '$CERTHASH' 192.168.64.13"
 
 # install worker node
 echo ""
 echo "= centos4 ========================================================================"
 vagrant up centos4
-vagrant ssh centos4 -c "sudo /scripts/pke-multi-worker.sh '$KUBERNETES_VERSION' '$TOKEN' '$CERTHASH'"
+vagrant ssh centos4 -c "sudo /scripts/pke-multi-worker.sh '$KUBERNETES_VERSION' '192.168.64.11:6443' '$TOKEN' '$CERTHASH'"
 
 export KUBECONFIG=$PWD/pke-multi-config.yaml
 
