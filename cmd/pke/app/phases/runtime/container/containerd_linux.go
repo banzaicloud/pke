@@ -43,11 +43,13 @@ net.ipv4.ip_forward                 = 1
 )
 
 func (r *Runtime) installRuntime(out io.Writer) error {
-	if ver, err := linux.CentOSVersion(out); err == nil {
-		if ver == "7" {
-			return installCentOS7(out, r.imageRepository)
-		}
-		return constants.ErrUnsupportedOS
+	ver, err := linux.CentOSVersion(out)
+	if err != nil {
+		ver, err = linux.RedHatVersion(out)
+	}
+
+	if err == nil && (ver == "7" || ver == "8.0") {
+		return installCentOS7(out, r.imageRepository)
 	}
 
 	return constants.ErrUnsupportedOS
