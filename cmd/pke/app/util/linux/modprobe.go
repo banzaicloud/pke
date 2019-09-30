@@ -32,6 +32,6 @@ func ModprobeOverlay(out io.Writer) error {
 	return Modprobe(out, "overlay")
 }
 
-func ModprobeBFNetFilter(out io.Writer) error {
+func ModprobeBRNetFilter(out io.Writer) error {
 	return Modprobe(out, "br_netfilter")
 }
