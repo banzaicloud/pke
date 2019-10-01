@@ -12,28 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !linux
-
 package linux
 
 import (
-	"io"
-
-	"github.com/banzaicloud/pke/cmd/pke/app/constants"
+	"bytes"
+	"testing"
 )
 
-func CentOSVersion(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
-
-func RedHatVersion(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
-
-func LSBReleaseDistributorID(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
-
-func LSBReleaseReleaseNumber(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
+func TestKernelVersionConstraint(t *testing.T) {
+	type args struct {
+		constraint string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{">=0.0.1", args{">=0.0.1-0"}, false},
+		{"<0.0.1", args{"<0.0.1-0"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := &bytes.Buffer{}
+			err := KernelVersionConstraint(out, tt.args.constraint)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("KernelVersionConstraint() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
 }
