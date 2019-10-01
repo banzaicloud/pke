@@ -108,6 +108,7 @@ func installContainerd(out io.Writer, imageRepository string) error {
 	if err != nil {
 		return errors.Wrapf(err, "unable to create temporary file: %q", f.Name())
 	}
+	defer func() { _ = f.Close() }()
 	// export CONTAINERD_VERSION="1.2.0"
 	// export CONTAINERD_SHA256="ee076c6260de140f9aa6dee30b0e360abfb80af252d271e697982d1209ca5dee"
 	// wget https://storage.googleapis.com/cri-containerd-release/cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz
@@ -127,12 +128,14 @@ func installContainerd(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "hash mismatch. hash: %q", containerdSHA256)
 	}
 
-	// # Unpack.
+	// Unpack.
 	// tar --no-overwrite-dir -C / -xzf cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz
 	fh, err := os.Open(f.Name())
 	if err != nil {
 		return err
 	}
+	defer func() { _ = fh.Close() }()
+
 	err = file.Untar(out, fh)
 	if err != nil {
 		return err

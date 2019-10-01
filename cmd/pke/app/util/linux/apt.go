@@ -92,6 +92,7 @@ func (a *AptInstaller) InstallKubernetesPrerequisites(out io.Writer, kubernetesV
 	if err != nil {
 		return errors.Wrapf(err, "unable to create temporary file: %q", f.Name())
 	}
+	defer func() { _ = f.Close() }()
 	u, err := url.Parse(k8sDEBRepoGPG)
 	if err != nil {
 		return errors.Wrapf(err, "unable to parse Kubernetes repo apt key. url: %q", k8sDEBRepoGPG)

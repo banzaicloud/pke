@@ -22,7 +22,7 @@ import (
 )
 
 func TestDownloadWithSHA256(t *testing.T) {
-	//t.SkipNow()
+	// t.SkipNow()
 	testCases := []struct {
 		u    string
 		hash string
@@ -47,6 +47,7 @@ func TestDownloadWithSHA256(t *testing.T) {
 		defer func() { _ = os.Remove(f.Name()) }()
 
 		err = Download(u, f.Name())
+		_ = f.Close()
 		if err != nil {
 			t.Error(err)
 		}
@@ -56,9 +57,12 @@ func TestDownloadWithSHA256(t *testing.T) {
 			t.Error(err)
 		}
 
-		b, err := ioutil.ReadFile(f.Name())
-		if len(b) != tc.len {
-			t.Errorf("unexpected length. got: %d, expected %d", len(b), tc.len)
+		fi, err := os.Stat(f.Name())
+		if err != nil {
+			t.Error(err)
+		}
+		if fi.Size() != int64(tc.len) {
+			t.Errorf("unexpected length. got: %d, expected %d", fi.Size(), tc.len)
 		}
 	}
 }
