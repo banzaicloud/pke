@@ -44,11 +44,12 @@ func KubernetesPackagesImpl(out io.Writer) (KubernetesPackages, error) {
 }
 
 func ContainerdPackagesImpl(out io.Writer) (ContainerdPackages, error) {
-	if ver, err := CentOSVersion(out); err == nil {
-		if ver == "7" {
-			return NewYumInstaller(), nil
-		}
-		return nil, constants.ErrUnsupportedOS
+	ver, err := CentOSVersion(out)
+	if err != nil {
+		ver, err = RedHatVersion(out)
+	}
+	if err == nil && (ver == "7" || ver == "8.0") {
+		return NewYumInstaller(), nil
 	}
 
 	if distro, err := LSBReleaseDistributorID(out); err == nil {
