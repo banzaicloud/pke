@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	cmdKubeadm = "/bin/kubeadm"
+	cmdKubeadm = "kubeadm"
 )
 
 func Reset(out io.Writer) error {

@@ -63,6 +63,7 @@ func Untar(out io.Writer, r io.Reader) error {
 				return errors.Wrapf(err, "unable to create file: %s, mode: %v", hdr.Name, hdr.FileInfo().Mode())
 			}
 			n, err := io.Copy(f, tr)
+			_ = f.Close()
 			if err != nil {
 				_, _ = fmt.Fprintf(out, "err: %v\n", err)
 				return errors.Wrapf(err, "unable to write file: %s, mode: %v", hdr.Name, hdr.FileInfo().Mode())

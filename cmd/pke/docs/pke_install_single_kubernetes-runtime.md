@@ -14,7 +14,7 @@ pke install single kubernetes-runtime [flags]
 
 ```
   -h, --help                        help for kubernetes-runtime
-      --kubernetes-version string   Kubernetes version (default "1.14.3")
+      --kubernetes-version string   Kubernetes version (default "1.16.0")
 ```
 
 ### SEE ALSO

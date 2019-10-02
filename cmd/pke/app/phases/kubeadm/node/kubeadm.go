@@ -62,7 +62,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	case 12, 13:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
 		conf = kubeadmConfigV1Alpha3Template()
-	case 14, 15:
+	case 14, 15, 16:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
 		conf = kubeadmConfigV1Beta1Template()
 	default:

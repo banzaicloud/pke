@@ -17,14 +17,18 @@ package linux
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/pkg/errors"
 )
 
 const (
+	dotS                      = "."
+	dashS                     = "-"
 	cmdYum                    = "/bin/yum"
 	cmdRpm                    = "/bin/rpm"
 	kubeadm                   = "kubeadm"
@@ -32,9 +36,17 @@ const (
 	kubelet                   = "kubelet"
 	kubernetescni             = "kubernetes-cni"
 	disableExcludesKubernetes = "--disableexcludes=kubernetes"
-
-	dotS  = "."
-	dashS = "-"
+	selinuxConfig             = "/etc/selinux/config"
+	banzaiCloudRPMRepo        = "/etc/yum.repos.d/banzaicloud.repo"
+	k8sRPMRepoFile            = "/etc/yum.repos.d/kubernetes.repo"
+	k8sRPMRepo                = `[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+exclude=kube*`
 )
 
 var (
@@ -105,16 +117,83 @@ func parseRpmPackageOutput(pkg string) (name, version, release, arch string, err
 	return
 }
 
+var _ ContainerdPackages = (*YumInstaller)(nil)
 var _ KubernetesPackages = (*YumInstaller)(nil)
-var _ ContainerDPackages = (*YumInstaller)(nil)
 
 type YumInstaller struct{}
+
+func (y *YumInstaller) InstallKubernetesPrerequisites(out io.Writer, kubernetesVersion string) error {
+	// Set SELinux in permissive mode (effectively disabling it)
+	// setenforce 0
+	err := runner.Cmd(out, "setenforce", "0").Run()
+	if err != nil {
+		return err
+	}
+	// sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+	err = runner.Cmd(out, "sed", "-i", "s/^SELINUX=enforcing$/SELINUX=permissive/", selinuxConfig).Run()
+	if err != nil {
+		return err
+	}
+
+	if err = SwapOff(out); err != nil {
+		return err
+	}
+
+	// modprobe nf_conntrack_ipv4
+	if err := Modprobe(out, "nf_conntrack_ipv4"); err != nil {
+		return errors.Wrap(err, "missing nf_conntrack_ipv4 Linux Kernel module")
+	}
+
+	// modprobe ip_vs
+	if err := Modprobe(out, "ip_vs"); err != nil {
+		return errors.Wrap(err, "missing ip_vs Linux Kernel module")
+	}
+
+	// modprobe ip_vs_rr
+	if err := Modprobe(out, "ip_vs_rr"); err != nil {
+		return errors.Wrap(err, "missing ip_vs_rr Linux Kernel module")
+	}
+
+	// modprobe ip_vs_wrr
+	if err := Modprobe(out, "ip_vs_wrr"); err != nil {
+		return errors.Wrap(err, "missing ip_vs_wrr Linux Kernel module")
+	}
+
+	// modprobe ip_vs_sh
+	if err := Modprobe(out, "ip_vs_sh"); err != nil {
+		return errors.Wrap(err, "missing ip_vs_sh Linux Kernel module")
+	}
+
+	if err := SysctlLoadAllFiles(out); err != nil {
+		return errors.Wrapf(err, "unable to load all sysctl rules from files")
+	}
+
+	if _, err := os.Stat(banzaiCloudRPMRepo); err != nil {
+		// Add kubernetes repo
+		// cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+		// [kubernetes]
+		// name=Kubernetes
+		// baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+		// enabled=1
+		// gpgcheck=1
+		// repo_gpgcheck=1
+		// gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+		// exclude=kube*
+		// EOF
+		err = file.Overwrite(k8sRPMRepoFile, k8sRPMRepo)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func NewYumInstaller() *YumInstaller {
 	return &YumInstaller{}
 }
 
 func (y *YumInstaller) InstallKubernetesPackages(out io.Writer, kubernetesVersion string) error {
+	// yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 	p := []string{
 		mapYumPackageVersion(kubelet, kubernetesVersion),
 		mapYumPackageVersion(kubeadm, kubernetesVersion),
@@ -127,16 +206,17 @@ func (y *YumInstaller) InstallKubernetesPackages(out io.Writer, kubernetesVersio
 }
 
 func (y *YumInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion string) error {
+	// yum install -y kubeadm --disableexcludes=kubernetes
 	pkg := []string{
 		mapYumPackageVersion(kubeadm, kubernetesVersion),
 		mapYumPackageVersion(kubelet, kubernetesVersion),       // kubeadm dependency
 		mapYumPackageVersion(kubernetescni, kubernetesVersion), // kubeadm dependency
-		"--disableexcludes=kubernetes",
+		disableExcludesKubernetes,
 	}
 	return YumInstall(out, pkg)
 }
 
-func (y *YumInstaller) InstallPrerequisites(out io.Writer, containerDVersion string) error {
+func (y *YumInstaller) InstallContainerdPrerequisites(out io.Writer, containerdVersion string) error {
 	// yum install -y libseccomp
 	if err := YumInstall(out, []string{"libseccomp"}); err != nil {
 		return errors.Wrap(err, "unable to install libseccomp package")

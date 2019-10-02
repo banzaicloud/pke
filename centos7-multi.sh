@@ -6,15 +6,15 @@ jq --version || (echo "Please install jq command line tool. https://stedolan.git
 # build latest pke tool
 GOOS=linux make pke
 
-KUBERNETES_VERSION="${1:-v1.14.3}"
+KUBERNETES_VERSION="${1:-v1.16.0}"
 
 # install first master node
 echo ""
-echo "= node1 ========================================================================"
-vagrant up node1
-vagrant ssh node1 -c "sudo /scripts/pke-multi-master1.sh '$KUBERNETES_VERSION'"
-vagrant ssh node1 -c 'sudo cat /etc/kubernetes/admin.conf' > pke-multi-config.yaml
-vagrant ssh node1 -c "sudo /banzaicloud/pke token list -o json" > build/token.json
+echo "= centos1 ========================================================================"
+vagrant up centos1
+vagrant ssh centos1 -c "sudo /scripts/pke-multi-master1.sh '$KUBERNETES_VERSION' '192.168.64.11:6443'"
+vagrant ssh centos1 -c 'sudo cat /etc/kubernetes/admin.conf' > pke-multi-config.yaml
+vagrant ssh centos1 -c "sudo /banzaicloud/pke token list -o json" > build/token.json
 
 TOKEN=`jq -r '.tokens[] | select(.expired == false) | .token' build/token.json`
 CERTHASH=`jq -r '.tokens[] | select(.expired == false) | .hash' build/token.json`
@@ -24,21 +24,21 @@ echo "Using '$TOKEN' and '$CERTHASH' to join other nodes to the cluster"
 
 # install second master node
 echo ""
-echo "= node2 ========================================================================"
-vagrant up node2
-vagrant ssh node2 -c "sudo /scripts/pke-multi-mastern.sh '$KUBERNETES_VERSION' '$TOKEN' '$CERTHASH' 192.168.64.12"
+echo "= centos2 ========================================================================"
+vagrant up centos2
+vagrant ssh centos2 -c "sudo /scripts/pke-multi-mastern.sh '$KUBERNETES_VERSION' '192.168.64.11:6443' '$TOKEN' '$CERTHASH' 192.168.64.12"
 
 # install third master node
 echo ""
-echo "= node3 ========================================================================"
-vagrant up node3
-vagrant ssh node3 -c "sudo /scripts/pke-multi-mastern.sh '$KUBERNETES_VERSION' '$TOKEN' '$CERTHASH' 192.168.64.13"
+echo "= centos3 ========================================================================"
+vagrant up centos3
+vagrant ssh centos3 -c "sudo /scripts/pke-multi-mastern.sh '$KUBERNETES_VERSION' '192.168.64.11:6443' '$TOKEN' '$CERTHASH' 192.168.64.13"
 
 # install worker node
 echo ""
-echo "= node4 ========================================================================"
-vagrant up node4
-vagrant ssh node4 -c "sudo /scripts/pke-multi-worker.sh '$KUBERNETES_VERSION' '$TOKEN' '$CERTHASH'"
+echo "= centos4 ========================================================================"
+vagrant up centos4
+vagrant ssh centos4 -c "sudo /scripts/pke-multi-worker.sh '$KUBERNETES_VERSION' '192.168.64.11:6443' '$TOKEN' '$CERTHASH'"
 
 export KUBECONFIG=$PWD/pke-multi-config.yaml
 
@@ -48,4 +48,4 @@ echo "- from your host machine accessing the cluster via kubectl. Please run:"
 echo "export KUBECONFIG=$PWD/pke-multi-config.yaml"
 echo ""
 echo "- or starting a shell in the virtual machine. Please run:"
-echo "vagrant ssh node1 -c 'sudo -s'"
+echo "vagrant ssh centos1 -c 'sudo -s'"

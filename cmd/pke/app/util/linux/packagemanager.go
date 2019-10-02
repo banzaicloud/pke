@@ -19,10 +19,11 @@ import (
 )
 
 type KubernetesPackages interface {
+	InstallKubernetesPrerequisites(out io.Writer, kubernetesVersion string) error
 	InstallKubernetesPackages(out io.Writer, kubernetesVersion string) error
 	InstallKubeadmPackage(out io.Writer, kubernetesVersion string) error
 }
 
-type ContainerDPackages interface {
-	InstallPrerequisites(out io.Writer, containerDVersion string) error
+type ContainerdPackages interface {
+	InstallContainerdPrerequisites(out io.Writer, containerdVersion string) error
 }

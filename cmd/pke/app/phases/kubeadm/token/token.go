@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	cmdKubectl = "/bin/kubectl"
+	cmdKubectl = "kubectl"
 	kubeConfig = "/etc/kubernetes/admin.conf"
 )
 

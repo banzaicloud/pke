@@ -36,7 +36,7 @@ const (
 	short = "Kubernetes worker node upgrade"
 
 	kubeConfig = "/etc/kubernetes/kubelet.conf"
-	cmdKubeadm = "/bin/kubeadm"
+	cmdKubeadm = "kubeadm"
 )
 
 var _ phases.Runnable = (*Node)(nil)
@@ -59,7 +59,7 @@ func (*Node) Short() string {
 
 func (*Node) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
 }
 
 func (n *Node) Validate(cmd *cobra.Command) error {
@@ -98,9 +98,11 @@ func (n *Node) upgradePatch(out io.Writer, from, to *semver.Version) error {
 }
 
 func (n *Node) upgrade(out io.Writer, from, to *semver.Version) error {
-	var pm linux.KubernetesPackages
-	pm = linux.NewYumInstaller()
-	err := pm.InstallKubeadmPackage(out, to.String())
+	pm, err := linux.KubernetesPackagesImpl(out)
+	if err != nil {
+		return err
+	}
+	err = pm.InstallKubeadmPackage(out, to.String())
 	if err != nil {
 		return errors.Wrapf(err, "failed to upgrade kubeadm to version %s", to)
 	}

@@ -12,28 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !linux
+package controlplane
 
-package linux
-
-import (
-	"io"
-
-	"github.com/banzaicloud/pke/cmd/pke/app/constants"
-)
-
-func CentOSVersion(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
-
-func RedHatVersion(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
-
-func LSBReleaseDistributorID(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
-
-func LSBReleaseReleaseNumber(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
+// ciliumSysFsBpfTemplate is a generated function returning the template as a string.
+func ciliumSysFsBpfTemplate() string {
+	var tmpl = "[Unit]\n" +
+		"Description=Cilium BPF mounts\n" +
+		"Documentation=http://docs.cilium.io/\n" +
+		"DefaultDependencies=no\n" +
+		"Before=local-fs.target umount.target\n" +
+		"After=swap.target\n" +
+		"\n" +
+		"[Mount]\n" +
+		"What=bpffs\n" +
+		"Where=/sys/fs/bpf\n" +
+		"Type=bpf\n" +
+		"\n" +
+		"[Install]\n" +
+		"WantedBy=multi-user.target\n" +
+		""
+	return tmpl
 }

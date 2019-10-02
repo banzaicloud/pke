@@ -60,6 +60,7 @@ bin/templify: bin/templify-${TEMPLIFY_VERSION}
 	@ln -sf templify-${TEMPLIFY_VERSION} bin/templify
 bin/templify-${TEMPLIFY_VERSION}:
 	go get github.com/wlbr/templify@${TEMPLIFY_VERSION}
+	mkdir -p bin
 	@cp ${GOPATH}/bin/templify bin/templify-${TEMPLIFY_VERSION}
 
 .PHONY: check

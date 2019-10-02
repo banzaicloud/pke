@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	cmdKubectl = "/bin/kubectl"
+	cmdKubectl = "kubectl"
 
 	MaximumAllowedMinorVersionUpgradeSkew = 1
 )

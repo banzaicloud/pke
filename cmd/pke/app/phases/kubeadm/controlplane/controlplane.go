@@ -56,8 +56,8 @@ const (
 	use   = "kubernetes-controlplane"
 	short = "Kubernetes Control Plane installation"
 
-	cmdKubeadm                    = "/bin/kubeadm"
-	cmdKubectl                    = "/bin/kubectl"
+	cmdKubeadm                    = "kubeadm"
+	cmdKubectl                    = "kubectl"
 	weaveNetUrl                   = "https://cloud.weave.works/k8s/net"
 	kubeConfig                    = "/etc/kubernetes/admin.conf"
 	kubeProxyConfig               = "/var/lib/kube-proxy/config.conf"
@@ -77,6 +77,7 @@ const (
 	auditPolicyFile               = "/etc/kubernetes/audit-policy-file.yaml"
 	auditLogDir                   = "/var/log/audit/apiserver"
 	encryptionSecretLength        = 32
+	ciliumBpfMountSystemd         = "/etc/systemd/system/sys-fs-bpf.mount"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -160,7 +161,7 @@ func (c *ControlPlane) Short() string {
 
 func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
 	// Kubernetes network
 	flags.String(constants.FlagNetworkProvider, "calico", "Kubernetes network provider")
 	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
@@ -287,7 +288,15 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	}
 
 	switch c.networkProvider {
-	case "weave", "calico", "none":
+	case constants.NetworkProviderWeave,
+		constants.NetworkProviderCalico,
+		constants.NetworkProviderNone:
+		// break
+	case constants.NetworkProviderCilium:
+		if err := linux.KernelVersionConstraint(cmd.OutOrStdout(), ">=4.9.17-0"); err != nil {
+			return err
+		}
+		// break
 	default:
 		return errors.Wrapf(constants.ErrUnsupportedNetworkProvider, "network provider: %s", c.networkProvider)
 	}
@@ -459,12 +468,16 @@ func (c *ControlPlane) Run(out io.Writer) error {
 	}
 
 	switch c.networkProvider {
-	case "weave":
+	case constants.NetworkProviderWeave:
 		if err := installWeave(out, c.cloudProvider, c.podNetworkCIDR, kubeConfig, c.mtu); err != nil {
 			return err
 		}
-	case "calico":
+	case constants.NetworkProviderCalico:
 		if err := installCalico(out, c.podNetworkCIDR, kubeConfig, c.mtu); err != nil {
+			return err
+		}
+	case constants.NetworkProviderCilium:
+		if err := installCilium(out, kubeConfig, c.mtu); err != nil {
 			return err
 		}
 	}
@@ -889,6 +902,27 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 	cmd = runner.Cmd(out, cmdKubectl, "apply", "-f", u.String())
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	_, err = cmd.CombinedOutputAsync()
+	return err
+}
+
+//go:generate templify -t ${GOTMPL} -p controlplane -f cilium cilium.yaml.tmpl
+//go:generate templify -t ${GOTMPL} -p controlplane -f ciliumSysFsBpf cilium_sys_fs_bpf.mount.tmpl
+
+func installCilium(out io.Writer, kubeConfig string, mtu uint) error {
+	// Mounting BPF filesystem
+	if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
+		return err
+	}
+	if err := linux.SystemctlEnableAndStart(out, "sys-fs-bpf.mount"); err != nil {
+		return err
+	}
+
+	// https://raw.githubusercontent.com/cilium/cilium/v1.6/install/kubernetes/quick-install.yaml
+	input := ciliumTemplate()
+	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", "-")
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	cmd.Stdin = strings.NewReader(input)
+	_, err := cmd.CombinedOutputAsync()
 	return err
 }
 

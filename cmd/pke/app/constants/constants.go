@@ -77,6 +77,11 @@ const (
 	// FlagMTU maximum transmission unit. 0 means default value of the Kubernetes network provider is used.
 	FlagMTU = "kubernetes-mtu"
 
+	NetworkProviderNone   = "none"
+	NetworkProviderWeave  = "weave"
+	NetworkProviderCalico = "calico"
+	NetworkProviderCilium = "cilium"
+
 	// FlagCloudProvider cloud provider for kubeadm.
 	FlagCloudProvider = "kubernetes-cloud-provider"
 
@@ -189,4 +194,5 @@ var (
 	ErrValidationFailed             = errors.New("validation failed")
 	ErrUnsupportedNetworkProvider   = errors.New("unsupported network provider")
 	ErrUnsupportedKubernetesVersion = errors.New("unsupported kubernetes version")
+	ErrUnsupportedKernelVersion     = errors.New("unsupported kernel version")
 )

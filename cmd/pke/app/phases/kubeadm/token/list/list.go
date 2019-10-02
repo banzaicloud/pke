@@ -38,7 +38,7 @@ const (
 	use   = "list"
 	short = "List Kubernetes bootstrap token(s)"
 
-	cmdKubectl = "/bin/kubectl"
+	cmdKubectl = "kubectl"
 	kubeConfig = "/etc/kubernetes/admin.conf"
 	caCertFile = "/etc/kubernetes/pki/ca.crt"
 )

@@ -51,7 +51,7 @@ func (r *Runtime) Short() string {
 
 func (r *Runtime) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
 }
 
 func (r *Runtime) Validate(cmd *cobra.Command) error {
@@ -74,5 +74,5 @@ func (r *Runtime) Validate(cmd *cobra.Command) error {
 func (r *Runtime) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", r.Use())
 
-	return r.installRuntime(out, r.kubernetesVersion)
+	return r.installRuntime(out)
 }

@@ -16,12 +16,11 @@ cd pke
 
 ### Single node PKE
 
-Start a machine with the following command: `vagrant up node1`
+Start a machine with the following command: `vagrant up centos1`
 
 Once the node is up follow these instructions:
 ```
-vagrant ssh node1
-sudo -s
+vagrant ssh centos1 -c 'sudo -s'
 
 curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
@@ -37,15 +36,14 @@ You can use `kubectl` from now on. Test it by executing `kubectl get nodes`
 
 ### Multi node PKE
 
-Start a machine with the following command: `vagrant up node1 node2`
+Start a machine with the following command: `vagrant up centos1 centos2`
 
 Once the node is up follow these instructions:
 
 #### Start the master node
 
 ```
-vagrant ssh node1  
-sudo -s
+vagrant ssh centos1 -c 'sudo -s'
 
 curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
@@ -74,14 +72,14 @@ pke token create
 Take note that you'd need to export the TOKEN and CERTHASH environment variables from above.
 
 ```
-vagrant ssh node2
+vagrant ssh centos2
 sudo -s
 
 curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
-# copy values from node1
+# copy values from centos1
 export TOKEN=""
 export CERTHASH=""
 pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cert-hash $CERTHASH --kubernetes-api-server 192.168.64.11:6443

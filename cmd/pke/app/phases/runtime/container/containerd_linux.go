@@ -22,18 +22,17 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/pkg/errors"
 )
 
 const (
-	containerDVersion     = "1.2.9"
-	containerDSHA256      = "a1e8d3f6427f3146d8a3cce7a5d5fd55db0365697ece91506f74d116bdf0dff3"
-	containerDURL         = "https://storage.googleapis.com/cri-containerd-release/cri-containerd-%s.linux-amd64.tar.gz"
-	containerDVersionPath = "/opt/containerd/cluster/version"
-	containerDConf        = "/etc/containerd/config.toml"
+	containerdVersion     = "1.2.9"
+	containerdSHA256      = "a1e8d3f6427f3146d8a3cce7a5d5fd55db0365697ece91506f74d116bdf0dff3"
+	containerdURL         = "https://storage.googleapis.com/cri-containerd-release/cri-containerd-%s.linux-amd64.tar.gz"
+	containerdVersionPath = "/opt/containerd/cluster/version"
+	containerdConf        = "/etc/containerd/config.toml"
 
 	criConfFile = "/etc/sysctl.d/99-kubernetes-cri.conf"
 	criConf     = `net.bridge.bridge-nf-call-iptables  = 1
@@ -43,17 +42,14 @@ net.ipv4.ip_forward                 = 1
 )
 
 func (r *Runtime) installRuntime(out io.Writer) error {
-	if ver, err := linux.CentOSVersion(out); err == nil {
-		if ver == "7" {
-			return installCentOS7(out, r.imageRepository)
-		}
-		return constants.ErrUnsupportedOS
+	pm, err := linux.ContainerdPackagesImpl(out)
+	if err != nil {
+		return err
 	}
-
-	return constants.ErrUnsupportedOS
+	return install(out, r.imageRepository, pm)
 }
 
-func installCentOS7(out io.Writer, imageRepository string) error {
+func install(out io.Writer, imageRepository string, pm linux.ContainerdPackages) error {
 	// modprobe overlay
 	if err := linux.ModprobeOverlay(out); err != nil {
 		return errors.Wrap(err, "missing overlay Linux Kernel module")
@@ -78,16 +74,14 @@ func installCentOS7(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "unable to load all sysctl rules from files")
 	}
 
-	var pm linux.ContainerDPackages
-	pm = linux.NewYumInstaller()
-	if err := pm.InstallPrerequisites(out, containerDVersion); err != nil {
-		return errors.Wrap(err, "unable to install ContainerD prerequisites")
+	if err := pm.InstallContainerdPrerequisites(out, containerdVersion); err != nil {
+		return errors.Wrap(err, "unable to install containerd prerequisites")
 	}
 
 	_ = linux.SystemctlDisableAndStop(out, "containerd")
 
-	// Check ContainerD installed or not
-	if err := installContainerD(out, imageRepository); err != nil {
+	// Check containerd installed or not
+	if err := installContainerd(out, imageRepository); err != nil {
 		return err
 	}
 
@@ -102,22 +96,23 @@ func installCentOS7(out io.Writer, imageRepository string) error {
 	return linux.SystemctlReload(out)
 }
 
-func installContainerD(out io.Writer, imageRepository string) error {
-	// Check ContainerD installed or not
-	if _, err := os.Stat(containerDVersionPath); !os.IsNotExist(err) {
-		// TODO: check ContainerD version
-		_, _ = fmt.Fprintln(out, "ContainerD already installed, skipping download")
+func installContainerd(out io.Writer, imageRepository string) error {
+	// Check containerd installed or not
+	if _, err := os.Stat(containerdVersionPath); !os.IsNotExist(err) {
+		// TODO: check containerd version
+		_, _ = fmt.Fprintln(out, "containerd already installed, skipping download")
 		return nil
 	}
-	// Download ContainerD tar.
-	f, err := ioutil.TempFile("", "download_test")
+	// Download containerd tar.
+	f, err := ioutil.TempFile("", "containerd")
 	if err != nil {
 		return errors.Wrapf(err, "unable to create temporary file: %q", f.Name())
 	}
+	defer func() { _ = f.Close() }()
 	// export CONTAINERD_VERSION="1.2.0"
 	// export CONTAINERD_SHA256="ee076c6260de140f9aa6dee30b0e360abfb80af252d271e697982d1209ca5dee"
 	// wget https://storage.googleapis.com/cri-containerd-release/cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz
-	dl := fmt.Sprintf(containerDURL, containerDVersion)
+	dl := fmt.Sprintf(containerdURL, containerdVersion)
 	u, err := url.Parse(dl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse url: %q", dl)
@@ -127,29 +122,31 @@ func installContainerD(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "unable to download containerd. url: %q", u.String())
 	}
 	// echo "${CONTAINERD_SHA256} cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz" | sha256sum --check -
-	_, _ = fmt.Fprintf(out, "echo \"%s %s\" | sha256sum --check -\n", containerDSHA256, f.Name())
-	err = file.SHA256File(f.Name(), containerDSHA256)
+	_, _ = fmt.Fprintf(out, "echo \"%s %s\" | sha256sum --check -\n", containerdSHA256, f.Name())
+	err = file.SHA256File(f.Name(), containerdSHA256)
 	if err != nil {
-		return errors.Wrapf(err, "hash mismatch. hash: %q", containerDSHA256)
+		return errors.Wrapf(err, "hash mismatch. hash: %q", containerdSHA256)
 	}
 
-	// # Unpack.
+	// Unpack.
 	// tar --no-overwrite-dir -C / -xzf cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz
 	fh, err := os.Open(f.Name())
 	if err != nil {
 		return err
 	}
+	defer func() { _ = fh.Close() }()
+
 	err = file.Untar(out, fh)
 	if err != nil {
 		return err
 	}
 
-	return writeContainerDConfig(out, containerDConf, imageRepository)
+	return writeContainerdConfig(out, containerdConf, imageRepository)
 }
 
 //go:generate templify -t ${GOTMPL} -p container -f containerdConfig containerd_config.toml.tmpl
 
-func writeContainerDConfig(out io.Writer, filename, imageRepository string) error {
+func writeContainerdConfig(out io.Writer, filename, imageRepository string) error {
 	tmpl, err := template.New("containerd-config").Parse(containerdConfigTemplate())
 	if err != nil {
 		return err

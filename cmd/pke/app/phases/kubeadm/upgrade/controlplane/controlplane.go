@@ -36,7 +36,7 @@ const (
 	short = "Kubernetes Control Plane upgrade"
 
 	kubeConfig = "/etc/kubernetes/admin.conf"
-	cmdKubeadm = "/bin/kubeadm"
+	cmdKubeadm = "kubeadm"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -60,7 +60,7 @@ func (*ControlPlane) Short() string {
 
 func (*ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.14.3", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
 	// Additional Control Plane
 	flags.Bool(constants.FlagAdditionalControlPlane, false, "Treat node as additional control plane")
 }
@@ -103,9 +103,11 @@ func (c *ControlPlane) upgradePatch(out io.Writer, from, to *semver.Version) err
 }
 
 func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
-	var pm linux.KubernetesPackages
-	pm = linux.NewYumInstaller()
-	err := pm.InstallKubeadmPackage(out, to.String())
+	pm, err := linux.KubernetesPackagesImpl(out)
+	if err != nil {
+		return err
+	}
+	err = pm.InstallKubeadmPackage(out, to.String())
 	if err != nil {
 		return errors.Wrapf(err, "failed to upgrade kubeadm to version %s", to)
 	}

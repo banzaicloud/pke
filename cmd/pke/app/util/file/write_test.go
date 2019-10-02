@@ -29,6 +29,7 @@ const (
 func TestOverwrite(t *testing.T) {
 	f, err := ioutil.TempFile("", "write_test")
 	require.NoError(t, err)
+	_ = f.Close()
 
 	err = Overwrite(f.Name(), contents)
 	require.NoError(t, err)

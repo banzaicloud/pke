@@ -12,28 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !linux
-
 package linux
 
 import (
+	"bytes"
 	"io"
 
+	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
+	"github.com/pkg/errors"
 )
 
-func CentOSVersion(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
+func KernelVersionConstraint(out io.Writer, constraint string) error {
+	// uname -r
+	version, err := runner.Cmd(out, "uname", "-r").CombinedOutput()
+	if err != nil {
+		return err
+	}
+	v := string(bytes.TrimSpace(version))
+	ver, err := semver.NewVersion(v)
+	if err != nil {
+		return errors.Wrapf(err, "got version: %s", v)
+	}
 
-func RedHatVersion(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
+	c, err := semver.NewConstraint(constraint)
+	if err != nil {
+		return err
+	}
+	if !c.Check(ver) {
+		return errors.Wrapf(constants.ErrUnsupportedKernelVersion, "got: %q, expected: %q", v, constraint)
+	}
 
-func LSBReleaseDistributorID(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
-}
-
-func LSBReleaseReleaseNumber(w io.Writer) (string, error) {
-	return "", constants.ErrUnsupportedOS
+	return nil
 }

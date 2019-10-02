@@ -1,9 +1,10 @@
 #!/bin/bash -xe
 
 KUBERNETES_VERSION=$1
-TOKEN="$2"
-CERTHASH="$3"
-ADVERTISE_ADDRESS="$4"
+APISERVER_ADDRESS="${2:-192.168.64.11:6443}"
+TOKEN="$3"
+CERTHASH="$4"
+ADVERTISE_ADDRESS="$5"
 
 systemctl is-active kubelet || ( \
     tar -xvzf /banzaicloud/certs.tgz -C / && \
@@ -22,7 +23,7 @@ systemctl is-active kubelet || ( \
       --kubernetes-master-mode=ha \
       --kubernetes-version="${KUBERNETES_VERSION}" \
       --kubernetes-advertise-address="${ADVERTISE_ADDRESS}:6443" \
-      --kubernetes-api-server=192.168.64.11:6443 \
+      --kubernetes-api-server="${APISERVER_ADDRESS}" \
       --kubernetes-node-token "${TOKEN}" \
       --kubernetes-api-server-ca-cert-hash "${CERTHASH}" \
       --kubernetes-join-control-plane && \
