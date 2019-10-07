@@ -65,9 +65,8 @@ apiServerExtraArgs:
   oidc-username-claim: "email"
   oidc-username-prefix: "oidc:"
   oidc-groups-claim: "groups"{{end}}
-  {{ if .CloudProvider }}
-  cloud-provider: "{{ .CloudProvider }}"
-  {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}
+  {{ if .CloudProvider }}cloud-provider: "{{ .CloudProvider }}"
+  {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}{{end}}
 schedulerExtraArgs:
   profiling: "false"
 apiServerExtraVolumes:
