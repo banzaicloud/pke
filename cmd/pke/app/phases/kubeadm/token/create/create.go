@@ -25,12 +25,12 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"emperror.dev/errors"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/token"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/ghodss/yaml"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

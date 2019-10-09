@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 func Untar(out io.Writer, r io.Reader) error {

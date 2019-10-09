@@ -20,10 +20,10 @@ import (
 	"net/url"
 	"os"
 
+	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
-	"github.com/pkg/errors"
 )
 
 const (

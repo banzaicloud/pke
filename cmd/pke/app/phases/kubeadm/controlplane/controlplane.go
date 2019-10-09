@@ -31,6 +31,7 @@ import (
 	"text/template"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
@@ -47,7 +48,6 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/goph/emperror"
 	"github.com/lestrrat-go/backoff"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

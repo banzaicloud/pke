@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 
+	"emperror.dev/errors"
 	"github.com/antihax/optional"
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
@@ -27,7 +28,6 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	pipelineutil "github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

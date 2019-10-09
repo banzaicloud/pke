@@ -15,8 +15,8 @@
 package validator
 
 import (
+	"emperror.dev/errors"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
-	"github.com/pkg/errors"
 )
 
 // NotEmpty gives error, if any of the given args is empty. Map key is returned in the error message.

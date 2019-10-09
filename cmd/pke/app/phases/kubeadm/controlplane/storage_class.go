@@ -21,10 +21,10 @@ import (
 	"os/exec"
 	"text/template"
 
+	"emperror.dev/errors"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
-	"github.com/pkg/errors"
 )
 
 func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider string, azureStorageAccountType, azureStorageKind string) error {

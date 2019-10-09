@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 
+	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
@@ -26,7 +27,6 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

@@ -20,9 +20,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"emperror.dev/errors"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
-	"github.com/pkg/errors"
 )
 
 const (

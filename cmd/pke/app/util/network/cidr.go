@@ -17,7 +17,7 @@ package network
 import (
 	"net"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 func Contains(cidr string, ip net.IP) (bool, error) {

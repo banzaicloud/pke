@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"runtime"
 
+	"emperror.dev/errors"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/ghodss/yaml"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 

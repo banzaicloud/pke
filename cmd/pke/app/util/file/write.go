@@ -20,7 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 func Overwrite(file, contents string) error {
