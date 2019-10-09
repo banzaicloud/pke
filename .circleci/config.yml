@@ -148,7 +148,7 @@ jobs:
                 run:
                     name: Create tag
                     command: |
-                        scripts/create-git-tag.sh 'banzaicloud' 'pke-image' 'refs/heads/automated-build' "pke-${CIRCLE_TAG}"
+                        scripts/create-git-tag.sh 'banzaicloud' 'pke-image' 'refs/heads/master' "pke-${CIRCLE_TAG}"
 
 workflows:
     version: 2
