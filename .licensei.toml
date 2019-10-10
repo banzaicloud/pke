@@ -8,5 +8,8 @@ approved = [
 
 
 ignored = [
+    "emperror.dev/errors",
     "github.com/ghodss/yaml",
+    "go.uber.org/atomic",
+    "go.uber.org/multierr",
 ]
