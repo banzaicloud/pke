@@ -15,7 +15,7 @@
 package constants
 
 import (
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 const (

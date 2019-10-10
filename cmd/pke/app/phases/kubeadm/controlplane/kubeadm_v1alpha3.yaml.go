@@ -83,8 +83,7 @@ func kubeadmConfigV1Alpha3Template() string {
 		"  oidc-username-claim: \"email\"\n" +
 		"  oidc-username-prefix: \"oidc:\"\n" +
 		"  oidc-groups-claim: \"groups\"{{end}}\n" +
-		"  {{ if .CloudProvider }}\n" +
-		"  cloud-provider: \"{{ .CloudProvider }}\"\n" +
+		"  {{ if .CloudProvider }}cloud-provider: \"{{ .CloudProvider }}\"\n" +
 		"  {{ if .CloudConfig }}cloud-config: /etc/kubernetes/{{ .CloudProvider }}.conf{{end}}{{end}}\n" +
 		"schedulerExtraArgs:\n" +
 		"  profiling: \"false\"\n" +

@@ -20,10 +20,10 @@ import (
 	"net/url"
 	"os"
 
+	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -49,29 +49,8 @@ func (a *AptInstaller) InstallKubernetesPrerequisites(out io.Writer, kubernetesV
 		return err
 	}
 
-	// modprobe nf_conntrack_ipv4
-	if err := Modprobe(out, "nf_conntrack_ipv4"); err != nil {
-		return errors.Wrap(err, "missing nf_conntrack_ipv4 Linux Kernel module")
-	}
-
-	// modprobe ip_vs
-	if err := Modprobe(out, "ip_vs"); err != nil {
-		return errors.Wrap(err, "missing ip_vs Linux Kernel module")
-	}
-
-	// modprobe ip_vs_rr
-	if err := Modprobe(out, "ip_vs_rr"); err != nil {
-		return errors.Wrap(err, "missing ip_vs_rr Linux Kernel module")
-	}
-
-	// modprobe ip_vs_wrr
-	if err := Modprobe(out, "ip_vs_wrr"); err != nil {
-		return errors.Wrap(err, "missing ip_vs_wrr Linux Kernel module")
-	}
-
-	// modprobe ip_vs_sh
-	if err := Modprobe(out, "ip_vs_sh"); err != nil {
-		return errors.Wrap(err, "missing ip_vs_sh Linux Kernel module")
+	if err := ModprobeKubeProxyIPVSModules(out); err != nil {
+		return err
 	}
 
 	if err := SysctlLoadAllFiles(out); err != nil {

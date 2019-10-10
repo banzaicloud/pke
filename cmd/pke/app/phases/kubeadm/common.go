@@ -25,10 +25,10 @@ import (
 	"text/template"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
-	"github.com/pkg/errors"
 )
 
 const (

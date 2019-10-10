@@ -17,7 +17,7 @@ package kubernetes
 import (
 	"strings"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 type Taint struct {

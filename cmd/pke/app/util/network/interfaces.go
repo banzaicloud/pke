@@ -17,7 +17,7 @@ package network
 import (
 	"net"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 func IPv4Addresses() ([]net.IP, error) {

@@ -19,8 +19,8 @@ import (
 	"io"
 	"strings"
 
+	"emperror.dev/errors"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
-	"github.com/pkg/errors"
 )
 
 var (

@@ -23,13 +23,13 @@ import (
 	"strings"
 	"text/template"
 
+	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
 	"github.com/pbnjay/memory"
-	"github.com/pkg/errors"
 )
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Alpha3 kubeadm_v1alpha3.yaml.tmpl

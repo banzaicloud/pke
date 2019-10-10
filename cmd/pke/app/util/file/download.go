@@ -23,7 +23,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 func Download(u *url.URL, f string) error {

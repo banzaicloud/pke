@@ -19,7 +19,7 @@ package kubernetes
 import (
 	"io"
 
-	"github.com/pkg/errors"
+	"emperror.dev/errors"
 )
 
 func (r *Runtime) installRuntime(w io.Writer) error {
