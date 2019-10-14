@@ -16,7 +16,10 @@ package linux
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"regexp"
 	"strings"
 
 	"emperror.dev/errors"
@@ -51,7 +54,18 @@ func CentOSVersion(w io.Writer) (string, error) {
 func RedHatVersion(w io.Writer) (string, error) {
 	o, err := runner.Cmd(w, "rpm", "--query", "redhat-release").Output()
 	if err != nil {
-		return "", err
+		// /etc/redhat-release
+		b, err := ioutil.ReadFile("/etc/redhat-release")
+		_, _ = fmt.Fprintf(w, "/etc/redhat-release: %q, err: %v\n", b, err)
+		if err != nil {
+			return "", err
+		}
+		re := regexp.MustCompile(`\d+(\.\d+)?`)
+		ver := re.Find(b)
+		if len(ver) == 0 {
+			return "", errors.New("failed to parse version")
+		}
+		return string(ver), nil
 	}
 
 	s := bytes.SplitN(o, dash, 4)

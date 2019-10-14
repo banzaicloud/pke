@@ -17,6 +17,7 @@ package linux
 import (
 	"io"
 
+	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 )
 
@@ -48,8 +49,12 @@ func ContainerdPackagesImpl(out io.Writer) (ContainerdPackages, error) {
 	if err != nil {
 		ver, err = RedHatVersion(out)
 	}
-	if err == nil && (ver == "7" || ver == "8.0") {
-		return NewYumInstaller(), nil
+	if err == nil {
+		v, _ := semver.NewVersion(ver)
+		c, _ := semver.NewConstraint("7.x-0 || 8.x-0")
+		if c.Check(v) {
+			return NewYumInstaller(), nil
+		}
 	}
 
 	if distro, err := LSBReleaseDistributorID(out); err == nil {
