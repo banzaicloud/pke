@@ -22,11 +22,16 @@ import (
 )
 
 func KubernetesPackagesImpl(out io.Writer) (KubernetesPackages, error) {
-	if ver, err := CentOSVersion(out); err == nil {
-		if ver == "7" {
+	ver, err := CentOSVersion(out)
+	if err != nil {
+		ver, err = RedHatVersion(out)
+	}
+	if err == nil {
+		v, _ := semver.NewVersion(ver)
+		c, _ := semver.NewConstraint("7.x-0 || 8.x-0")
+		if c.Check(v) {
 			return NewYumInstaller(), nil
 		}
-		return nil, constants.ErrUnsupportedOS
 	}
 
 	if distro, err := LSBReleaseDistributorID(out); err == nil {

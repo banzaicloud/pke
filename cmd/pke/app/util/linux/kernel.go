@@ -33,6 +33,8 @@ func KernelVersionConstraint(out io.Writer, constraint string) error {
 	if err != nil {
 		return err
 	}
+	// Red Hat Linux uses underscore: 3.10.0-327.el7.x86_64
+	version = bytes.ReplaceAll(version, []byte("_"), []byte(""))
 	v := string(bytes.TrimSpace(version))
 	ver, err := semver.NewVersion(v)
 	if err != nil {
