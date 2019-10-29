@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/img/logo.png" width="260"></p>
+
 ## Pipeline Kubernetes Engine - PKE
 
 PKE is an extremely simple [CNCF certifed](https://www.cncf.io/certification/software-conformance/#logos) Kubernetes installer and distribution, designed to work on any cloud, VM or bare metal. The `pke` tool supports cloud provider integrations, multi-phased installs (requires only an OS), pre-warmed machine image builds, and more. PKE is the preferred Kubernetes run-time of the [Banzai Cloud Pipeline platform](https://beta.banzaicloud.io/), which supercharges the development, deployment and scaling of container-based applications with native support for multi-, hybrid-, and edge-cloud environments.
