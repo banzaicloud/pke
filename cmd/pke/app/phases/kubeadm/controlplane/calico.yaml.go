@@ -38,7 +38,7 @@ func calicoTemplate() string {
 		"  cni_network_config: |-\n" +
 		"    {\n" +
 		"      \"name\": \"k8s-pod-network\",\n" +
-		"      \"cniVersion\": \"0.3.0\",\n" +
+		"      \"cniVersion\": \"0.3.1\",\n" +
 		"      \"plugins\": [\n" +
 		"        {\n" +
 		"          \"type\": \"calico\",\n" +
@@ -534,7 +534,7 @@ func calicoTemplate() string {
 		"        # It can be deleted if this is a fresh installation, or if you have already\n" +
 		"        # upgraded to use calico-ipam.\n" +
 		"        - name: upgrade-ipam\n" +
-		"          image: calico/cni:v3.9.0\n" +
+		"          image: calico/cni:v3.10.1\n" +
 		"          command: [\"/opt/cni/bin/calico-ipam\", \"-upgrade\"]\n" +
 		"          env:\n" +
 		"            - name: KUBERNETES_NODE_NAME\n" +
@@ -554,7 +554,7 @@ func calicoTemplate() string {
 		"        # This container installs the CNI binaries\n" +
 		"        # and CNI network config file on each node.\n" +
 		"        - name: install-cni\n" +
-		"          image: calico/cni:v3.9.0\n" +
+		"          image: calico/cni:v3.10.1\n" +
 		"          command: [\"/install-cni.sh\"]\n" +
 		"          env:\n" +
 		"            # Name of the CNI config file to create.\n" +
@@ -588,7 +588,7 @@ func calicoTemplate() string {
 		"        # Adds a Flex Volume Driver that creates a per-pod Unix Domain Socket to allow Dikastes\n" +
 		"        # to communicate with Felix over the Policy Sync API.\n" +
 		"        - name: flexvol-driver\n" +
-		"          image: calico/pod2daemon-flexvol:v3.9.0\n" +
+		"          image: calico/pod2daemon-flexvol:v3.10.1\n" +
 		"          volumeMounts:\n" +
 		"          - name: flexvol-driver-host\n" +
 		"            mountPath: /host/driver\n" +
@@ -597,7 +597,7 @@ func calicoTemplate() string {
 		"        # container programs network policy and routes on each\n" +
 		"        # host.\n" +
 		"        - name: calico-node\n" +
-		"          image: calico/node:v3.9.0\n" +
+		"          image: calico/node:v3.10.1\n" +
 		"          env:\n" +
 		"            # Use Kubernetes API as the backing datastore.\n" +
 		"            - name: DATASTORE_TYPE\n" +
@@ -771,7 +771,7 @@ func calicoTemplate() string {
 		"      priorityClassName: system-cluster-critical\n" +
 		"      containers:\n" +
 		"        - name: calico-kube-controllers\n" +
-		"          image: calico/kube-controllers:v3.9.0\n" +
+		"          image: calico/kube-controllers:v3.10.1\n" +
 		"          env:\n" +
 		"            # Choose which controllers to run.\n" +
 		"            - name: ENABLED_CONTROLLERS\n" +
@@ -799,7 +799,6 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"# Source: calico/templates/configure-canal.yaml\n" +
-		"\n" +
 		""
 	return tmpl
 }

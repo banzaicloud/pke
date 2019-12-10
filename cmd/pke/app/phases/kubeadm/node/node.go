@@ -296,7 +296,8 @@ func (n *Node) install(out io.Writer) error {
 		}
 
 		// re-run command on connection refused error
-		if !strings.Contains(ll, "connection refused") {
+		// couldn't validate the identity of the API Server: abort connecting to API servers after timeout of 5m0s
+		if !strings.Contains(ll, "connection refused") && !strings.Contains(ll, "timeout") {
 			return err
 		}
 		_, _ = fmt.Fprintf(out, "[%s] re-run %q command\n", use, cmdKubeadm)

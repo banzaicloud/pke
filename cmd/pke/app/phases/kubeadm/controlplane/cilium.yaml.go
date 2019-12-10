@@ -390,7 +390,7 @@ func ciliumTemplate() string {
 		"              key: custom-cni-conf\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        image: \"docker.io/cilium/cilium:v1.6.2\"\n" +
+		"        image: \"docker.io/cilium/cilium:v1.6.4\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        lifecycle:\n" +
 		"          postStart:\n" +
@@ -477,7 +477,7 @@ func ciliumTemplate() string {
 		"              key: wait-bpf-mount\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        image: \"docker.io/cilium/cilium:v1.6.2\"\n" +
+		"        image: \"docker.io/cilium/cilium:v1.6.4\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: clean-cilium-state\n" +
 		"        securityContext:\n" +
@@ -652,7 +652,7 @@ func ciliumTemplate() string {
 		"              key: identity-allocation-mode\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        image: \"docker.io/cilium/operator:v1.6.2\"\n" +
+		"        image: \"docker.io/cilium/operator:v1.6.4\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: cilium-operator\n" +
 		"        livenessProbe:\n" +
@@ -663,6 +663,7 @@ func ciliumTemplate() string {
 		"          initialDelaySeconds: 60\n" +
 		"          periodSeconds: 10\n" +
 		"          timeoutSeconds: 3\n" +
+		"\n" +
 		"      hostNetwork: true\n" +
 		"      restartPolicy: Always\n" +
 		"      serviceAccount: cilium-operator\n" +

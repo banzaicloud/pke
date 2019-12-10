@@ -26,6 +26,7 @@ func storageClassAmazonTemplate() string {
 		"parameters:\n" +
 		"  type: gp2\n" +
 		"  fsType: ext4\n" +
+		"volumeBindingMode: WaitForFirstConsumer\n" +
 		""
 	return tmpl
 }
