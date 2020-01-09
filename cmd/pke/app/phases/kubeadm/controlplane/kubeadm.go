@@ -168,7 +168,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ImageRepository:             c.imageRepository,
 		EncryptionProviderPrefix:    encryptionProviderPrefix,
 		WithPluginPSP:               c.withPluginPSP,
-		WithAuditLog:                c.withAuditLog,
+		WithAuditLog:                !c.withoutAuditLog,
 		Taints:                      taints,
 		AuditLogDir:                 auditLogDir,
 		AuditPolicyFile:             auditPolicyFile,

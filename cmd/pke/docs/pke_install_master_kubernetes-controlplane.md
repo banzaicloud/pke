@@ -69,8 +69,8 @@ pke install master kubernetes-controlplane [flags]
       --vsphere-resourcepool string                       The path of the resource pool to create temporary VMs in during volume creation (for example "Cluster/Pool")
       --vsphere-server string                             The hostname or IP of vCenter to use
       --vsphere-username string                           The name of vCenter SSO user to use for deploying persistent volumes (Should be avoided in favor of a K8S secret)
-      --with-audit-log                                    Enable apiserver audit log
       --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
+      --without-audit-log                                 Disable apiserver audit log
 ```
 
 ### SEE ALSO

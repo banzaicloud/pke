@@ -102,7 +102,7 @@ type ControlPlane struct {
 	oidcClientID                     string
 	imageRepository                  string
 	withPluginPSP                    bool
-	withAuditLog                     bool
+	withoutAuditLog                  bool
 	node                             *node.Node
 	azureTenantID                    string
 	azureSubnetName                  string
@@ -189,7 +189,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
 	// AuditLog enable
-	flags.Bool(constants.FlagAuditLog, false, "Enable apiserver audit log")
+	flags.Bool(constants.FlagAuditLog, false, "Disable apiserver audit log")
 	// Azure cloud
 	flags.String(constants.FlagAzureTenantID, "", "The AAD Tenant ID for the Subscription that the cluster is deployed in")
 	flags.String(constants.FlagAzureSubnetName, "", "The name of the subnet that the cluster is deployed in")
@@ -442,7 +442,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 				return err
 			}
 			// install additional master node
-			if err := writeMasterConfig(out, c.withAuditLog, c.kubernetesVersion, c.encryptionSecret); err != nil {
+			if err := writeMasterConfig(out, !c.withoutAuditLog, c.kubernetesVersion, c.encryptionSecret); err != nil {
 				return err
 			}
 			_, _ = fmt.Fprintf(out, "[%s] installing additional master node\n", c.Use())
@@ -609,7 +609,7 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 	if err != nil {
 		return
 	}
-	c.withAuditLog, err = cmd.Flags().GetBool(constants.FlagAuditLog)
+	c.withoutAuditLog, err = cmd.Flags().GetBool(constants.FlagAuditLog)
 	if err != nil {
 		return
 	}
@@ -793,7 +793,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// write master config
-	if err := writeMasterConfig(out, c.withAuditLog, c.kubernetesVersion, c.encryptionSecret); err != nil {
+	if err := writeMasterConfig(out, !c.withoutAuditLog, c.kubernetesVersion, c.encryptionSecret); err != nil {
 		return err
 	}
 
