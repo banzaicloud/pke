@@ -7,7 +7,7 @@ To *try out* a single- or multi-node PKE Kubernetes cluster you can also use Vag
 To install Vagrant on a macOS, complete the following steps:
 
 1. Install VirtualBox: `brew cask install virtualbox`
-    > You may need to download VirtualBox 6.0 manually, because [VirtualBox 6.1 support](https://github.com/hashicorp/vagrant/pull/11250) is not yet released (as of early 2020).
+    > You may need to download VirtualBox 6.0 manually, because [VirtualBox 6.1 support](https://github.com/hashicorp/vagrant/pull/11250) of Vagrant is not yet released (as of early 2020).
 1. Install Vagrant: `brew cask install vagrant`
 1. Install the vagrant-vbguest plugin `vagrant plugin install vagrant-vbguest`
 1. Clone the PKE repository. If you do not have git installed, you can also [download and unzip it into the pke directory](https://github.com/banzaicloud/pke/releases/latest):
@@ -90,4 +90,4 @@ To install Vagrant on a macOS, complete the following steps:
     pke install worker --kubernetes-node-token $TOKEN --kubernetes-api-server-ca-cert-hash $CERTHASH --kubernetes-api-server 192.168.64.11:6443
     ```
 
-1. Repeat the previous step to add additional worker nodes. You can check the status of the containers by issueing the `crictl ps` command.
+1. Repeat the previous step to add additional worker nodes. You can check the status of the containers by issuing the `crictl ps` command.
