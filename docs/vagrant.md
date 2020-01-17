@@ -1,11 +1,14 @@
 ## PKE in Vagrant
 
-In order to try out a single/multi node PKE Kubernetes cluster you will need a Vagrant box. To install Vagrant on a Mac OS X follow these steps below:
+In order to *try out* a single/multi node PKE Kubernetes cluster you can also use Vagrant.
+
+To install Vagrant on a Mac OS X follow these steps below:
 
 - Install VirtualBox: `brew cask install virtualbox`
 - Install Vagrant: `brew cask install vagrant`
-- Install the VirtualBox extension pack: `brew cask install virtualbox-extension-pack`
 - Install the vagrant-vbguest plugin `vagrant plugin install vagrant-vbguest`
+
+> You may need to download VirtualBox 6.0 manually, because [VirtualBox 6.1 support](https://github.com/hashicorp/vagrant/pull/11250) is not yet released (as of early 2020).
 
 You are set, and ready to install PKE on your machine. Now you should clone the PKE repo and follow these steps:
 
