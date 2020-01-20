@@ -117,17 +117,28 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 		args = []string{
 			"upgrade",
 			"node",
-			"experimental-control-plane",
-			to.String(),
 		}
+		c, _ := semver.NewConstraint("<1.15")
+		if c.Check(to) {
+			args = append(args, "experimental-control-plane")
+		} else {
+			args = append(args, "--kubelet-version")
+		}
+
 	} else {
 		args = []string{
 			"upgrade",
 			"apply",
 			"-f",
-			to.String(),
+		}
+		c, _ := semver.NewConstraint("1.16.x")
+		if c.Check(to) {
+			args = append(args, "--ignore-preflight-errors=CoreDNSUnsupportedPlugins")
 		}
 	}
+	// target version
+	args = append(args, to.String())
+
 	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {
 		return err
