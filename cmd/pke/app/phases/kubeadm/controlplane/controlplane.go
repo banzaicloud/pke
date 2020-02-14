@@ -20,7 +20,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -71,7 +70,6 @@ const (
 	admissionEventRateLimitConfig = "/etc/kubernetes/admission-control/event-rate-limit.yaml"
 	podSecurityPolicyConfig       = "/etc/kubernetes/admission-control/pod-security-policy.yaml"
 	certificateAutoApprover       = "/etc/kubernetes/admission-control/deploy-auto-approver.yaml"
-	urlAWSAZ                      = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 	cniDir                        = "/etc/cni/net.d"
 	etcdDir                       = "/var/lib/etcd"
 	auditPolicyFile               = "/etc/kubernetes/audit-policy-file.yaml"
@@ -798,7 +796,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// write kubeadm aws.conf
-	err = writeKubeadmAmazonConfig(out, kubeadmAmazonConfig, c.cloudProvider)
+	err = kubeadm.WriteKubeadmAmazonConfig(out, kubeadmAmazonConfig, c.cloudProvider)
 	if err != nil {
 		return err
 	}
@@ -924,47 +922,6 @@ func installCilium(out io.Writer, kubeConfig string, mtu uint) error {
 	cmd.Stdin = strings.NewReader(input)
 	_, err := cmd.CombinedOutputAsync()
 	return err
-}
-
-func writeKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) error {
-	if cloudProvider != constants.CloudProviderAmazon {
-		return nil
-	}
-
-	if http.DefaultClient.Timeout < 10*time.Second {
-		http.DefaultClient.Timeout = 10 * time.Second
-	}
-
-	// printf "[GLOBAL]\nZone="$(curl -q -s http://169.254.169.254/latest/meta-data/placement/availability-zone) > /etc/kubernetes/aws.conf
-	resp, err := http.Get(urlAWSAZ)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("failed to get aws availability zone. http status code: %d", resp.StatusCode)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Wrap(err, "failed to read response body")
-	}
-
-	tmpl, err := template.New("amazon").Parse(`[GLOBAL]
-Zone={{ .Zone }}`)
-	if err != nil {
-		return err
-	}
-
-	type data struct {
-		Zone string
-	}
-
-	d := data{
-		Zone: string(b),
-	}
-
-	return file.WriteTemplate(filename, tmpl, d)
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f admissionConfiguration admission_configuration.yaml.tmpl

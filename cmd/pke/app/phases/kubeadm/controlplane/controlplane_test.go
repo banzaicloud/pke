@@ -56,19 +56,6 @@ func TestWriteKubeadmConfig(t *testing.T) {
 	t.Logf("%s\n", b)
 }
 
-func TestWriteKubeadmAmazonConfig(t *testing.T) {
-	t.SkipNow()
-	filename := os.TempDir() + "aws.conf"
-	t.Log(filename)
-	err := writeKubeadmAmazonConfig(os.Stdout, filename, constants.CloudProviderAmazon)
-	require.NoError(t, err)
-	defer func() { _ = os.Remove(filename) }()
-
-	b, err := ioutil.ReadFile(filename)
-	require.NoError(t, err)
-	t.Logf("%s\n", b)
-}
-
 func TestEnsureAPIServerConnection(t *testing.T) {
 	t.SkipNow()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

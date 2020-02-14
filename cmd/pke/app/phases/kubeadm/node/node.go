@@ -40,14 +40,15 @@ const (
 	use   = "kubernetes-node"
 	short = "Kubernetes worker node installation"
 
-	cmdKubeadm         = "kubeadm"
-	kubeProxyConfig    = "/var/lib/kube-proxy/config.conf"
-	kubeadmConfig      = "/etc/kubernetes/kubeadm.conf"
-	kubeadmAzureConfig = "/etc/kubernetes/azure.conf"
-	cniDir             = "/etc/cni/net.d"
-	cniBridgeConfig    = "/etc/cni/net.d/10-bridge.conf"
-	cniLoopbackConfig  = "/etc/cni/net.d/99-loopback.conf"
-	maxJoinRetries     = 5
+	cmdKubeadm          = "kubeadm"
+	kubeProxyConfig     = "/var/lib/kube-proxy/config.conf"
+	kubeadmConfig       = "/etc/kubernetes/kubeadm.conf"
+	kubeadmAmazonConfig = "/etc/kubernetes/aws.conf"
+	kubeadmAzureConfig  = "/etc/kubernetes/azure.conf"
+	cniDir              = "/etc/cni/net.d"
+	cniBridgeConfig     = "/etc/cni/net.d/10-bridge.conf"
+	cniLoopbackConfig   = "/etc/cni/net.d/99-loopback.conf"
+	maxJoinRetries      = 5
 )
 
 var _ phases.Runnable = (*Node)(nil)
@@ -260,6 +261,12 @@ func (n *Node) install(out io.Writer) error {
 	}
 
 	err := writeKubeProxyConfig(out, kubeProxyConfig)
+	if err != nil {
+		return err
+	}
+
+	// write kubeadm aws.conf
+	err = kubeadm.WriteKubeadmAmazonConfig(out, kubeadmAmazonConfig, n.cloudProvider)
 	if err != nil {
 		return err
 	}
