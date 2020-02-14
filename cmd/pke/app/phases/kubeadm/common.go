@@ -32,6 +32,7 @@ import (
 )
 
 const (
+	urlAWSAZ                 = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
 	urlAzureAZ               = "http://169.254.169.254/metadata/instance?api-version=2018-10-01"
 	EncryptionProviderConfig = "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
 )
@@ -218,6 +219,47 @@ func WriteEncryptionProviderConfig(out io.Writer, filename, kubernetesVersion, e
 		Kind:             kind,
 		APIVersion:       apiVersion,
 		EncryptionSecret: encryptionSecret,
+	}
+
+	return file.WriteTemplate(filename, tmpl, d)
+}
+
+func WriteKubeadmAmazonConfig(out io.Writer, filename, cloudProvider string) error {
+	if cloudProvider != constants.CloudProviderAmazon {
+		return nil
+	}
+
+	if http.DefaultClient.Timeout < 10*time.Second {
+		http.DefaultClient.Timeout = 10 * time.Second
+	}
+
+	// printf "[GLOBAL]\nZone="$(curl -q -s http://169.254.169.254/latest/meta-data/placement/availability-zone) > /etc/kubernetes/aws.conf
+	resp, err := http.Get(urlAWSAZ)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("failed to get aws availability zone. http status code: %d", resp.StatusCode)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to read response body")
+	}
+
+	tmpl, err := template.New("amazon").Parse(`[GLOBAL]
+Zone={{ .Zone }}`)
+	if err != nil {
+		return err
+	}
+
+	type data struct {
+		Zone string
+	}
+
+	d := data{
+		Zone: string(b),
 	}
 
 	return file.WriteTemplate(filename, tmpl, d)
