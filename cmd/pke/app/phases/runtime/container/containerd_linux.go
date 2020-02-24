@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	containerdVersion     = "1.3.2"
-	containerdSHA256      = "95cf4d2cfa23c7a586980c51f8c283a9f0717e09d1a3cc54fc6ed7984923b7aa"
+	containerdVersion     = "1.3.3"
+	containerdSHA256      = "b76d54ca86b69871266c29d0f1ad56f37892ab4879b82d34909ab94918b83d16"
 	containerdURL         = "https://storage.googleapis.com/cri-containerd-release/cri-containerd-%s.linux-amd64.tar.gz"
 	containerdVersionPath = "/opt/containerd/cluster/version"
 	containerdConf        = "/etc/containerd/config.toml"
@@ -109,8 +109,8 @@ func installContainerd(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "unable to create temporary file: %q", f.Name())
 	}
 	defer func() { _ = f.Close() }()
-	// export CONTAINERD_VERSION="1.2.0"
-	// export CONTAINERD_SHA256="ee076c6260de140f9aa6dee30b0e360abfb80af252d271e697982d1209ca5dee"
+	// export CONTAINERD_VERSION="1.3.3"
+	// export CONTAINERD_SHA256="b76d54ca86b69871266c29d0f1ad56f37892ab4879b82d34909ab94918b83d16"
 	// wget https://storage.googleapis.com/cri-containerd-release/cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz
 	dl := fmt.Sprintf(containerdURL, containerdVersion)
 	u, err := url.Parse(dl)
