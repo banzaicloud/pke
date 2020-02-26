@@ -29,7 +29,7 @@ import (
 
 const (
 	containerdVersion     = "1.3.3"
-	containerdSHA256      = "b76d54ca86b69871266c29d0f1ad56f37892ab4879b82d34909ab94918b83d16"
+	containerdSHA256      = "24ce7ad6b489fb25d07d2a3bb50e443fcce1ac3318f8cc0831e00668c2c9fd86"
 	containerdURL         = "https://storage.googleapis.com/cri-containerd-release/cri-containerd-%s.linux-amd64.tar.gz"
 	containerdVersionPath = "/opt/containerd/cluster/version"
 	containerdConf        = "/etc/containerd/config.toml"
