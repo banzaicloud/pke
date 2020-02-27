@@ -15,9 +15,9 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
-	"fmt"
 	"path"
 	"path/filepath"
 	"strings"
@@ -27,7 +27,7 @@ import (
 )
 
 func main() {
-const fmTemplate = `---
+	const fmTemplate = `---
 title: %s
 slug: %s
 ---
