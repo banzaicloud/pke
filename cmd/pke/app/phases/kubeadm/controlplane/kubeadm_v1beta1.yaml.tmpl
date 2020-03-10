@@ -46,7 +46,7 @@ apiServer:
   extraArgs:
     # anonymous-auth: "false"
     profiling: "false"
-    enable-admission-plugins: "AlwaysPullImages,DenyEscalatingExec,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
+    enable-admission-plugins: "AlwaysPullImages,{{ if not .WithoutPluginDenyEscalatingExec }}DenyEscalatingExec,{{end}}EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}"
     disable-admission-plugins: ""
     admission-control-config-file: "{{ .AdmissionConfig }}"
     audit-log-path: "{{ .AuditLogDir }}/apiserver.log"

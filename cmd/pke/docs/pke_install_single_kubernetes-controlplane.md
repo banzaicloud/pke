@@ -70,6 +70,7 @@ pke install single kubernetes-controlplane [flags]
       --vsphere-server string                             The hostname or IP of vCenter to use
       --vsphere-username string                           The name of vCenter SSO user to use for deploying persistent volumes (Should be avoided in favor of a K8S secret)
       --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
+      --without-plugin-deny-escalating-exec               Disable DenyEscalatingExec admission plugin
       --without-audit-log                                 Disable apiserver audit log
 ```
 

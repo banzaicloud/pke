@@ -100,6 +100,7 @@ type ControlPlane struct {
 	oidcClientID                     string
 	imageRepository                  string
 	withPluginPSP                    bool
+	withoutPluginDenyEscalatingExec  bool
 	withoutAuditLog                  bool
 	node                             *node.Node
 	azureTenantID                    string
@@ -186,6 +187,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
+	// DenyEscalatingExec admission plugin
+	flags.Bool(constants.FlagNoAdmissionPluginDenyEscalatingExec, false, "Disable DenyEscalatingExec admission plugin")
 	// AuditLog enable
 	flags.Bool(constants.FlagAuditLog, false, "Disable apiserver audit log")
 	// Azure cloud
@@ -604,6 +607,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.withPluginPSP, err = cmd.Flags().GetBool(constants.FlagAdmissionPluginPodSecurityPolicy)
+	if err != nil {
+		return
+	}
+	c.withoutPluginDenyEscalatingExec, err = cmd.Flags().GetBool(constants.FlagNoAdmissionPluginDenyEscalatingExec)
 	if err != nil {
 		return
 	}

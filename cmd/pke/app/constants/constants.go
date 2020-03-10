@@ -115,6 +115,9 @@ const (
 	// FlagAdmissionPluginPodSecurityPolicy enable admission plugin PodSecurityPolicy.
 	FlagAdmissionPluginPodSecurityPolicy = "with-plugin-psp"
 
+	// FlagNoAdmissionPluginDenyEscalatingExec disable admission plugin DenyEscalatingExec.
+	FlagNoAdmissionPluginDenyEscalatingExec = "without-plugin-deny-escalating-exec"
+
 	// FlagAuditLog enable audit log.
 	FlagAuditLog = "without-audit-log"
 
