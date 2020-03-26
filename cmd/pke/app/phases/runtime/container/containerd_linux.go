@@ -110,7 +110,7 @@ func installContainerd(out io.Writer, imageRepository string) error {
 	}
 	defer func() { _ = f.Close() }()
 	// export CONTAINERD_VERSION="1.3.3"
-	// export CONTAINERD_SHA256="b76d54ca86b69871266c29d0f1ad56f37892ab4879b82d34909ab94918b83d16"
+	// export CONTAINERD_SHA256="24ce7ad6b489fb25d07d2a3bb50e443fcce1ac3318f8cc0831e00668c2c9fd86"
 	// wget https://storage.googleapis.com/cri-containerd-release/cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz
 	dl := fmt.Sprintf(containerdURL, containerdVersion)
 	u, err := url.Parse(dl)
