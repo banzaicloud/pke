@@ -14,9 +14,10 @@
 
 package controlplane
 
-// kubeadmConfigV1Beta1Template is a generated function returning the template as a string.
-func kubeadmConfigV1Beta1Template() string {
-	var tmpl = "apiVersion: kubeadm.k8s.io/v1beta1\n" +
+// kubeadmConfigV1Beta2Template is a generated function returning the template as a string.
+func kubeadmConfigV1Beta2Template() string {
+	var tmpl = "\n" +
+		"apiVersion: kubeadm.k8s.io/v1beta2\n" +
 		"kind: InitConfiguration\n" +
 		"{{ if .APIServerAdvertiseAddress}}\n" +
 		"localAPIEndpoint:\n" +
@@ -44,11 +45,11 @@ func kubeadmConfigV1Beta1Template() string {
 		"    authorization-mode: \"Webhook\"\n" +
 		"    experimental-kernel-memcg-notification: \"true\"\n" +
 		"---\n" +
-		"apiVersion: kubeadm.k8s.io/v1beta1\n" +
+		"apiVersion: kubeadm.k8s.io/v1beta2\n" +
 		"kind: ClusterConfiguration\n" +
 		"clusterName: \"{{ .ClusterName }}\"\n" +
 		"imageRepository: {{ .ImageRepository }}\n" +
-		"useHyperKubeImage:  {{ .UseHyperKubeImage }}\n" +
+		"useHyperKubeImage: {{ .UseHyperKubeImage }}\n" +
 		"networking:\n" +
 		"  serviceSubnet: \"{{ .ServiceCIDR }}\"\n" +
 		"  podSubnet: \"{{ .PodCIDR }}\"\n" +

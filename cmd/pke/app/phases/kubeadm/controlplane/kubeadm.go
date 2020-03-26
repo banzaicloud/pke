@@ -34,6 +34,7 @@ import (
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Alpha3 kubeadm_v1alpha3.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
+//go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta2 kubeadm_v1beta2.yaml.tmpl
 
 func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	// API server advertisement
@@ -66,6 +67,8 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		encryptionProviderPrefix = "experimental-"
 	}
 
+	useHyperKubeImage := false
+
 	var conf string
 	switch ver.Minor() {
 	case 12, 13:
@@ -73,7 +76,11 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		conf = kubeadmConfigV1Alpha3Template()
 	case 14, 15, 16, 17:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
+		useHyperKubeImage = true
 		conf = kubeadmConfigV1Beta1Template()
+	case 18:
+		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
+		conf = kubeadmConfigV1Beta2Template()
 	default:
 		return errors.New(fmt.Sprintf("unsupported Kubernetes version %q for kubeadm", c.kubernetesVersion))
 	}
@@ -122,6 +129,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		AdmissionConfig                 string
 		ClusterName                     string
 		KubernetesVersion               string
+		UseHyperKubeImage               bool
 		ServiceCIDR                     string
 		PodCIDR                         string
 		CloudProvider                   string
@@ -157,6 +165,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		AdmissionConfig:                 admissionConfig,
 		ClusterName:                     c.clusterName,
 		KubernetesVersion:               c.kubernetesVersion,
+		UseHyperKubeImage:               useHyperKubeImage,
 		ServiceCIDR:                     c.serviceCIDR,
 		PodCIDR:                         c.podNetworkCIDR,
 		CloudProvider:                   c.cloudProvider,
