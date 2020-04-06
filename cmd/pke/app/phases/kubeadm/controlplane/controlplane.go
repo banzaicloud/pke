@@ -534,6 +534,7 @@ func ensureAPIServerConnection(out io.Writer, ctx context.Context, successTries 
 	}
 }
 
+// nolint: gocyclo
 func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error) {
 	c.kubernetesVersion, err = cmd.Flags().GetString(constants.FlagKubernetesVersion)
 	if err != nil {
