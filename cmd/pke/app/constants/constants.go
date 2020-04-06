@@ -118,9 +118,6 @@ const (
 	// FlagNoAdmissionPluginDenyEscalatingExec disable admission plugin DenyEscalatingExec.
 	FlagNoAdmissionPluginDenyEscalatingExec = "without-plugin-deny-escalating-exec"
 
-	// FlagUseHyperKubeImage enable using hyperkube image
-	FlagUseHyperKubeImage = "use-hyperkube-image"
-
 	// FlagAuditLog enable audit log.
 	FlagAuditLog = "without-audit-log"
 

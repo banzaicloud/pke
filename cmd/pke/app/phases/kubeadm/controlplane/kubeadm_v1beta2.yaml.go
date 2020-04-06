@@ -49,7 +49,7 @@ func kubeadmConfigV1Beta2Template() string {
 		"kind: ClusterConfiguration\n" +
 		"clusterName: \"{{ .ClusterName }}\"\n" +
 		"imageRepository: {{ .ImageRepository }}\n" +
-		"useHyperKubeImage: {{ .UseHyperKubeImage }}\n" +
+		"{{ if .UseHyperKubeImage }}useHyperKubeImage: true{{end}}\n" +
 		"networking:\n" +
 		"  serviceSubnet: \"{{ .ServiceCIDR }}\"\n" +
 		"  podSubnet: \"{{ .PodCIDR }}\"\n" +

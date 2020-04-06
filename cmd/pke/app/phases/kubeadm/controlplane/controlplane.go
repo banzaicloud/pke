@@ -190,8 +190,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
 	// DenyEscalatingExec admission plugin
 	flags.Bool(constants.FlagNoAdmissionPluginDenyEscalatingExec, false, "Disable DenyEscalatingExec admission plugin")
-	// Use Hyperkube image
-	flags.Bool(constants.FlagUseHyperKubeImage, false, "Enable using HyperKube image")
+
 	// AuditLog enable
 	flags.Bool(constants.FlagAuditLog, false, "Disable apiserver audit log")
 	// Azure cloud
@@ -615,10 +614,6 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.withoutPluginDenyEscalatingExec, err = cmd.Flags().GetBool(constants.FlagNoAdmissionPluginDenyEscalatingExec)
-	if err != nil {
-		return
-	}
-	c.useHyperKubeImage, err = cmd.Flags().GetBool(constants.FlagUseHyperKubeImage)
 	if err != nil {
 		return
 	}

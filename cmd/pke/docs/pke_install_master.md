@@ -72,7 +72,6 @@ pke install master [flags]
       --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
       --without-plugin-deny-escalating-exec               Disable DenyEscalatingExec admission plugin
       --without-audit-log                                 Disable apiserver audit log
-      --use-hyperkube-image                               Enable to use hyperkube image, (deprecated in K8s version 1.18)
 ```
 
 ### SEE ALSO

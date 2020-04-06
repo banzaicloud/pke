@@ -31,7 +31,7 @@ apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
 clusterName: "{{ .ClusterName }}"
 imageRepository: {{ .ImageRepository }}
-useHyperKubeImage: {{ .UseHyperKubeImage }}
+{{ if .UseHyperKubeImage }}useHyperKubeImage: true{{end}}
 networking:
   serviceSubnet: "{{ .ServiceCIDR }}"
   podSubnet: "{{ .PodCIDR }}"
