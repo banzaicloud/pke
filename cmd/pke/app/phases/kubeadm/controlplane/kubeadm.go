@@ -67,8 +67,6 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		encryptionProviderPrefix = "experimental-"
 	}
 
-	useHyperKubeImage := false
-
 	var conf string
 	switch ver.Minor() {
 	case 12, 13:
@@ -76,7 +74,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		conf = kubeadmConfigV1Alpha3Template()
 	case 14, 15, 16, 17:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
-		useHyperKubeImage = true
+		c.useHyperKubeImage = true
 		conf = kubeadmConfigV1Beta1Template()
 	case 18:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
@@ -165,7 +163,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		AdmissionConfig:                 admissionConfig,
 		ClusterName:                     c.clusterName,
 		KubernetesVersion:               c.kubernetesVersion,
-		UseHyperKubeImage:               useHyperKubeImage,
+		UseHyperKubeImage:               c.useHyperKubeImage,
 		ServiceCIDR:                     c.serviceCIDR,
 		PodCIDR:                         c.podNetworkCIDR,
 		CloudProvider:                   c.cloudProvider,
