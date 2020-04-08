@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	emperror.dev/errors v0.4.3
+	github.com/Azure/go-autorest/autorest/to v0.3.0
 	github.com/Masterminds/semver v1.4.2
 	github.com/PuerkitoBio/rehttp v0.0.0-20180310210549-11cf6ea5d3e9
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
