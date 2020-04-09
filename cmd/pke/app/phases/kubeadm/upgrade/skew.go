@@ -24,7 +24,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
-	"github.com/ghodss/yaml"
+	"gopkg.in/yaml.v2"
 )
 
 const (

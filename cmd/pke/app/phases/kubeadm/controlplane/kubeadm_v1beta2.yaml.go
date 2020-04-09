@@ -65,7 +65,7 @@ func kubeadmConfigV1Beta2Template() string {
 		"  extraArgs:\n" +
 		"    # anonymous-auth: \"false\"\n" +
 		"    profiling: \"false\"\n" +
-		"    enable-admission-plugins: \"AlwaysPullImages,{{ if not .WithoutPluginDenyEscalatingExec }}DenyEscalatingExec,{{end}}EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}\"\n" +
+		"    enable-admission-plugins: \"AlwaysPullImages,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}\"\n" +
 		"    disable-admission-plugins: \"\"\n" +
 		"    admission-control-config-file: \"{{ .AdmissionConfig }}\"\n" +
 		"    audit-log-path: \"{{ .AuditLogDir }}/apiserver.log\"\n" +

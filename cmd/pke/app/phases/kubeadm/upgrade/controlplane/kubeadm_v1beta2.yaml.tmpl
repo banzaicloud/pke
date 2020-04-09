@@ -1,0 +1,86 @@
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: InitConfiguration
+{{ if .APIServerAdvertiseAddress }}
+localAPIEndpoint:
+  advertiseAddress: "{{ .APIServerAdvertiseAddress }}"
+  bindPort: {{ .APIServerBindPort }}{{end}}
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+clusterName: "{{ .KubeadmConfig.ClusterName }}"
+imageRepository: {{ .KubeadmConfig.ImageRepository }}
+{{ if .KubeadmConfig.UseHyperKubeImage }}useHyperKubeImage: true{{end}}
+kubernetesVersion: "{{ .KubeadmConfig.KubernetesVersion }}"
+networking:
+  serviceSubnet: "{{ .KubeadmConfig.Networking.ServiceSubnet }}"
+  podSubnet: "{{ .KubeadmConfig.Networking.PodSubnet }}"
+  dnsDomain: "cluster.local"
+{{ if .KubeadmConfig.ControlPlaneEndpoint }}controlPlaneEndpoint: "{{ .KubeadmConfig.ControlPlaneEndpoint }}"{{end}}
+certificatesDir: "/etc/kubernetes/pki"
+apiServer:
+  {{ if .KubeadmConfig.APIServer.CertSANs }}
+  certSANs:
+  {{range $k, $san := .KubeadmConfig.APIServer.CertSANs}}  - "{{ $san }}"
+  {{end}}{{end}}
+  extraArgs:
+    profiling: "false"
+    enable-admission-plugins: "{{ .KubeadmConfig.APIServer.ExtraArgs.EnableAdmissionPlugins }}"
+    disable-admission-plugins: "{{ .KubeadmConfig.APIServer.ExtraArgs.DisableAdmissionPlugins }}"
+    admission-control-config-file: "{{ .KubeadmConfig.APIServer.ExtraArgs.AdmissionControlConfigFile }}"
+    audit-log-path: "{{ .KubeadmConfig.APIServer.ExtraArgs.AuditLogPath }}"
+    audit-log-maxage: "30"
+    audit-log-maxbackup: "10"
+    audit-log-maxsize: "100"
+    {{ if .KubeadmConfig.APIServer.ExtraArgs.AuditPolicyFile }}audit-policy-file: "{{ .KubeadmConfig.APIServer.ExtraArgs.AuditPolicyFile }}"{{ end }}
+    {{ if .KubeadmConfig.APIServer.ExtraArgs.EtcdPrefix }}etcd-prefix: "{{ .KubeadmConfig.APIServer.ExtraArgs.EtcdPrefix }}"{{end}}
+    service-account-lookup: "true"
+    kubelet-certificate-authority: "{{ .KubeadmConfig.APIServer.ExtraArgs.KubeletCertificateAuthority }}"
+    tls-cipher-suites: "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256"
+    encryption-provider-config: "/etc/kubernetes/admission-control/encryption-provider-config.yaml"
+    {{ if (and .KubeadmConfig.APIServer.ExtraArgs.OIDCIssuerURL .KubeadmConfig.APIServer.ExtraArgs.OIDCClientID) }}
+    oidc-issuer-url: "{{ .KubeadmConfig.APIServer.ExtraArgs.OIDCIssuerURL }}"
+    oidc-client-id: "{{ .KubeadmConfig.APIServer.ExtraArgs.OIDCClientID }}"
+    oidc-username-claim: "email"
+    oidc-username-prefix: "oidc:"
+    oidc-groups-claim: "groups"{{end}}
+    {{ if .KubeadmConfig.APIServer.ExtraArgs.CloudProvider }}cloud-provider: "{{ .KubeadmConfig.APIServer.ExtraArgs.CloudProvider }}"
+    {{ if .KubeadmConfig.APIServer.ExtraArgs.CloudConfig }}cloud-config: {{ .KubeadmConfig.APIServer.ExtraArgs.CloudConfig }}{{end}}{{end}}
+  extraVolumes:
+  {{range $k, $volume := .KubeadmConfig.APIServer.ExtraVolumes }}
+    - name: {{ $volume.Name }}
+      hostPath: {{ $volume.HostPath }}
+      mountPath: {{ $volume.MountPath }}
+      pathType: {{ $volume.PathType }}
+      readOnly: {{ $volume.ReadOnly }}{{end}}
+scheduler:
+  extraArgs:
+    profiling: "false"
+controllerManager:
+  extraArgs:
+    cluster-name: "{{ .KubeadmConfig.ControllerManager.ExtraArgs.ClusterName }}"
+    profiling: "false"
+    terminated-pod-gc-threshold: "10"
+    feature-gates: "RotateKubeletServerCertificate=true"
+    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.ClusterSigningCertFile }}cluster-signing-cert-file: {{ .KubeadmConfig.ControllerManager.ExtraArgs.ClusterSigningCertFile }}{{end}}
+    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}cloud-provider: "{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}
+    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}cloud-config: "{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}
+  extraVolumes:
+  {{range $k, $volume := .KubeadmConfig.ControllerManager.ExtraVolumes }}
+    - name: {{ $volume.Name }}
+	    hostPath: {{ $volume.HostPath }}
+	    mountPath: {{ $volume.MountPath }}
+	    pathType: {{ $volume.PathType }}
+	    readOnly: {{ $volume.ReadOnly }}{{end}}{{end}}{{end}}
+etcd:
+  {{ if .KubeadmConfig.Etcd.External.Endpoints }}
+  external:
+    endpoints:
+    {{range $k, $endpoint := .KubeadmConfig.Etcd.External.Endpoints }}
+      - caFile: {{ $endpoint.CAFile }}
+        certFile: {{ $endpoint.CertFile }}
+        keyFile: {{ $endpoint.KeyFile }}{{end}}
+  {{else}}
+  local:
+    extraArgs:
+      peer-auto-tls: "false"
+  {{end}}
