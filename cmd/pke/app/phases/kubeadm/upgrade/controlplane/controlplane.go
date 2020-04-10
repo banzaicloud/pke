@@ -37,6 +37,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+//go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta2 kubeadm_v1beta2.yaml.tmpl
 
 const (
@@ -220,25 +221,29 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 			"upgrade",
 			"node",
 		}
-		c, _ := semver.NewConstraint("<1.15")
-		if c.Check(to) {
+		version, _ := semver.NewConstraint("<1.15")
+		if version.Check(to) {
 			args = append(args, "experimental-control-plane")
 		} else {
 			args = append(args, "--kubelet-version")
 		}
 
 	} else {
-		err := c.getKubeadmConfigmap(out)
-		if err != nil {
-			return err
-		}
-		err = c.generateNewKubeadmConfig(out, from, to)
-		if err != nil {
-			return err
-		}
-		err = c.uploadKubeadmConf(out)
-		if err != nil {
-			return err
+		version, _ := semver.NewConstraint(">1.14")
+		if version.Check(to) {
+			err := c.getKubeadmConfigmap(out)
+			if err != nil {
+				return err
+			}
+
+			err = c.generateNewKubeadmConfig(out, from, to)
+			if err != nil {
+				return err
+			}
+			err = c.uploadKubeadmConf(out)
+			if err != nil {
+				return err
+			}
 		}
 
 		args = []string{
@@ -246,8 +251,8 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 			"apply",
 			"-f",
 		}
-		c, _ := semver.NewConstraint("1.16.x")
-		if c.Check(to) {
+		version, _ = semver.NewConstraint("1.16.x")
+		if version.Check(to) {
 			args = append(args, "--ignore-preflight-errors=CoreDNSUnsupportedPlugins")
 		}
 	}
@@ -313,13 +318,32 @@ func (c *ControlPlane) getKubeadmConfigmap(out io.Writer) error {
 }
 
 func (c *ControlPlane) generateNewKubeadmConfig(out io.Writer, from, to *semver.Version) error {
-	// TODO implement all supported k8s version as well
-	conf := kubeadmConfigV1Beta2Template()
+	var conf string
+	switch to.Minor() {
+	case 15, 16, 17:
+		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
+		c.kubeadmConfigMap.UseHyperKubeImage = true
+		conf = kubeadmConfigV1Beta1Template()
+	case 18:
+		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
+		conf = kubeadmConfigV1Beta2Template()
+	default:
+		return errors.New(fmt.Sprintf("unsupported Kubernetes version %q for upgrade", c.kubernetesVersion))
+	}
 
 	version, _ := semver.NewConstraint(">1.17")
 	if version.Check(to) {
 		c.kubeadmConfigMap.UseHyperKubeImage = false
+		admissionPlugins := strings.Split(c.kubeadmConfigMap.APIServer.ExtraArgs.EnableAdmissionPlugins, ",")
+		upgradeAddmissionPlugins := []string{}
+		for _, plugin := range admissionPlugins {
+			if plugin != "DenyEscalatingExec" {
+				upgradeAddmissionPlugins = append(upgradeAddmissionPlugins, plugin)
+			}
+		}
+		c.kubeadmConfigMap.APIServer.ExtraArgs.EnableAdmissionPlugins = strings.Join(upgradeAddmissionPlugins, ",")
 	}
+
 	type data struct {
 		KubeadmConfig             kubeadmConfigMap
 		APIServerAdvertiseAddress string
