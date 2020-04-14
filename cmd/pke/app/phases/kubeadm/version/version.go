@@ -31,7 +31,7 @@ const (
 	use   = "kubernetes-version"
 	short = "Check Kubernetes version is supported or not"
 
-	constraint = "1.13.x-0 || 1.14.x-0 || 1.15.x-0 || 1.16.x-0 || 1.17.x-0"
+	constraint = "1.13.x-0 || 1.14.x-0 || 1.15.x-0 || 1.16.x-0 || 1.17.x-0 || 1.18.x-0"
 )
 
 var _ phases.Runnable = (*Version)(nil)
@@ -54,7 +54,7 @@ func (v *Version) Short() string {
 
 func (v *Version) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.17.0", "Kubernetes version")
 }
 
 func (v *Version) Validate(cmd *cobra.Command) error {

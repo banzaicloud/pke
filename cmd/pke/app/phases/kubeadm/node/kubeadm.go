@@ -30,6 +30,7 @@ import (
 
 //go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Alpha3 kubeadm_v1alpha3.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
+//go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Beta2 kubeadm_v1beta2.yaml.tmpl
 
 func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	// API server advertisement
@@ -65,6 +66,9 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	case 14, 15, 16, 17:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
 		conf = kubeadmConfigV1Beta1Template()
+	case 18:
+		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
+		conf = kubeadmConfigV1Beta2Template()
 	default:
 		return errors.Errorf("unsupported Kubernetes version %q for kubeadm", n.kubernetesVersion)
 	}

@@ -101,6 +101,7 @@ type ControlPlane struct {
 	imageRepository                  string
 	withPluginPSP                    bool
 	withoutPluginDenyEscalatingExec  bool
+	useHyperKubeImage                bool
 	withoutAuditLog                  bool
 	node                             *node.Node
 	azureTenantID                    string
@@ -160,7 +161,7 @@ func (c *ControlPlane) Short() string {
 
 func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.17.0", "Kubernetes version")
 	// Kubernetes network
 	flags.String(constants.FlagNetworkProvider, "calico", "Kubernetes network provider")
 	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
@@ -189,6 +190,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
 	// DenyEscalatingExec admission plugin
 	flags.Bool(constants.FlagNoAdmissionPluginDenyEscalatingExec, false, "Disable DenyEscalatingExec admission plugin")
+
 	// AuditLog enable
 	flags.Bool(constants.FlagAuditLog, false, "Disable apiserver audit log")
 	// Azure cloud
@@ -531,6 +533,7 @@ func ensureAPIServerConnection(out io.Writer, ctx context.Context, successTries 
 	}
 }
 
+// nolint: gocyclo
 func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error) {
 	c.kubernetesVersion, err = cmd.Flags().GetString(constants.FlagKubernetesVersion)
 	if err != nil {
