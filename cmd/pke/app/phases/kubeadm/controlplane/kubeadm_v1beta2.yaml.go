@@ -16,8 +16,7 @@ package controlplane
 
 // kubeadmConfigV1Beta2Template is a generated function returning the template as a string.
 func kubeadmConfigV1Beta2Template() string {
-	var tmpl = "\n" +
-		"apiVersion: kubeadm.k8s.io/v1beta2\n" +
+	var tmpl = "apiVersion: kubeadm.k8s.io/v1beta2\n" +
 		"kind: InitConfiguration\n" +
 		"{{ if .APIServerAdvertiseAddress}}\n" +
 		"localAPIEndpoint:\n" +

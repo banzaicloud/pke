@@ -26,6 +26,14 @@ rules:
   - create
   - update
 - apiGroups:
+  - certificates.k8s.io
+  resources:
+  - signers
+  resourceNames:
+  - kubernetes.io/kubelet-serving
+  verbs:
+  - approve
+- apiGroups:
   - authorization.k8s.io
   resources:
   - subjectaccessreviews
