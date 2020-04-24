@@ -49,6 +49,7 @@ func certificateAutoApproverTemplate() string {
 		"  - signers\n" +
 		"  resourceNames:\n" +
 		"  - kubernetes.io/kubelet-serving\n" +
+		"  - kubernetes.io/kube-apiserver-client-kubelet\n" +
 		"  verbs:\n" +
 		"  - approve\n" +
 		"- apiGroups:\n" +

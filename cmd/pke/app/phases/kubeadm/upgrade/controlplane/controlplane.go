@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -44,8 +46,10 @@ const (
 	use   = "kubernetes-controlplane"
 	short = "Kubernetes Control Plane upgrade"
 
-	kubeConfig = "/etc/kubernetes/admin.conf"
-	cmdKubeadm = "kubeadm"
+	kubeConfig                    = "/etc/kubernetes/admin.conf"
+	cmdKubeadm                    = "kubeadm"
+	cmdKubectl                    = "kubectl"
+	certificateAutoApproverUpdate = "/etc/kubernetes/admission-control/deploy-auto-approver-update.yaml"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -284,6 +288,15 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 		return err
 	}
 
+	fromVersion, _ := semver.NewConstraint("1.17.x")
+	toVersion, _ := semver.NewConstraint("1.18.x")
+	if fromVersion.Check(from) && toVersion.Check(to) {
+		// apply AutoApproverRbacUpdate
+		if err := writeCertificateAutoApproverRbacUpdate(out); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -301,6 +314,7 @@ func (c *ControlPlane) uploadKubeadmConf(out io.Writer) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -367,4 +381,27 @@ func (c *ControlPlane) generateNewKubeadmConfig(out io.Writer, from, to *semver.
 	c.kubeadmConfigUpgrade = "/etc/kubernetes/kubeadm-" + time.Now().Format(time.RFC3339) + ".conf"
 
 	return file.WriteTemplate(c.kubeadmConfigUpgrade, tmpl, d)
+}
+
+//go:generate templify -t ${GOTMPL} -p controlplane -f certificateAutoApproverRbacUpdate certificate_auto_approver_rbac_update.yaml.tmpl
+
+func writeCertificateAutoApproverRbacUpdate(out io.Writer) error {
+	filename := certificateAutoApproverUpdate
+	dir := filepath.Dir(filename)
+
+	_, _ = fmt.Fprintf(out, "[%s] creating directory: %q\n", use, dir)
+	err := os.MkdirAll(dir, 0750)
+	if err != nil {
+		return err
+	}
+
+	err = file.Overwrite(filename, certificateAutoApproverRbacUpdateTemplate())
+	if err != nil {
+		return err
+	}
+
+	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", filename)
+	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
+	_, err = cmd.CombinedOutputAsync()
+	return err
 }
