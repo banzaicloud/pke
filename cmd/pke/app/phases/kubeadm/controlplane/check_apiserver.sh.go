@@ -12,22 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package linux
+package controlplane
 
-import (
-	"io"
-)
-
-type KubernetesPackages interface {
-	InstallKubernetesPrerequisites(out io.Writer, kubernetesVersion string) error
-	InstallKubernetesPackages(out io.Writer, kubernetesVersion string) error
-	InstallKubeadmPackage(out io.Writer, kubernetesVersion string) error
-}
-
-type ContainerdPackages interface {
-	InstallContainerdPrerequisites(out io.Writer, containerdVersion string) error
-}
-
-type KeepalivedPackages interface {
-	InstallKeepalivedPackage(out io.Writer) error
+// checkApiserverTemplate is a generated function returning the template as a string.
+func checkApiserverTemplate() string {
+	var tmpl = "#!/bin/sh\n" +
+		"errorExit() {\n" +
+		"    echo \"*** $*\" 1>&2\n" +
+		"    exit 1\n" +
+		"}\n" +
+		"\n" +
+		"export no_proxy=127.0.0.1 NO_PROXY=127.0.0.1\n" +
+		"curl --silent --max-time 2 --insecure https://127.0.0.1:6443/healthz -o /dev/null || errorExit \"Error GET https://127.0.0.1:6443/healthz\"\n" +
+		""
+	return tmpl
 }

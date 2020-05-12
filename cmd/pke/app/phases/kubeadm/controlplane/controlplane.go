@@ -131,6 +131,9 @@ type ControlPlane struct {
 	vsphereFolder                    string
 	vsphereUsername                  string
 	vspherePassword                  string
+	virtualIP                        string
+	virtualIPInterface               string
+	clusterUUID                      string
 	cidr                             string
 	lbRange                          string
 	disableDefaultStorageClass       bool
@@ -225,6 +228,10 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagVsphereFolder, "", "The name of the folder (aka blue folder) to create temporary VMs in during volume creation, as well as all Kubernetes nodes are in")
 	flags.String(constants.FlagVsphereUsername, "", "The name of vCenter SSO user to use for deploying persistent volumes (Should be avoided in favor of a K8S secret)")
 	flags.String(constants.FlagVspherePassword, "", "The password of vCenter SSO user to use for deploying persistent volumes (should be avoided in favor of a K8S secret)")
+
+	flags.String(constants.FlagVirtualIP, "", "Virtual IP to advertise on the leader node")
+	flags.String(constants.FlagVirtualIPInterface, "", "Network interface name to run the VRRP protocol on and to bind the virtual IP on")
+	flags.String(constants.FlagClusterUUID, "", "UUID of cluster") // used for vrrp pass
 
 	// Pipeline
 	flags.StringP(constants.FlagPipelineAPIEndpoint, constants.FlagPipelineAPIEndpointShort, "", "Pipeline API server url")
@@ -349,6 +356,15 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 		return errors.New("Not supported --" + constants.FlagClusterMode + ". Possible values: single, default or ha.")
 	}
 
+	if c.virtualIP != "" {
+		if err := validator.NotEmpty(map[string]interface{}{
+			constants.FlagVirtualIPInterface: c.virtualIPInterface,
+			constants.FlagClusterUUID:        c.clusterUUID,
+		}); err != nil {
+			return err
+		}
+	}
+
 	flags.PrintFlags(cmd.OutOrStdout(), c.Use(), cmd.Flags())
 
 	return nil
@@ -452,6 +468,13 @@ func (c *ControlPlane) appendAdvertiseAddressAsLoopback() error {
 }
 
 func (c *ControlPlane) Run(out io.Writer) error {
+	if c.virtualIP != "" {
+		_, _ = fmt.Fprintf(out, "[%s] installing keepalived\n", c.Use())
+		if err := installKeepalived(c.virtualIP, c.virtualIPInterface, c.clusterUUID, !c.joinControlPlane, out); err != nil {
+			return errors.Wrap(err, "failed to install keepalived")
+		}
+	}
+
 	_, _ = fmt.Fprintf(out, "[%s] running\n", c.Use())
 
 	if c.clusterMode == haMode {
@@ -660,6 +683,18 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	err = c.vsphereParameters(cmd)
+	if err != nil {
+		return
+	}
+	c.virtualIP, err = cmd.Flags().GetString(constants.FlagVirtualIP)
+	if err != nil {
+		return
+	}
+	c.virtualIPInterface, err = cmd.Flags().GetString(constants.FlagVirtualIPInterface)
+	if err != nil {
+		return
+	}
+	c.clusterUUID, err = cmd.Flags().GetString(constants.FlagClusterUUID)
 	if err != nil {
 		return
 	}
@@ -894,7 +929,6 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f calico calico.yaml.tmpl
-
 func installCalico(out io.Writer, podNetworkCIDR, kubeConfig string, mtu uint) error {
 	input := calicoTemplate()
 	input = strings.ReplaceAll(input, "192.168.0.0/16", podNetworkCIDR)
@@ -941,6 +975,77 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
 	_, err = cmd.CombinedOutputAsync()
 	return err
+}
+
+func passFromUUID(uuid string) string {
+	uuid = "banzaipke" + strings.Replace(uuid, "-", "", 0)
+	return uuid[len(uuid)-8:]
+}
+
+//go:generate templify -t ${GOTMPL} -p controlplane -f keepalivedConf keepalived.conf.tmpl
+//go:generate templify -t ${GOTMPL} -p controlplane -f checkApiserver check_apiserver.sh.tmpl
+func installKeepalived(vip, iface, uuid string, leader bool, out io.Writer) error {
+	pm, err := linux.KeepalivedPackagesImpl(out)
+	if err != nil {
+		return err
+	}
+	pm.InstallKeepalivedPackage(out)
+
+	if err := os.MkdirAll("/etc/keepalived", 0755); err != nil {
+		return errors.Wrap(err, "failed to create /etc/keepalived directory")
+	}
+
+	tpl, err := template.New("keepalived.conf").Parse(keepalivedConfTemplate())
+	if err != nil {
+		return errors.Wrap(err, "failed to parse keepalived.conf template")
+	}
+
+	data := struct {
+		state    string
+		iface    string
+		priority int
+		pass     string
+		vip      string
+	}{
+		state:    "BACKUP",
+		priority: 100,
+		iface:    iface,
+		pass:     passFromUUID(uuid),
+		vip:      vip,
+	}
+
+	if leader {
+		data.state = "MASTER"
+		data.priority = 101
+	}
+
+	keepalivedFile, err := os.Create("/etc/keepalived/keepalived.conf")
+	if err != nil {
+		return errors.Wrap(err, "failed to create /etc/keepalived/keepalived.conf")
+	}
+
+	err = tpl.Execute(keepalivedFile, data)
+	keepalivedFile.Close()
+
+	if err != nil {
+		return errors.Wrap(err, "failed to write keepalived.conf")
+	}
+
+	checkerFile, err := os.OpenFile("/etc/keepalived/check_apiserver.sh", os.O_WRONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return errors.Wrap(err, "failed to create /etc/keepalived/check_apiserver.sh")
+	}
+	defer checkerFile.Close()
+
+	if _, err := checkerFile.Write([]byte(checkApiserverTemplate())); err != nil {
+		return errors.Wrap(err, "failed to write /etc/keepalived/check_apiserver.sh")
+	}
+
+	if err := linux.SystemctlEnableAndStart(out, "keepalived.service"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f cilium cilium.yaml.tmpl

@@ -172,6 +172,13 @@ const (
 	// FlagVspherePassword is the password of vCenter SSO user to use for deploying persistent volumes. (Should be avoided in favor of a K8S secret.)
 	FlagVspherePassword = "vsphere-password"
 
+	// FlagVirtualIP is the virtual ip to advertise on the leader master node
+	FlagVirtualIP = "virtual-ip"
+	// FlagVirtualIPInterface is the interface to run vrrp on and to bind the virtual ip to
+	FlagVirtualIPInterface = "virtual-ip-interface"
+	// FlagClusterUUID is the UUID of cluster
+	FlagClusterUUID = "cluster-uuid"
+
 	// FlagLbRange is the IPv4 range advertised via ARP and allocated for LoadBalancer Services.
 	FlagLbRange = "lb-range"
 
