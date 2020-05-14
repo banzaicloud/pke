@@ -82,6 +82,7 @@ var _ phases.Runnable = (*ControlPlane)(nil)
 
 type ControlPlane struct {
 	kubernetesVersion                string
+	containerRuntime                 string
 	networkProvider                  string
 	advertiseAddress                 string
 	apiServerHostPort                string
@@ -162,6 +163,8 @@ func (c *ControlPlane) Short() string {
 func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
 	flags.String(constants.FlagKubernetesVersion, "1.17.0", "Kubernetes version")
+	// Kubernetes container runtime
+	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
 	// Kubernetes network
 	flags.String(constants.FlagNetworkProvider, "calico", "Kubernetes network provider")
 	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
@@ -262,6 +265,7 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 
 	if err := validator.NotEmpty(map[string]interface{}{
 		constants.FlagKubernetesVersion: c.kubernetesVersion,
+		constants.FlagContainerRuntime:  c.containerRuntime,
 		constants.FlagNetworkProvider:   c.networkProvider,
 		constants.FlagServiceCIDR:       c.serviceCIDR,
 		constants.FlagPodNetworkCIDR:    c.podNetworkCIDR,
@@ -288,6 +292,14 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 		}); err != nil {
 			return err
 		}
+	}
+
+	switch c.containerRuntime {
+	case constants.ContainerRuntimeContainerd,
+		constants.ContainerRuntimeDocker:
+		// break
+	default:
+		return errors.Wrapf(constants.ErrUnsupportedContainerRuntime, "container runtime: %s", c.containerRuntime)
 	}
 
 	switch c.networkProvider {
@@ -460,7 +472,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 	}
 
 	if err := c.installMaster(out); err != nil {
-		if rErr := kubeadm.Reset(out); rErr != nil {
+		if rErr := kubeadm.Reset(out, c.containerRuntime); rErr != nil {
 			_, _ = fmt.Fprintf(out, "%v\n", rErr)
 		}
 		return err
@@ -544,6 +556,11 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.kubernetesVersion = ver.String()
+
+	c.containerRuntime, err = cmd.Flags().GetString(constants.FlagContainerRuntime)
+	if err != nil {
+		return
+	}
 
 	c.networkProvider, err = cmd.Flags().GetString(constants.FlagNetworkProvider)
 	if err != nil {

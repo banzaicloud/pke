@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/banzaicloud/pke/cmd/pke/app/util/cri"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
 
@@ -25,12 +26,12 @@ const (
 	cmdKubeadm = "kubeadm"
 )
 
-func Reset(out io.Writer) error {
+func Reset(out io.Writer, containerRuntime string) error {
 	// kubeadm reset --force
 	_, _ = fmt.Fprintln(out, "")
 	_, _ = fmt.Fprintln(out, "================================================================================")
 	_, _ = fmt.Fprintln(out, "Resetting kubeadm changes...")
-	_, err := runner.Cmd(out, cmdKubeadm, "reset", "--force", "--cri-socket=unix:///run/containerd/containerd.sock").CombinedOutputAsync()
+	_, err := runner.Cmd(out, cmdKubeadm, "reset", "--force", fmt.Sprintf("--cri-socket=%s", cri.GetCRISocket(containerRuntime))).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}

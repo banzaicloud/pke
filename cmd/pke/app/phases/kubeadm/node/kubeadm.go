@@ -23,6 +23,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/cri"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
 	"github.com/pbnjay/memory"
@@ -112,7 +113,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	d := data{
 		APIServerAdvertiseAddress: n.advertiseAddress,
 		APIServerBindPort:         bindPort,
-		CRISocket:                 "unix:///run/containerd/containerd.sock",
+		CRISocket:                 cri.GetCRISocket(n.containerRuntime),
 		ControlPlaneEndpoint:      n.apiServerHostPort,
 		Token:                     n.kubeadmToken,
 		CACertHash:                n.caCertHash,

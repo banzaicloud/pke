@@ -66,6 +66,12 @@ const (
 	// FlagKubernetesVersion Kubernetes version.
 	FlagKubernetesVersion = "kubernetes-version"
 
+	// FlagContainerRuntime Kuberneter container runtime.
+	FlagContainerRuntime = "kubernetes-container-runtime"
+
+	ContainerRuntimeContainerd = "containerd"
+	ContainerRuntimeDocker     = "docker"
+
 	// FlagNetworkProvider network provider for Kubernetes.
 	FlagNetworkProvider = "kubernetes-network-provider"
 	// FlagServiceCIDR range of IP address for service VIPs.
@@ -195,6 +201,7 @@ var (
 	ErrUnsupportedOS                = errors.New("unsupported operating system")
 	ErrInvalidInput                 = errors.New("invalid input")
 	ErrValidationFailed             = errors.New("validation failed")
+	ErrUnsupportedContainerRuntime  = errors.New("unsupported container runtime")
 	ErrUnsupportedNetworkProvider   = errors.New("unsupported network provider")
 	ErrUnsupportedKubernetesVersion = errors.New("unsupported kubernetes version")
 	ErrUnsupportedKernelVersion     = errors.New("unsupported kernel version")

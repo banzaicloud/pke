@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 
+	"emperror.dev/errors"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
@@ -33,7 +34,8 @@ const (
 var _ phases.Runnable = (*Runtime)(nil)
 
 type Runtime struct {
-	imageRepository string
+	containerRuntime string
+	imageRepository  string
 }
 
 func NewCommand() *cobra.Command {
@@ -49,20 +51,40 @@ func (r *Runtime) Short() string {
 }
 
 func (r *Runtime) RegisterFlags(flags *pflag.FlagSet) {
+	// Kubernetes container runtime
+	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
+
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 }
 
-func (r *Runtime) Validate(cmd *cobra.Command) error {
-	var err error
+func (r *Runtime) Validate(cmd *cobra.Command) (err error) {
+	r.containerRuntime, err = cmd.Flags().GetString(constants.FlagContainerRuntime)
+	if err != nil {
+		return
+	}
+
 	r.imageRepository, err = cmd.Flags().GetString(constants.FlagImageRepository)
 	if err != nil {
 		return err
 	}
 
-	return validator.NotEmpty(map[string]interface{}{
-		constants.FlagImageRepository: r.imageRepository,
-	})
+	if err := validator.NotEmpty(map[string]interface{}{
+		constants.FlagContainerRuntime: r.containerRuntime,
+		constants.FlagImageRepository:  r.imageRepository,
+	}); err != nil {
+		return err
+	}
+
+	switch r.containerRuntime {
+	case constants.ContainerRuntimeContainerd,
+		constants.ContainerRuntimeDocker:
+		// break
+	default:
+		return errors.Wrapf(constants.ErrUnsupportedContainerRuntime, "container runtime: %s", r.containerRuntime)
+	}
+
+	return nil
 }
 
 func (r *Runtime) Run(out io.Writer) error {

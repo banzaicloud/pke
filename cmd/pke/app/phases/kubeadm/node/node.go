@@ -23,6 +23,7 @@ import (
 	"text/template"
 	"time"
 
+	"emperror.dev/errors"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
@@ -55,6 +56,7 @@ var _ phases.Runnable = (*Node)(nil)
 
 type Node struct {
 	kubernetesVersion      string
+	containerRuntime       string
 	advertiseAddress       string
 	apiServerHostPort      string
 	kubeadmToken           string
@@ -89,6 +91,8 @@ func (n *Node) Short() string {
 func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
 	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
+	// Kubernetes container runtime
+	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
 	// Kubernetes network
 	flags.String(constants.FlagPodNetworkCIDR, "", "range of IP addresses for the pod network on the current node")
 	// Pipeline
@@ -130,6 +134,7 @@ func (n *Node) Validate(cmd *cobra.Command) error {
 
 	if err := validator.NotEmpty(map[string]interface{}{
 		constants.FlagKubernetesVersion: n.kubernetesVersion,
+		constants.FlagContainerRuntime:  n.containerRuntime,
 		constants.FlagAPIServerHostPort: n.apiServerHostPort,
 		constants.FlagKubeadmToken:      n.kubeadmToken,
 		constants.FlagCACertHash:        n.caCertHash,
@@ -153,6 +158,14 @@ func (n *Node) Validate(cmd *cobra.Command) error {
 		}
 	}
 
+	switch n.containerRuntime {
+	case constants.ContainerRuntimeContainerd,
+		constants.ContainerRuntimeDocker:
+		// break
+	default:
+		return errors.Wrapf(constants.ErrUnsupportedContainerRuntime, "container runtime: %s", n.containerRuntime)
+	}
+
 	flags.PrintFlags(cmd.OutOrStdout(), n.Use(), cmd.Flags())
 
 	return nil
@@ -162,7 +175,7 @@ func (n *Node) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", n.Use())
 
 	if err := n.install(out); err != nil {
-		if rErr := kubeadm.Reset(out); rErr != nil {
+		if rErr := kubeadm.Reset(out, n.containerRuntime); rErr != nil {
 			_, _ = fmt.Fprintf(out, "%v\n", rErr)
 		}
 		return err
@@ -173,6 +186,10 @@ func (n *Node) Run(out io.Writer) error {
 
 func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 	n.kubernetesVersion, err = cmd.Flags().GetString(constants.FlagKubernetesVersion)
+	if err != nil {
+		return
+	}
+	n.containerRuntime, err = cmd.Flags().GetString(constants.FlagContainerRuntime)
 	if err != nil {
 		return
 	}
