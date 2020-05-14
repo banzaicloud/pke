@@ -6,7 +6,7 @@ controlPlane:
     advertiseAddress: "{{ .APIServerAdvertiseAddress }}"
     bindPort: {{ .APIServerBindPort }}{{end}}
 nodeRegistration:
-  criSocket: "unix:///run/containerd/containerd.sock"
+  criSocket: "{{ .CRISocket }}"
   taints:{{ if not .Taints }} []{{end}}{{range .Taints}}
     - key: "{{.Key}}"
       value: "{{.Value}}"

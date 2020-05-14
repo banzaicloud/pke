@@ -98,6 +98,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	type data struct {
 		APIServerAdvertiseAddress string
 		APIServerBindPort         string
+		CRISocket                 string
 		ControlPlaneEndpoint      string
 		Token                     string
 		CACertHash                string
@@ -111,6 +112,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 	d := data{
 		APIServerAdvertiseAddress: n.advertiseAddress,
 		APIServerBindPort:         bindPort,
+		CRISocket:                 "unix:///run/containerd/containerd.sock",
 		ControlPlaneEndpoint:      n.apiServerHostPort,
 		Token:                     n.kubeadmToken,
 		CACertHash:                n.caCertHash,

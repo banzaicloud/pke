@@ -121,6 +121,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	type data struct {
 		APIServerAdvertiseAddress       string
 		APIServerBindPort               string
+		CRISocket                       string
 		ControlPlaneEndpoint            string
 		APIServerCertSANs               []string
 		KubeletCertificateAuthority     string
@@ -157,6 +158,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	d := data{
 		APIServerAdvertiseAddress:       c.advertiseAddress,
 		APIServerBindPort:               bindPort,
+		CRISocket:                       "unix:///run/containerd/containerd.sock",
 		ControlPlaneEndpoint:            c.apiServerHostPort,
 		APIServerCertSANs:               c.apiServerCertSANs,
 		KubeletCertificateAuthority:     c.kubeletCertificateAuthority,

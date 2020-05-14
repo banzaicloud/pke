@@ -23,7 +23,7 @@ func kubeadmConfigV1Alpha3Template() string {
 		"  advertiseAddress: \"{{ .APIServerAdvertiseAddress }}\"\n" +
 		"  bindPort: {{ .APIServerBindPort }}{{end}}\n" +
 		"nodeRegistration:\n" +
-		"  criSocket: \"unix:///run/containerd/containerd.sock\"\n" +
+		"  criSocket: \"{{ .CRISocket }}\"\n" +
 		"  taints:{{ if not .Taints }} []{{end}}{{range .Taints}}\n" +
 		"    - key: \"{{.Key}}\"\n" +
 		"      value: \"{{.Value}}\"\n" +
