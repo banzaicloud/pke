@@ -90,5 +90,14 @@ func (r *Runtime) Validate(cmd *cobra.Command) (err error) {
 func (r *Runtime) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", r.Use())
 
-	return r.installRuntime(out)
+	switch r.containerRuntime {
+	case constants.ContainerRuntimeContainerd:
+		return r.installContainerd(out)
+
+	case constants.ContainerRuntimeDocker:
+		return r.installDocker(out)
+
+	default:
+		return errors.Wrapf(constants.ErrUnsupportedContainerRuntime, "container runtime: %s", r.containerRuntime)
+	}
 }

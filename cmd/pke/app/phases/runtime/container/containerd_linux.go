@@ -41,15 +41,12 @@ net.ipv4.ip_forward                 = 1
 `
 )
 
-func (r *Runtime) installRuntime(out io.Writer) error {
+func (r *Runtime) installContainerd(out io.Writer) error {
 	pm, err := linux.ContainerdPackagesImpl(out)
 	if err != nil {
 		return err
 	}
-	return install(out, r.imageRepository, pm)
-}
 
-func install(out io.Writer, imageRepository string, pm linux.ContainerdPackages) error {
 	// modprobe overlay
 	if err := linux.ModprobeOverlay(out); err != nil {
 		return errors.Wrap(err, "missing overlay Linux Kernel module")
@@ -81,7 +78,7 @@ func install(out io.Writer, imageRepository string, pm linux.ContainerdPackages)
 	_ = linux.SystemctlDisableAndStop(out, "containerd")
 
 	// Check containerd installed or not
-	if err := installContainerd(out, imageRepository); err != nil {
+	if err := installContainerd(out, r.imageRepository); err != nil {
 		return err
 	}
 

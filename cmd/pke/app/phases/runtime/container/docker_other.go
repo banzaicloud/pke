@@ -22,6 +22,6 @@ import (
 	"emperror.dev/errors"
 )
 
-func (r *Runtime) installContainerd(w io.Writer) error {
+func (r *Runtime) installDocker(w io.Writer) error {
 	return errors.Errorf("unsupported operating system")
 }
