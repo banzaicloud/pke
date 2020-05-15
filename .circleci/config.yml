@@ -7,7 +7,7 @@ jobs:
     build:
         docker:
             -
-                image: circleci/golang:1.12
+                image: circleci/golang:1.14
                 environment:
                     GOFLAGS: -mod=readonly
 
@@ -99,7 +99,7 @@ jobs:
     release:
         docker:
             -
-                image: circleci/golang:1.12
+                image: circleci/golang:1.14
                 environment:
                     GOFLAGS: -mod=readonly
 
@@ -140,7 +140,7 @@ jobs:
     trigger-pke-image-build:
         docker:
             -
-                image: circleci/golang:1.12
+                image: circleci/golang:1.14
         resource_class: small
         steps:
             - checkout

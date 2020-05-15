@@ -2,6 +2,7 @@
 
 SHELL = /bin/bash
 OS = $(shell uname -s)
+export PATH := $(abspath bin/):${PATH}
 
 # Project variables
 PACKAGE = github.com/banzaicloud/pke
@@ -20,7 +21,7 @@ PIPELINE_VERSION = master
 
 # Dependency versions
 GOTESTSUM_VERSION = 0.3.4
-GOLANGCI_VERSION = 1.16.0
+GOLANGCI_VERSION = 1.26.0
 LICENSEI_VERSION = 0.1.0
 GORELEASER_VERSION = 0.105.0
 OPENAPI_GENERATOR_VERSION = PR1869
@@ -51,17 +52,15 @@ pke-linux: ## Cross-compile pke for linux
 
 .PHONY: gogenerate
 gogenerate: bin/templify ## Generate go files from template
-	PATH=${PATH}:${PWD}/bin \
 	GOOS=linux go generate ./cmd/...
-	PATH=${PATH}:${PWD}/bin \
 	GOOS=darwin go generate ./cmd/...
 
 bin/templify: bin/templify-${TEMPLIFY_VERSION}
 	@ln -sf templify-${TEMPLIFY_VERSION} bin/templify
 bin/templify-${TEMPLIFY_VERSION}:
-	go get github.com/wlbr/templify@${TEMPLIFY_VERSION}
 	mkdir -p bin
-	@cp ${GOPATH}/bin/templify bin/templify-${TEMPLIFY_VERSION}
+	GOBIN=${PWD}/bin go get -modfile=tools/go.mod github.com/wlbr/templify@${TEMPLIFY_VERSION}
+	@mv bin/templify bin/templify-${TEMPLIFY_VERSION}
 
 .PHONY: check
 check: test lint ## Run tests and linters

@@ -27,6 +27,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/cri"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
 	"github.com/pbnjay/memory"
@@ -121,6 +122,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	type data struct {
 		APIServerAdvertiseAddress       string
 		APIServerBindPort               string
+		CRISocket                       string
 		ControlPlaneEndpoint            string
 		APIServerCertSANs               []string
 		KubeletCertificateAuthority     string
@@ -157,6 +159,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	d := data{
 		APIServerAdvertiseAddress:       c.advertiseAddress,
 		APIServerBindPort:               bindPort,
+		CRISocket:                       cri.GetCRISocket(c.containerRuntime),
 		ControlPlaneEndpoint:            c.apiServerHostPort,
 		APIServerCertSANs:               c.apiServerCertSANs,
 		KubeletCertificateAuthority:     c.kubeletCertificateAuthority,

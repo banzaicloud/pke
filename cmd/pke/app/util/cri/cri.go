@@ -1,4 +1,4 @@
-// Copyright © 2019 Banzai Cloud
+// Copyright © 2020 Banzai Cloud
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !linux
-
-package container
+package cri
 
 import (
-	"io"
-
-	"emperror.dev/errors"
+	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 )
 
-func (r *Runtime) installContainerd(w io.Writer) error {
-	return errors.Errorf("unsupported operating system")
+// GetCRISocket determines the CRI socket path based on the runtime name.
+func GetCRISocket(cri string) string {
+	switch cri {
+	case constants.ContainerRuntimeContainerd:
+		return "unix:///run/containerd/containerd.sock"
+
+	case constants.ContainerRuntimeDocker:
+		return "/var/run/dockershim.sock"
+	}
+
+	return ""
 }

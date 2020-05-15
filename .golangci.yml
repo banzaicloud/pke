@@ -2,6 +2,12 @@ linters:
     enable-all: true
     disable:
         - maligned
+        - funlen
+        - gomnd
+        - wsl
+        - testpackage
+        - goerr113
+        - nestif
 
         # TODO: fix these
         - gosimple
@@ -16,6 +22,13 @@ linters:
         - interfacer
         - unused
         - golint
+        - stylecheck
+        - bodyclose
+        - govet
+        - godot
+        - whitespace
+        - godox
+        - gocognit
 
 linters-settings:
     golint:
