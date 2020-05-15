@@ -2,6 +2,7 @@
 
 KUBERNETES_VERSION=$1
 APISERVER_ADDRESS="${2:-192.168.64.11:6443}"
+CONTAINER_RUNTIME="${3:-containerd}"
 
 systemctl is-active kubelet || ( \
     /banzaicloud/pke version -o yaml || ( \
@@ -11,6 +12,7 @@ systemctl is-active kubelet || ( \
 
     /banzaicloud/pke install single \
       --kubernetes-version="${KUBERNETES_VERSION}" \
+      --kubernetes-container-runtime="${CONTAINER_RUNTIME}" \
       --kubernetes-advertise-address="${APISERVER_ADDRESS}" \
       --kubernetes-api-server="${APISERVER_ADDRESS}" && \
     mkdir -p $HOME/.kube && \

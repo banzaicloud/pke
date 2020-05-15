@@ -95,4 +95,61 @@ EOF
             end
         end
     end
+
+    config.vm.define "ubuntu-docker" do |node|
+        node.vm.box = "ubuntu/bionic64"
+        node.vm.network "private_network", ip: "192.168.64.30"
+        node.vm.hostname = "ubuntu-docker"
+
+        node.vm.provider "virtualbox" do |vb|
+            vb.name = "ubuntu-docker"
+            vb.memory = "2048"
+            vb.cpus = "2"
+            vb.customize ["modifyvm", :id, "--audio", "none"]
+            vb.customize ["modifyvm", :id, "--memory", "2048"]
+            vb.customize ["modifyvm", :id, "--cpus", "2"]
+        end
+
+        node.vm.provision "shell" do |s|
+            s.inline = <<-SHELL
+
+            apt-get update
+            apt-get install -y ntp wget curl vim net-tools socat
+            echo 'sync time'
+            systemctl start ntp
+            systemctl enable ntp
+
+            echo 'set host name resolution'
+            cat >> /etc/hosts <<EOF
+192.168.64.30 ubuntu-docker
+EOF
+            cat /etc/hosts
+
+            hostnamectl set-hostname ubuntu-docker
+
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+            apt-get update && apt-get install -y \
+                containerd.io=1.2.13-1 \
+                docker-ce=5:19.03.8~3-0~ubuntu-$(lsb_release -cs) \
+                docker-ce-cli=5:19.03.8~3-0~ubuntu-$(lsb_release -cs)
+
+            cat > /etc/docker/daemon.json <<EOF
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+
+            mkdir -p /etc/systemd/system/docker.service.d
+            systemctl daemon-reload
+            systemctl restart docker
+
+            SHELL
+        end
+    end
 end
