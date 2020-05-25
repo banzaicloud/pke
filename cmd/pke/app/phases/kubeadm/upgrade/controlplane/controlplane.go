@@ -167,7 +167,7 @@ func (*ControlPlane) Short() string {
 
 func (*ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
 	// Additional Control Plane
 	flags.Bool(constants.FlagAdditionalControlPlane, false, "Treat node as additional control plane")
 }

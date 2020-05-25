@@ -90,7 +90,7 @@ func (n *Node) Short() string {
 
 func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
 	// Kubernetes container runtime
 	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
 	// Kubernetes network

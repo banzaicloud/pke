@@ -54,7 +54,7 @@ func (v *Version) Short() string {
 
 func (v *Version) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
 }
 
 func (v *Version) Validate(cmd *cobra.Command) error {
