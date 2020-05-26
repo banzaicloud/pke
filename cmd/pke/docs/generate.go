@@ -15,17 +15,38 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
+	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/banzaicloud/pke/cmd/pke/app/cmd"
 	"github.com/spf13/cobra/doc"
 )
 
 func main() {
+	const fmTemplate = `---
+title: %s
+generated_file: true
+---
+`
+	const basePath = "/docs/pke/cli/reference/"
+
+	// Customized Hugo output based on https://github.com/spf13/cobra/blob/master/doc/md_docs.md
+	filePrepender := func(filename string) string {
+		name := filepath.Base(filename)
+		base := strings.TrimSuffix(name, path.Ext(name))
+		return fmt.Sprintf(fmTemplate, strings.Replace(base, "_", " ", -1))
+	}
+	linkHandler := func(name string) string {
+		base := strings.TrimSuffix(name, path.Ext(name))
+		return basePath + strings.ToLower(base) + "/"
+	}
 	c := cmd.NewPKECommand("", "", "", "")
 	c.SetOutput(ioutil.Discard)
-	err := doc.GenMarkdownTree(c, ".")
+	err := doc.GenMarkdownTreeCustom(c, ".", filePrepender, linkHandler)
 	if err != nil {
 		log.Fatal(err)
 	}
