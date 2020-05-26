@@ -80,7 +80,7 @@ func (c *Certificates) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.16.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
 }
 
 func (c *Certificates) Validate(cmd *cobra.Command) error {

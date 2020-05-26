@@ -162,7 +162,7 @@ func (c *ControlPlane) Short() string {
 
 func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.0", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
 	// Kubernetes container runtime
 	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
 	// Kubernetes network
