@@ -18,12 +18,13 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/images"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/version"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases/machineimage/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/runtime/container"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/runtime/kubernetes"
 	"github.com/spf13/cobra"
 )
 
-// NewCmdImage .
+// NewCmdImage is a helper for building pre-cached images.
 func NewCmdImage() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "machine-image",
@@ -35,6 +36,7 @@ func NewCmdImage() *cobra.Command {
 	cmd.AddCommand(container.NewCommand())
 	cmd.AddCommand(kubernetes.NewCommand())
 	cmd.AddCommand(images.NewCommand())
+	cmd.AddCommand(config.NewCommand())
 
 	phases.MakeRunnable(cmd)
 
