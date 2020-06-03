@@ -150,6 +150,16 @@ jobs:
                     command: |
                         scripts/create-git-tag.sh 'banzaicloud' 'pke-image' 'refs/heads/master' "pke-${CIRCLE_TAG}"
 
+    trigger-docs-update:
+        docker:
+            - image: cimg/base:stable
+        resource_class: small
+        steps:
+            - checkout
+            - run:
+                  name: Trigger
+                  command: scripts/trigger-docs-update.sh "${CIRCLE_TAG}"
+
 workflows:
     version: 2
     ci:
@@ -186,3 +196,10 @@ workflows:
                             only: /^v?\d+\.\d+\.\d+(-\S*)?$/
                         branches:
                             ignore: /.*/
+            -
+                trigger-docs-update:
+                    requires:
+                        - release
+                    filters:
+                        tags:
+                            only: /^v?\d+\.\d+\.\d+$/
