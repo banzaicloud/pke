@@ -15,6 +15,10 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/spf13/cobra"
 )
 
@@ -28,10 +32,16 @@ func NewPKECommand(gitVersion, gitCommit, gitTreeState, buildDate string) *cobra
 
 	cmd.ResetFlags()
 
-	cmd.AddCommand(NewCmdInstall())
+	c, err := config.Load()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	cmd.AddCommand(NewCmdInstall(c))
 	cmd.AddCommand(NewCmdImage())
 	cmd.AddCommand(NewCmdToken())
-	cmd.AddCommand(NewCmdUpgrade())
+	cmd.AddCommand(NewCmdUpgrade(c))
 	cmd.AddCommand(NewCmdVersion(gitVersion, gitCommit, gitTreeState, buildDate))
 
 	return cmd

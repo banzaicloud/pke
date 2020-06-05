@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"emperror.dev/errors"
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
@@ -55,6 +56,8 @@ const (
 var _ phases.Runnable = (*Node)(nil)
 
 type Node struct {
+	config config.Config
+
 	kubernetesVersion      string
 	containerRuntime       string
 	advertiseAddress       string
@@ -76,8 +79,8 @@ type Node struct {
 	labels                 []string
 }
 
-func NewCommand() *cobra.Command {
-	return phases.NewCommand(&Node{})
+func NewCommand(config config.Config) *cobra.Command {
+	return phases.NewCommand(&Node{config: config})
 }
 
 func (n *Node) Use() string {
@@ -90,9 +93,9 @@ func (n *Node) Short() string {
 
 func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, n.config.Kubernetes.Version, "Kubernetes version")
 	// Kubernetes container runtime
-	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
+	flags.String(constants.FlagContainerRuntime, n.config.ContainerRuntime.Type, "Kubernetes container runtime")
 	// Kubernetes network
 	flags.String(constants.FlagPodNetworkCIDR, "", "range of IP addresses for the pod network on the current node")
 	// Pipeline

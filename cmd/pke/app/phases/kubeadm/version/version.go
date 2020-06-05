@@ -20,6 +20,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
@@ -37,11 +38,13 @@ const (
 var _ phases.Runnable = (*Version)(nil)
 
 type Version struct {
+	config config.Config
+
 	kubernetesVersion string
 }
 
-func NewCommand() *cobra.Command {
-	return phases.NewCommand(&Version{})
+func NewCommand(config config.Config) *cobra.Command {
+	return phases.NewCommand(&Version{config: config})
 }
 
 func (v *Version) Use() string {
@@ -54,7 +57,7 @@ func (v *Version) Short() string {
 
 func (v *Version) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, v.config.Kubernetes.Version, "Kubernetes version")
 }
 
 func (v *Version) Validate(cmd *cobra.Command) error {

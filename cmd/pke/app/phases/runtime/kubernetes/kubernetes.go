@@ -19,6 +19,7 @@ import (
 	"io"
 
 	"github.com/Masterminds/semver"
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
@@ -34,11 +35,13 @@ const (
 var _ phases.Runnable = (*Runtime)(nil)
 
 type Runtime struct {
+	config config.Config
+
 	kubernetesVersion string
 }
 
-func NewCommand() *cobra.Command {
-	return phases.NewCommand(&Runtime{})
+func NewCommand(config config.Config) *cobra.Command {
+	return phases.NewCommand(&Runtime{config: config})
 }
 
 func (r *Runtime) Use() string {
@@ -51,7 +54,7 @@ func (r *Runtime) Short() string {
 
 func (r *Runtime) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, r.config.Kubernetes.Version, "Kubernetes version")
 }
 
 func (r *Runtime) Validate(cmd *cobra.Command) error {
@@ -73,6 +76,10 @@ func (r *Runtime) Validate(cmd *cobra.Command) error {
 
 func (r *Runtime) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", r.Use())
+
+	if r.config.Kubernetes.Installed {
+		_, _ = fmt.Fprintf(out, "[%s] skipping installation (already installed)\n", r.Use())
+	}
 
 	return r.installRuntime(out)
 }

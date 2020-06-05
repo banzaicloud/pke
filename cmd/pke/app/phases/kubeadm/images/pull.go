@@ -19,6 +19,7 @@ import (
 	"io"
 
 	"github.com/Masterminds/semver"
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/controlplane"
@@ -39,12 +40,14 @@ const (
 var _ phases.Runnable = (*Image)(nil)
 
 type Image struct {
+	config config.Config
+
 	kubernetesVersion string
 	imageRepository   string
 }
 
-func NewCommand() *cobra.Command {
-	return phases.NewCommand(&Image{})
+func NewCommand(config config.Config) *cobra.Command {
+	return phases.NewCommand(&Image{config: config})
 }
 
 func (i *Image) Use() string {
@@ -57,7 +60,7 @@ func (i *Image) Short() string {
 
 func (i *Image) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, i.config.Kubernetes.Version, "Kubernetes version")
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
 }

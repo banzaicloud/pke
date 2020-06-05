@@ -23,6 +23,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/antihax/optional"
 	"github.com/banzaicloud/pke/.gen/pipeline"
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
@@ -51,6 +52,8 @@ const (
 var _ phases.Runnable = (*Certificates)(nil)
 
 type Certificates struct {
+	config config.Config
+
 	pipelineEnabled        bool
 	pipelineAPIEndpoint    string
 	pipelineAPIToken       string
@@ -60,8 +63,8 @@ type Certificates struct {
 	kubernetesVersion      string
 }
 
-func NewCommand() *cobra.Command {
-	return phases.NewCommand(&Certificates{})
+func NewCommand(config config.Config) *cobra.Command {
+	return phases.NewCommand(&Certificates{config: config})
 }
 
 func (c *Certificates) Use() string {
@@ -80,7 +83,7 @@ func (c *Certificates) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Int32(constants.FlagPipelineOrganizationID, 0, "Organization ID to use with Pipeline API")
 	flags.Int32(constants.FlagPipelineClusterID, 0, "Cluster ID to use with Pipeline API")
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, c.config.Kubernetes.Version, "Kubernetes version")
 }
 
 func (c *Certificates) Validate(cmd *cobra.Command) error {
