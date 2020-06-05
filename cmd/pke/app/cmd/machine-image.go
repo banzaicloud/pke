@@ -18,7 +18,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/images"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/version"
-	"github.com/banzaicloud/pke/cmd/pke/app/phases/machineimage/config"
+	"github.com/banzaicloud/pke/cmd/pke/app/phases/machineimage/writeconfig"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/runtime/container"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/runtime/kubernetes"
 	"github.com/spf13/cobra"
@@ -36,7 +36,7 @@ func NewCmdImage() *cobra.Command {
 	cmd.AddCommand(container.NewCommand())
 	cmd.AddCommand(kubernetes.NewCommand())
 	cmd.AddCommand(images.NewCommand())
-	cmd.AddCommand(config.NewCommand())
+	cmd.AddCommand(writeconfig.NewCommand())
 
 	phases.MakeRunnable(cmd)
 
