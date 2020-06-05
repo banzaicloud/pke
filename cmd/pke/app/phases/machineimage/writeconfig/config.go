@@ -39,12 +39,14 @@ const (
 var _ phases.Runnable = (*WriteConfig)(nil)
 
 type WriteConfig struct {
+	config config.Config
+
 	kubernetesVersion string
 	containerRuntime  string
 }
 
-func NewCommand() *cobra.Command {
-	return phases.NewCommand(&WriteConfig{})
+func NewCommand(config config.Config) *cobra.Command {
+	return phases.NewCommand(&WriteConfig{config: config})
 }
 
 func (w *WriteConfig) Use() string {
@@ -57,10 +59,10 @@ func (w *WriteConfig) Short() string {
 
 func (w *WriteConfig) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, w.config.Kubernetes.Version, "Kubernetes version")
 
 	// Kubernetes container runtime
-	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
+	flags.String(constants.FlagContainerRuntime, w.config.ContainerRuntime.Type, "Kubernetes container runtime")
 }
 
 func (w *WriteConfig) Validate(cmd *cobra.Command) (err error) {

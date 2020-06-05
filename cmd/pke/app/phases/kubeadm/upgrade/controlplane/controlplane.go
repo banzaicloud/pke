@@ -26,6 +26,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm/upgrade"
@@ -55,6 +56,8 @@ const (
 var _ phases.Runnable = (*ControlPlane)(nil)
 
 type ControlPlane struct {
+	config config.Config
+
 	kubernetesVersion                string
 	kubernetesAdditionalControlPlane bool
 	kubeadmConfigMap                 kubeadmConfigMap
@@ -153,8 +156,8 @@ type kubeadmConfigMap struct {
 	UseHyperKubeImage bool `yaml:"useHyperKubeImage,omitempty"`
 }
 
-func NewCommand() *cobra.Command {
-	return phases.NewCommand(&ControlPlane{})
+func NewCommand(config config.Config) *cobra.Command {
+	return phases.NewCommand(&ControlPlane{config: config})
 }
 
 func (*ControlPlane) Use() string {
@@ -165,9 +168,9 @@ func (*ControlPlane) Short() string {
 	return short
 }
 
-func (*ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
+func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, c.config.Kubernetes.Version, "Kubernetes version")
 	// Additional Control Plane
 	flags.Bool(constants.FlagAdditionalControlPlane, false, "Treat node as additional control plane")
 }

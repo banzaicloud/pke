@@ -19,6 +19,7 @@ import (
 	"io"
 
 	"emperror.dev/errors"
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
@@ -34,12 +35,14 @@ const (
 var _ phases.Runnable = (*Runtime)(nil)
 
 type Runtime struct {
+	config config.Config
+
 	containerRuntime string
 	imageRepository  string
 }
 
-func NewCommand() *cobra.Command {
-	return phases.NewCommand(&Runtime{})
+func NewCommand(config config.Config) *cobra.Command {
+	return phases.NewCommand(&Runtime{config: config})
 }
 
 func (r *Runtime) Use() string {
@@ -52,7 +55,7 @@ func (r *Runtime) Short() string {
 
 func (r *Runtime) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes container runtime
-	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
+	flags.String(constants.FlagContainerRuntime, r.config.ContainerRuntime.Type, "Kubernetes container runtime")
 
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
@@ -89,6 +92,10 @@ func (r *Runtime) Validate(cmd *cobra.Command) (err error) {
 
 func (r *Runtime) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", r.Use())
+
+	if r.config.ContainerRuntime.Installed {
+		_, _ = fmt.Fprintf(out, "[%s] skipping installation (already installed)\n", r.Use())
+	}
 
 	switch r.containerRuntime {
 	case constants.ContainerRuntimeContainerd:

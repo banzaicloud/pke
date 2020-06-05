@@ -33,6 +33,7 @@ import (
 	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/.gen/pipeline"
+	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
@@ -81,6 +82,8 @@ const (
 var _ phases.Runnable = (*ControlPlane)(nil)
 
 type ControlPlane struct {
+	config config.Config
+
 	kubernetesVersion                string
 	containerRuntime                 string
 	networkProvider                  string
@@ -138,9 +141,10 @@ type ControlPlane struct {
 	encryptionSecret                 string
 }
 
-func NewCommand() *cobra.Command {
+func NewCommand(config config.Config) *cobra.Command {
 	return phases.NewCommand(&ControlPlane{
-		node: &node.Node{},
+		config: config,
+		node:   &node.Node{},
 	})
 }
 
@@ -162,9 +166,9 @@ func (c *ControlPlane) Short() string {
 
 func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	// Kubernetes version
-	flags.String(constants.FlagKubernetesVersion, "1.17.5", "Kubernetes version")
+	flags.String(constants.FlagKubernetesVersion, c.config.Kubernetes.Version, "Kubernetes version")
 	// Kubernetes container runtime
-	flags.String(constants.FlagContainerRuntime, "containerd", "Kubernetes container runtime")
+	flags.String(constants.FlagContainerRuntime, c.config.ContainerRuntime.Type, "Kubernetes container runtime")
 	// Kubernetes network
 	flags.String(constants.FlagNetworkProvider, "calico", "Kubernetes network provider")
 	flags.String(constants.FlagAdvertiseAddress, "", "Kubernetes API Server advertise address")
