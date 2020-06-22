@@ -36,6 +36,7 @@ const (
 	kubelet                   = "kubelet"
 	kubernetescni             = "kubernetes-cni"
 	disableExcludesKubernetes = "--disableexcludes=kubernetes"
+	setopObsoletes            = "--setopt=obsoletes=0"
 	selinuxConfig             = "/etc/selinux/config"
 	banzaiCloudRPMRepo        = "/etc/yum.repos.d/banzaicloud.repo"
 	k8sRPMRepoFile            = "/etc/yum.repos.d/kubernetes.repo"
@@ -60,6 +61,9 @@ func YumInstall(out io.Writer, packages []string) error {
 	}
 
 	for _, pkg := range packages {
+		if pkg == "" {
+			continue
+		}
 		if pkg[:1] == "-" {
 			continue
 		}
@@ -180,6 +184,11 @@ func (y *YumInstaller) InstallKubernetesPackages(out io.Writer, kubernetesVersio
 		mapYumPackageVersion(kubernetescni, kubernetesVersion),
 		disableExcludesKubernetes,
 	}
+	ver, _ := semver.NewVersion(kubernetesVersion)
+	c, _ := semver.NewConstraint(">=1.15.0,<1.15.12 || >=1.16.0,<1.16.11 || >=1.17.0,<1.17.7 || >=1.18.0,<1.18.4")
+	if c.Check(ver) {
+		p = append(p, setopObsoletes)
+	}
 
 	return YumInstall(out, p)
 }
@@ -191,6 +200,11 @@ func (y *YumInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion st
 		mapYumPackageVersion(kubelet, kubernetesVersion),       // kubeadm dependency
 		mapYumPackageVersion(kubernetescni, kubernetesVersion), // kubeadm dependency
 		disableExcludesKubernetes,
+	}
+	ver, _ := semver.NewVersion(kubernetesVersion)
+	c, _ := semver.NewConstraint(">=1.15.0,<1.15.12 || >=1.16.0,<1.16.11 || >=1.17.0,<1.17.7 || >=1.18.0,<1.18.4")
+	if c.Check(ver) {
+		pkg = append(pkg, setopObsoletes)
 	}
 	return YumInstall(out, pkg)
 }
@@ -217,11 +231,11 @@ func mapYumPackageVersion(pkg, kubernetesVersion string) string {
 
 	case kubernetescni:
 		ver, _ := semver.NewVersion(kubernetesVersion)
-		c, _ := semver.NewConstraint(">=1.12.7,<1.13.x || >=1.13.5")
+		c, _ := semver.NewConstraint(">=1.15.0,<1.15.12 || >=1.16.0,<1.16.11 || >=1.17.0,<1.17.7 || >=1.18.0,<1.18.4")
 		if c.Check(ver) {
 			return "kubernetes-cni-0.7.5-0"
 		}
-		return "kubernetes-cni-0.6.0-0"
+		return ""
 
 	default:
 		return ""
