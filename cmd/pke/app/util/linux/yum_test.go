@@ -48,7 +48,7 @@ func TestParseRpmPackageOutput(t *testing.T) {
 		err     bool
 	}{
 		{"kubernetes-cni-0.7.5-0.x86_64", "kubernetes-cni", "0.7.5", "0", "x86_64", false},
-		{"kubeadm-1.14.0-0.x86_64", "kubeadm", "1.14.0", "0", "x86_64", false},
+		{"kubeadm-1.18.0-0.x86_64", "kubeadm", "1.18.0", "0", "x86_64", false},
 		{"kubeadm", "", "", "", "", true},
 		{"util-linux-2.23.2-59.el7.x86_64", "util-linux", "2.23.2", "59.el7", "x86_64", false},
 		{"systemd-219-62.el7_6.5.x86_64", "systemd", "219", "62.el7_6.5", "x86_64", false},

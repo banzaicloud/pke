@@ -29,7 +29,6 @@ import (
 	"github.com/pbnjay/memory"
 )
 
-//go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Alpha3 kubeadm_v1alpha3.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Beta2 kubeadm_v1beta2.yaml.tmpl
 
@@ -61,10 +60,7 @@ func (n Node) writeKubeadmConfig(out io.Writer, filename string) error {
 
 	var conf string
 	switch ver.Minor() {
-	case 12, 13:
-		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1alpha3
-		conf = kubeadmConfigV1Alpha3Template()
-	case 14, 15, 16, 17:
+	case 15, 16, 17:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
 		conf = kubeadmConfigV1Beta1Template()
 	case 18:
