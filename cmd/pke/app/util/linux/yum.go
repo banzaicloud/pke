@@ -184,11 +184,6 @@ func (y *YumInstaller) InstallKubernetesPackages(out io.Writer, kubernetesVersio
 		mapYumPackageVersion(kubernetescni, kubernetesVersion),
 		disableExcludesKubernetes,
 	}
-	ver, _ := semver.NewVersion(kubernetesVersion)
-	c, _ := semver.NewConstraint(">=1.15.0,<1.16.11 || >=1.17.0,<1.17.7 || >=1.18.0,<1.18.4")
-	if c.Check(ver) {
-		p = append(p, setopObsoletes)
-	}
 
 	return YumInstall(out, p)
 }
@@ -201,11 +196,7 @@ func (y *YumInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion st
 		mapYumPackageVersion(kubernetescni, kubernetesVersion), // kubeadm dependency
 		disableExcludesKubernetes,
 	}
-	ver, _ := semver.NewVersion(kubernetesVersion)
-	c, _ := semver.NewConstraint(">=1.15.0,<1.16.11 || >=1.17.0,<1.17.7 || >=1.18.0,<1.18.4")
-	if c.Check(ver) {
-		pkg = append(pkg, setopObsoletes)
-	}
+
 	return YumInstall(out, pkg)
 }
 
@@ -221,23 +212,27 @@ func (y *YumInstaller) InstallContainerdPrerequisites(out io.Writer, containerdV
 func mapYumPackageVersion(pkg, kubernetesVersion string) string {
 	switch pkg {
 	case kubeadm:
-		return "kubeadm-" + kubernetesVersion + "-0"
+		return "kubeadm-" + getYumPackageVersion(kubernetesVersion)
 
 	case kubectl:
-		return "kubectl-" + kubernetesVersion + "-0"
+		return "kubectl-" + getYumPackageVersion(kubernetesVersion)
 
 	case kubelet:
-		return "kubelet-" + kubernetesVersion + "-0"
+		return "kubelet-" + getYumPackageVersion(kubernetesVersion)
 
 	case kubernetescni:
-		ver, _ := semver.NewVersion(kubernetesVersion)
-		c, _ := semver.NewConstraint(">=1.15.0,<1.16.11 || >=1.17.0,<1.17.7 || >=1.18.0,<1.18.4")
-		if c.Check(ver) {
-			return "kubernetes-cni-0.7.5-0"
-		}
-		return ""
+		return "kubernetes-cni-0.8.6-0"
 
 	default:
 		return ""
 	}
+}
+
+func getYumPackageVersion(kubernetesVersion string) string {
+	ver, _ := semver.NewVersion(kubernetesVersion)
+	c, _ := semver.NewConstraint("=1.16.11 || =1.17.7 || =1.18.4")
+	if c.Check(ver) {
+		return kubernetesVersion + "-1"
+	}
+	return kubernetesVersion + "-0"
 }
