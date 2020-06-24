@@ -125,23 +125,28 @@ func AptInstall(out io.Writer, packages []string) error {
 func mapAptPackageVersion(pkg, kubernetesVersion string) string {
 	switch pkg {
 	case kubeadm:
-		return "kubeadm=" + kubernetesVersion + "-00"
+		return "kubeadm=" + getAptPackageVersion(kubernetesVersion)
 
 	case kubectl:
-		return "kubectl=" + kubernetesVersion + "-00"
+		return "kubectl=" + getAptPackageVersion(kubernetesVersion)
 
 	case kubelet:
-		return "kubelet=" + kubernetesVersion + "-00"
+		return "kubelet=" + getAptPackageVersion(kubernetesVersion)
 
 	case kubernetescni:
-		ver, _ := semver.NewVersion(kubernetesVersion)
-		c, _ := semver.NewConstraint(">=1.15.0,<1.16.11 || >=1.17.0,<1.17.7 || >=1.18.0,<1.18.4")
-		if c.Check(ver) {
-			return "kubernetes-cni=0.7.5-00"
-		}
-		return ""
+		return "kubernetes-cni=0.8.6-00"
 
 	default:
 		return ""
 	}
+}
+
+func getAptPackageVersion(kubernetesVersion string) string {
+	ver, _ := semver.NewVersion(kubernetesVersion)
+	// There was an issue with bundled CNI plugin so new package was released in case of versions below. (https://github.com/kubernetes/kubernetes/issues/92242)
+	c, _ := semver.NewConstraint("=1.16.11 || =1.17.7 || =1.18.4")
+	if c.Check(ver) {
+		return kubernetesVersion + "-01"
+	}
+	return kubernetesVersion + "-00"
 }
