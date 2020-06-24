@@ -36,7 +36,6 @@ const (
 	kubelet                   = "kubelet"
 	kubernetescni             = "kubernetes-cni"
 	disableExcludesKubernetes = "--disableexcludes=kubernetes"
-	setopObsoletes            = "--setopt=obsoletes=0"
 	selinuxConfig             = "/etc/selinux/config"
 	banzaiCloudRPMRepo        = "/etc/yum.repos.d/banzaicloud.repo"
 	k8sRPMRepoFile            = "/etc/yum.repos.d/kubernetes.repo"
