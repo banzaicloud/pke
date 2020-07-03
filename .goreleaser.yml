@@ -21,6 +21,18 @@ checksum:
 changelog:
     skip: true
 
+nfpms:
+    -
+        vendor: Banzai Cloud
+        maintainer: Banzai Cloud <info@banzaicloud.com>
+        homepage: https://banzaicloud.com/
+        description: Banzai Cloud Pipeline Kubernetes Engine
+        formats:
+            - deb
+            - rpm
+        bindir: /usr/bin
+        license: Apache 2.0
+
 blobs:
     -
        provider: s3
