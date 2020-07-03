@@ -10,9 +10,10 @@ builds:
         goarch:
             - amd64
 
-archive:
-    name_template: "pke-{{ .Version }}"
-    format: binary
+archives:
+    -
+        name_template: "pke-{{ .Version }}"
+        format: binary
 
 checksum:
     name_template: "pke-{{ .Version }}-checksums.txt"
@@ -20,8 +21,9 @@ checksum:
 changelog:
     skip: true
 
-s3:
+blobs:
     -
+       provider: s3
        bucket: banzaicloud.com
        region: us-east-1
        folder: "downloads/pke"
