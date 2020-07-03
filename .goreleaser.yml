@@ -30,7 +30,7 @@ nfpms:
         formats:
             - deb
             - rpm
-        bindir: /usr/bin
+        bindir: /usr/local/bin
         license: Apache 2.0
 
 blobs:
