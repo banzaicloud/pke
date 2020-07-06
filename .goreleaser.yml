@@ -32,6 +32,7 @@ nfpms:
             - rpm
         bindir: /usr/local/bin
         license: Apache 2.0
+        file_name_template: "{{ .ProjectName }}-{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 blobs:
     -
