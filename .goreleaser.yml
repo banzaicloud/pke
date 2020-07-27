@@ -10,9 +10,10 @@ builds:
         goarch:
             - amd64
 
-archive:
-    name_template: "pke-{{ .Version }}"
-    format: binary
+archives:
+    -
+        name_template: "pke-{{ .Version }}"
+        format: binary
 
 checksum:
     name_template: "pke-{{ .Version }}-checksums.txt"
@@ -20,8 +21,22 @@ checksum:
 changelog:
     skip: true
 
-s3:
+nfpms:
     -
+        vendor: Banzai Cloud
+        maintainer: Banzai Cloud <info@banzaicloud.com>
+        homepage: https://banzaicloud.com/
+        description: Banzai Cloud Pipeline Kubernetes Engine
+        formats:
+            - deb
+            - rpm
+        bindir: /usr/local/bin
+        license: Apache 2.0
+        file_name_template: "{{ .ProjectName }}-{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+blobs:
+    -
+       provider: s3
        bucket: banzaicloud.com
        region: us-east-1
        folder: "downloads/pke"
