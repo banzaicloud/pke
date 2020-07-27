@@ -938,12 +938,14 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 //go:generate templify -t ${GOTMPL} -p controlplane -f ciliumSysFsBpf cilium_sys_fs_bpf.mount.tmpl
 
 func installCilium(out io.Writer, kubeConfig string, mtu uint) error {
-	// Mounting BPF filesystem
-	if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
-		return err
-	}
-	if err := linux.SystemctlEnableAndStart(out, "sys-fs-bpf.mount"); err != nil {
-		return err
+	if _, err := os.Stat("/sys/fs/bpf"); err != nil {
+		// Mounting BPF filesystem
+		if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
+			return err
+		}
+		if err := linux.SystemctlEnableAndStart(out, "sys-fs-bpf.mount"); err != nil {
+			return err
+		}
 	}
 
 	// https://raw.githubusercontent.com/cilium/cilium/v1.6/install/kubernetes/quick-install.yaml

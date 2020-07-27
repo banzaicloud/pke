@@ -38,7 +38,7 @@ func KubernetesPackagesImpl(out io.Writer) (KubernetesPackages, error) {
 		if distro == "Ubuntu" {
 			relNum, err := LSBReleaseReleaseNumber(out)
 			if err == nil {
-				if relNum == "18.04" {
+				if relNum == "18.04" || relNum == "20.04" {
 					return NewAptInstaller(), nil
 				}
 			}
@@ -66,7 +66,7 @@ func ContainerdPackagesImpl(out io.Writer) (ContainerdPackages, error) {
 		if distro == "Ubuntu" {
 			relNum, err := LSBReleaseReleaseNumber(out)
 			if err == nil {
-				if relNum == "18.04" {
+				if relNum == "18.04" || relNum == "20.04" {
 					return NewAptInstaller(), nil
 				}
 			}
