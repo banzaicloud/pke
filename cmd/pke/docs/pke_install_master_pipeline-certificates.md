@@ -1,3 +1,7 @@
+---
+title: pke install master pipeline-certificates
+generated_file: true
+---
 ## pke install master pipeline-certificates
 
 Pipeline pre-generated certificate download
@@ -14,7 +18,7 @@ pke install master pipeline-certificates [flags]
 
 ```
   -h, --help                        help for pipeline-certificates
-      --kubernetes-version string   Kubernetes version (default "1.16.0")
+      --kubernetes-version string   Kubernetes version (default "1.17.5")
       --pipeline-cluster-id int32   Cluster ID to use with Pipeline API
       --pipeline-insecure           If the Pipeline API should not verify the API's certificate
       --pipeline-org-id int32       Organization ID to use with Pipeline API
@@ -24,5 +28,5 @@ pke install master pipeline-certificates [flags]
 
 ### SEE ALSO
 
-* [pke install master](pke_install_master.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
+* [pke install master](/docs/pke/cli/reference/pke_install_master/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
 

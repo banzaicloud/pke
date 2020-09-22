@@ -1,3 +1,7 @@
+---
+title: pke install
+generated_file: true
+---
 ## pke install
 
 Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
@@ -14,8 +18,8 @@ Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
 
 ### SEE ALSO
 
-* [pke](pke.md)	 - Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)
-* [pke install master](pke_install_master.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
-* [pke install single](pke_install_single.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) on a single machine
-* [pke install worker](pke_install_worker.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node
+* [pke](/docs/pke/cli/reference/pke/)	 - Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)
+* [pke install master](/docs/pke/cli/reference/pke_install_master/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
+* [pke install single](/docs/pke/cli/reference/pke_install_single/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) on a single machine
+* [pke install worker](/docs/pke/cli/reference/pke_install_worker/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node
 

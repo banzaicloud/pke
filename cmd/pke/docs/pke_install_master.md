@@ -1,3 +1,7 @@
+---
+title: pke install master
+generated_file: true
+---
 ## pke install master
 
 Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
@@ -39,6 +43,7 @@ pke install master [flags]
       --kubernetes-api-server-cert-sans strings           sets extra Subject Alternative Names for the API Server signing cert
       --kubernetes-cloud-provider string                  cloud provider. example: aws
       --kubernetes-cluster-name string                    Kubernetes cluster name (default "pke")
+      --kubernetes-container-runtime string               Kubernetes container runtime (default "containerd")
       --kubernetes-controller-manager-signing-ca string   Kubernetes Controller Manager signing cert
       --kubernetes-infrastructure-cidr string             network CIDR for the actual machine (default "192.168.64.0/20")
       --kubernetes-join-control-plane                     Join an another control plane node
@@ -51,7 +56,7 @@ pke install master [flags]
       --kubernetes-oidc-issuer-url string                 URL of the OIDC provider which allows the API server to discover public signing keys
       --kubernetes-pod-network-cidr string                range of IP addresses for the pod network (default "10.20.0.0/16")
       --kubernetes-service-cidr string                    range of IP address for service VIPs (default "10.10.0.0/16")
-      --kubernetes-version string                         Kubernetes version (default "1.16.0")
+      --kubernetes-version string                         Kubernetes version (default "1.17.5")
       --lb-range string                                   Advertise the specified IPv4 range via ARP and allocate addresses for LoadBalancer Services (non-cloud only, example: 192.168.0.100-192.168.0.110)
       --pipeline-cluster-id int32                         Cluster ID to use with Pipeline API
       --pipeline-insecure                                 If the Pipeline API should not verify the API's certificate
@@ -70,17 +75,17 @@ pke install master [flags]
       --vsphere-server string                             The hostname or IP of vCenter to use
       --vsphere-username string                           The name of vCenter SSO user to use for deploying persistent volumes (Should be avoided in favor of a K8S secret)
       --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
-      --without-plugin-deny-escalating-exec               Disable DenyEscalatingExec admission plugin
       --without-audit-log                                 Disable apiserver audit log
+      --without-plugin-deny-escalating-exec               Disable DenyEscalatingExec admission plugin
 ```
 
 ### SEE ALSO
 
-* [pke install](pke_install.md)	 - Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
-* [pke install master container-runtime](pke_install_master_container-runtime.md)	 - Container runtime installation
-* [pke install master kubernetes-controlplane](pke_install_master_kubernetes-controlplane.md)	 - Kubernetes Control Plane installation
-* [pke install master kubernetes-runtime](pke_install_master_kubernetes-runtime.md)	 - Kubernetes runtime installation
-* [pke install master kubernetes-version](pke_install_master_kubernetes-version.md)	 - Check Kubernetes version is supported or not
-* [pke install master pipeline-certificates](pke_install_master_pipeline-certificates.md)	 - Pipeline pre-generated certificate download
-* [pke install master pipeline-ready](pke_install_master_pipeline-ready.md)	 - Register node as ready at Pipeline
+* [pke install](/docs/pke/cli/reference/pke_install/)	 - Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
+* [pke install master container-runtime](/docs/pke/cli/reference/pke_install_master_container-runtime/)	 - Container runtime installation
+* [pke install master kubernetes-controlplane](/docs/pke/cli/reference/pke_install_master_kubernetes-controlplane/)	 - Kubernetes Control Plane installation
+* [pke install master kubernetes-runtime](/docs/pke/cli/reference/pke_install_master_kubernetes-runtime/)	 - Kubernetes runtime installation
+* [pke install master kubernetes-version](/docs/pke/cli/reference/pke_install_master_kubernetes-version/)	 - Check Kubernetes version is supported or not
+* [pke install master pipeline-certificates](/docs/pke/cli/reference/pke_install_master_pipeline-certificates/)	 - Pipeline pre-generated certificate download
+* [pke install master pipeline-ready](/docs/pke/cli/reference/pke_install_master_pipeline-ready/)	 - Register node as ready at Pipeline
 

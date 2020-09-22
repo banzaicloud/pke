@@ -1,3 +1,7 @@
+---
+title: pke install single pipeline-ready
+generated_file: true
+---
 ## pke install single pipeline-ready
 
 Register node as ready at Pipeline
@@ -25,5 +29,5 @@ pke install single pipeline-ready [flags]
 
 ### SEE ALSO
 
-* [pke install single](pke_install_single.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) on a single machine
+* [pke install single](/docs/pke/cli/reference/pke_install_single/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) on a single machine
 

@@ -1,3 +1,7 @@
+---
+title: pke
+generated_file: true
+---
 ## pke
 
 Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)
@@ -14,9 +18,9 @@ Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engi
 
 ### SEE ALSO
 
-* [pke install](pke_install.md)	 - Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
-* [pke machine-image](pke_machine-image.md)	 - Machine image build helper for Banzai Cloud Pipeline Kubernetes Engine (PKE)
-* [pke token](pke_token.md)	 - Manage Kubernetes bootstrap tokens
-* [pke upgrade](pke_upgrade.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
-* [pke version](pke_version.md)	 - Print tool version
+* [pke install](/docs/pke/cli/reference/pke_install/)	 - Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
+* [pke machine-image](/docs/pke/cli/reference/pke_machine-image/)	 - Machine image build helper for Banzai Cloud Pipeline Kubernetes Engine (PKE)
+* [pke token](/docs/pke/cli/reference/pke_token/)	 - Manage Kubernetes bootstrap tokens
+* [pke upgrade](/docs/pke/cli/reference/pke_upgrade/)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
+* [pke version](/docs/pke/cli/reference/pke_version/)	 - Print tool version
 

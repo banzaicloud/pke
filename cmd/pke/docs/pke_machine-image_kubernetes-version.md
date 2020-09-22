@@ -1,3 +1,7 @@
+---
+title: pke machine-image kubernetes-version
+generated_file: true
+---
 ## pke machine-image kubernetes-version
 
 Check Kubernetes version is supported or not
@@ -14,10 +18,10 @@ pke machine-image kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.16.0")
+      --kubernetes-version string   Kubernetes version (default "1.17.5")
 ```
 
 ### SEE ALSO
 
-* [pke machine-image](pke_machine-image.md)	 - Machine image build helper for Banzai Cloud Pipeline Kubernetes Engine (PKE)
+* [pke machine-image](/docs/pke/cli/reference/pke_machine-image/)	 - Machine image build helper for Banzai Cloud Pipeline Kubernetes Engine (PKE)
 

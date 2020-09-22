@@ -1,3 +1,7 @@
+---
+title: pke token list
+generated_file: true
+---
 ## pke token list
 
 List Kubernetes bootstrap token(s)
@@ -19,5 +23,5 @@ pke token list [flags]
 
 ### SEE ALSO
 
-* [pke token](pke_token.md)	 - Manage Kubernetes bootstrap tokens
+* [pke token](/docs/pke/cli/reference/pke_token/)	 - Manage Kubernetes bootstrap tokens
 

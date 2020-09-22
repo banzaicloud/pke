@@ -1,3 +1,7 @@
+---
+title: pke install master kubernetes-version
+generated_file: true
+---
 ## pke install master kubernetes-version
 
 Check Kubernetes version is supported or not
@@ -14,10 +18,10 @@ pke install master kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.16.0")
+      --kubernetes-version string   Kubernetes version (default "1.17.5")
 ```
 
 ### SEE ALSO
 
-* [pke install master](pke_install_master.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
+* [pke install master](/docs/pke/cli/reference/pke_install_master/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
 

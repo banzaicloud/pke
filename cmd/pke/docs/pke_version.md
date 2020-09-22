@@ -1,3 +1,7 @@
+---
+title: pke version
+generated_file: true
+---
 ## pke version
 
 Print tool version
@@ -19,5 +23,5 @@ pke version [flags]
 
 ### SEE ALSO
 
-* [pke](pke.md)	 - Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)
+* [pke](/docs/pke/cli/reference/pke/)	 - Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)
 

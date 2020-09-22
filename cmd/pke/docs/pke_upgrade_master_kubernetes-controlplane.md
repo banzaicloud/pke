@@ -1,3 +1,7 @@
+---
+title: pke upgrade master kubernetes-controlplane
+generated_file: true
+---
 ## pke upgrade master kubernetes-controlplane
 
 Kubernetes Control Plane upgrade
@@ -15,10 +19,10 @@ pke upgrade master kubernetes-controlplane [flags]
 ```
   -h, --help                                  help for kubernetes-controlplane
       --kubernetes-additional-control-plane   Treat node as additional control plane
-      --kubernetes-version string             Kubernetes version (default "1.16.0")
+      --kubernetes-version string             Kubernetes version (default "1.17.5")
 ```
 
 ### SEE ALSO
 
-* [pke upgrade master](pke_upgrade_master.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) master machine
+* [pke upgrade master](/docs/pke/cli/reference/pke_upgrade_master/)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) master machine
 

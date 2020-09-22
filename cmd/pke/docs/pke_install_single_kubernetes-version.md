@@ -1,3 +1,7 @@
+---
+title: pke install single kubernetes-version
+generated_file: true
+---
 ## pke install single kubernetes-version
 
 Check Kubernetes version is supported or not
@@ -14,10 +18,10 @@ pke install single kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.16.0")
+      --kubernetes-version string   Kubernetes version (default "1.17.5")
 ```
 
 ### SEE ALSO
 
-* [pke install single](pke_install_single.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) on a single machine
+* [pke install single](/docs/pke/cli/reference/pke_install_single/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) on a single machine
 

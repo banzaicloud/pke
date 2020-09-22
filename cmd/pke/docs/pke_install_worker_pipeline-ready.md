@@ -1,3 +1,7 @@
+---
+title: pke install worker pipeline-ready
+generated_file: true
+---
 ## pke install worker pipeline-ready
 
 Register node as ready at Pipeline
@@ -25,5 +29,5 @@ pke install worker pipeline-ready [flags]
 
 ### SEE ALSO
 
-* [pke install worker](pke_install_worker.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node
+* [pke install worker](/docs/pke/cli/reference/pke_install_worker/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node
 

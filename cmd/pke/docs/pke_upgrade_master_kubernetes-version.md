@@ -1,3 +1,7 @@
+---
+title: pke upgrade master kubernetes-version
+generated_file: true
+---
 ## pke upgrade master kubernetes-version
 
 Check Kubernetes version is supported or not
@@ -14,10 +18,10 @@ pke upgrade master kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.16.0")
+      --kubernetes-version string   Kubernetes version (default "1.17.5")
 ```
 
 ### SEE ALSO
 
-* [pke upgrade master](pke_upgrade_master.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) master machine
+* [pke upgrade master](/docs/pke/cli/reference/pke_upgrade_master/)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) master machine
 

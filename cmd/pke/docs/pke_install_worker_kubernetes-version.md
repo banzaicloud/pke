@@ -1,3 +1,7 @@
+---
+title: pke install worker kubernetes-version
+generated_file: true
+---
 ## pke install worker kubernetes-version
 
 Check Kubernetes version is supported or not
@@ -14,10 +18,10 @@ pke install worker kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.16.0")
+      --kubernetes-version string   Kubernetes version (default "1.17.5")
 ```
 
 ### SEE ALSO
 
-* [pke install worker](pke_install_worker.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node
+* [pke install worker](/docs/pke/cli/reference/pke_install_worker/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node
 

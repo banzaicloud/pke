@@ -1,3 +1,7 @@
+---
+title: pke install worker
+generated_file: true
+---
 ## pke install worker
 
 Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Worker node
@@ -26,11 +30,12 @@ pke install worker [flags]
       --kubernetes-api-server string                Kubernetes API Server host port
       --kubernetes-api-server-ca-cert-hash string   CA cert hash
       --kubernetes-cloud-provider string            cloud provider. example: aws
+      --kubernetes-container-runtime string         Kubernetes container runtime (default "containerd")
       --kubernetes-infrastructure-cidr string       network CIDR for the actual machine (default "192.168.64.0/20")
       --kubernetes-node-labels strings              Specifies the labels the Node should be registered with
       --kubernetes-node-token string                PKE join token
       --kubernetes-pod-network-cidr string          range of IP addresses for the pod network on the current node
-      --kubernetes-version string                   Kubernetes version (default "1.16.0")
+      --kubernetes-version string                   Kubernetes version (default "1.17.5")
       --pipeline-cluster-id int32                   Cluster ID to use with Pipeline API
       --pipeline-insecure                           If the Pipeline API should not verify the API's certificate
       --pipeline-nodepool string                    name of the nodepool the node belongs to
@@ -42,10 +47,10 @@ pke install worker [flags]
 
 ### SEE ALSO
 
-* [pke install](pke_install.md)	 - Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
-* [pke install worker container-runtime](pke_install_worker_container-runtime.md)	 - Container runtime installation
-* [pke install worker kubernetes-node](pke_install_worker_kubernetes-node.md)	 - Kubernetes worker node installation
-* [pke install worker kubernetes-runtime](pke_install_worker_kubernetes-runtime.md)	 - Kubernetes runtime installation
-* [pke install worker kubernetes-version](pke_install_worker_kubernetes-version.md)	 - Check Kubernetes version is supported or not
-* [pke install worker pipeline-ready](pke_install_worker_pipeline-ready.md)	 - Register node as ready at Pipeline
+* [pke install](/docs/pke/cli/reference/pke_install/)	 - Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine
+* [pke install worker container-runtime](/docs/pke/cli/reference/pke_install_worker_container-runtime/)	 - Container runtime installation
+* [pke install worker kubernetes-node](/docs/pke/cli/reference/pke_install_worker_kubernetes-node/)	 - Kubernetes worker node installation
+* [pke install worker kubernetes-runtime](/docs/pke/cli/reference/pke_install_worker_kubernetes-runtime/)	 - Kubernetes runtime installation
+* [pke install worker kubernetes-version](/docs/pke/cli/reference/pke_install_worker_kubernetes-version/)	 - Check Kubernetes version is supported or not
+* [pke install worker pipeline-ready](/docs/pke/cli/reference/pke_install_worker_pipeline-ready/)	 - Register node as ready at Pipeline
 

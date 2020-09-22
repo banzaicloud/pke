@@ -1,3 +1,7 @@
+---
+title: pke upgrade worker kubernetes-version
+generated_file: true
+---
 ## pke upgrade worker kubernetes-version
 
 Check Kubernetes version is supported or not
@@ -14,10 +18,10 @@ pke upgrade worker kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.16.0")
+      --kubernetes-version string   Kubernetes version (default "1.17.5")
 ```
 
 ### SEE ALSO
 
-* [pke upgrade worker](pke_upgrade_worker.md)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) worker machine
+* [pke upgrade worker](/docs/pke/cli/reference/pke_upgrade_worker/)	 - Upgrade a single Banzai Cloud Pipeline Kubernetes Engine (PKE) worker machine
 

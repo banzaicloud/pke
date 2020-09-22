@@ -1,3 +1,7 @@
+---
+title: pke install master kubernetes-runtime
+generated_file: true
+---
 ## pke install master kubernetes-runtime
 
 Kubernetes runtime installation
@@ -14,10 +18,10 @@ pke install master kubernetes-runtime [flags]
 
 ```
   -h, --help                        help for kubernetes-runtime
-      --kubernetes-version string   Kubernetes version (default "1.16.0")
+      --kubernetes-version string   Kubernetes version (default "1.17.5")
 ```
 
 ### SEE ALSO
 
-* [pke install master](pke_install_master.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
+* [pke install master](/docs/pke/cli/reference/pke_install_master/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
 
