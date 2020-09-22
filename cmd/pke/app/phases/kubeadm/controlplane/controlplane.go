@@ -479,8 +479,10 @@ func (c *ControlPlane) Run(out io.Writer) error {
 	}
 
 	if err := c.installMaster(out); err != nil {
-		if rErr := kubeadm.Reset(out, c.containerRuntime); rErr != nil {
-			_, _ = fmt.Fprintf(out, "%v\n", rErr)
+		if c.node.ResetOnFailure {
+			if rErr := kubeadm.Reset(out, c.containerRuntime); rErr != nil {
+				_, _ = fmt.Fprintf(out, "%v\n", rErr)
+			}
 		}
 		return err
 	}

@@ -64,6 +64,7 @@ type Node struct {
 	apiServerHostPort      string
 	kubeadmToken           string
 	caCertHash             string
+	ResetOnFailure         bool
 	podNetworkCIDR         string
 	cloudProvider          string
 	nodepool               string
@@ -113,6 +114,7 @@ func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAPIServerHostPort, "", "Kubernetes API Server host port")
 	flags.String(constants.FlagKubeadmToken, "", "PKE join token")
 	flags.String(constants.FlagCACertHash, "", "CA cert hash")
+	flags.Bool(constants.FlagResetOnFailure, true, "Roll back changes after failures")
 	// Pipeline nodepool name (optional)
 	flags.String(constants.FlagPipelineNodepool, "", "name of the nodepool the node belongs to")
 	// Azure cloud
@@ -178,8 +180,10 @@ func (n *Node) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", n.Use())
 
 	if err := n.install(out); err != nil {
-		if rErr := kubeadm.Reset(out, n.containerRuntime); rErr != nil {
-			_, _ = fmt.Fprintf(out, "%v\n", rErr)
+		if n.ResetOnFailure {
+			if rErr := kubeadm.Reset(out, n.containerRuntime); rErr != nil {
+				_, _ = fmt.Fprintf(out, "%v\n", rErr)
+			}
 		}
 		return err
 	}
@@ -210,6 +214,10 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 		return
 	}
 	n.caCertHash, err = cmd.Flags().GetString(constants.FlagCACertHash)
+	if err != nil {
+		return
+	}
+	n.ResetOnFailure, err = cmd.Flags().GetBool(constants.FlagResetOnFailure)
 	if err != nil {
 		return
 	}

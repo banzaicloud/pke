@@ -64,6 +64,7 @@ pke install single kubernetes-controlplane [flags]
       --pipeline-org-id int32                             Organization ID to use with Pipeline API
   -t, --pipeline-token string                             Token for accessing Pipeline API
   -u, --pipeline-url string                               Pipeline API server url
+      --reset-on-failure                                  Roll back changes after failures (default true)
       --taints strings                                    Specifies the taints the Node should be registered with (default [node-role.kubernetes.io/master:NoSchedule])
       --vsphere-datacenter string                         The name of the datacenter to use to store persistent volumes (and deploy temporary VMs to create them)
       --vsphere-datastore string                          The name of the datastore that is in the given datacenter, and is available on all nodes
