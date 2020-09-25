@@ -10,19 +10,23 @@ Method | HTTP request | Description
 [**EnableARK**](ArkApi.md#EnableARK) | **Post** /api/v1/orgs/{orgId}/clusters/{id}/backupservice/enable | Enable ARK service
 
 
-# **CheckARKStatus**
+
+## CheckARKStatus
+
 > CheckARKStatus(ctx, orgId, id)
+
 Check ARK service status
 
 Check ARK service status
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
 
 ### Return type
 
@@ -34,24 +38,30 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: Not defined
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **CheckARKStatusGET**
+
+## CheckARKStatusGET
+
 > BackupServiceResponse CheckARKStatusGET(ctx, orgId, id)
+
 Check ARK service status
 
 Check ARK service status
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
 
 ### Return type
 
@@ -63,24 +73,30 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **DisableARK**
+
+## DisableARK
+
 > DisableArkResponse DisableARK(ctx, orgId, id)
+
 Disable ARK service
 
 Disable ARK service
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
 
 ### Return type
 
@@ -92,25 +108,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **EnableARK**
+
+## EnableARK
+
 > EnableArkResponse EnableARK(ctx, orgId, id, enableArkRequest)
+
 Enable ARK service
 
 Enable ARK service
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
-  **enableArkRequest** | [**EnableArkRequest**](EnableArkRequest.md)|  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
+**enableArkRequest** | [**EnableArkRequest**](EnableArkRequest.md)|  | 
 
 ### Return type
 
@@ -122,8 +144,10 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: application/json
+- **Content-Type**: application/json
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 

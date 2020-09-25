@@ -1,9 +1,9 @@
 /*
  * Pipeline API
  *
- * Pipeline v0.3.0 swagger
+ * Pipeline is a feature rich application platform, built for containers on top of Kubernetes to automate the DevOps experience, continuous application development and the lifecycle of deployments. 
  *
- * API version: master
+ * API version: latest
  * Contact: info@banzaicloud.com
  */
 
@@ -13,12 +13,11 @@ package pipeline
 import (
 	"time"
 )
-
+// SecretItem struct for SecretItem
 type SecretItem struct {
 	Id string `json:"id,omitempty"`
 	Name string `json:"name,omitempty"`
 	Type string `json:"type,omitempty"`
-	Version int32 `json:"version,omitempty"`
 	UpdatedAt time.Time `json:"updatedAt,omitempty"`
 	UpdatedBy string `json:"updatedBy,omitempty"`
 	Tags []string `json:"tags,omitempty"`

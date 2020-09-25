@@ -11,19 +11,23 @@ Method | HTTP request | Description
 [**ListObjectStoreBuckets**](StorageApi.md#ListObjectStoreBuckets) | **Get** /api/v1/orgs/{orgId}/buckets | List object storage buckets
 
 
-# **CreateObjectStoreBucket**
+
+## CreateObjectStoreBucket
+
 > CreateObjectStoreBucketResponse CreateObjectStoreBucket(ctx, orgId, createObjectStoreBucketRequest)
+
 Creates a new object store bucket with the given params
 
 Creates a new object store bucket on the Cloud provider referenced by the given secret. The credentials for creating the bucket is taken from the provided secret.
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **createObjectStoreBucketRequest** | [**CreateObjectStoreBucketRequest**](CreateObjectStoreBucketRequest.md)|  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**createObjectStoreBucketRequest** | [**CreateObjectStoreBucketRequest**](CreateObjectStoreBucketRequest.md)|  | 
 
 ### Return type
 
@@ -35,30 +39,38 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: application/json
+- **Content-Type**: application/json
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **DeleteObjectStoreBucket**
+
+## DeleteObjectStoreBucket
+
 > DeleteObjectStoreBucket(ctx, orgId, name, secretId, cloudType, optional)
+
 Deletes the object store bucket with the given name
 
 Deletes the object store bucket identified by the given name. The credentials for deleting the bucket is taken from the provided secret.
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **name** | **string**| Bucket identification | 
-  **secretId** | **string**| Secret identification | 
-  **cloudType** | **string**| Identifies the cloud provider | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**name** | **string**| Bucket identification | 
+**secretId** | **string**| Secret identification | 
+**cloudType** | **string**| Identifies the cloud provider | 
  **optional** | ***DeleteObjectStoreBucketOpts** | optional parameters | nil if no parameters
 
 ### Optional Parameters
+
 Optional parameters are passed through a pointer to a DeleteObjectStoreBucketOpts struct
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
@@ -81,29 +93,37 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **GetBucket**
+
+## GetBucket
+
 > BucketInfo GetBucket(ctx, orgId, name, cloudType, optional)
+
 Get object store bucket details
 
 Retrieves the details of the object store bucket given its name
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **name** | **string**| Bucket identification | 
-  **cloudType** | **string**| Identifies the cloud provider | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**name** | **string**| Bucket identification | 
+**cloudType** | **string**| Identifies the cloud provider | 
  **optional** | ***GetBucketOpts** | optional parameters | nil if no parameters
 
 ### Optional Parameters
+
 Optional parameters are passed through a pointer to a GetBucketOpts struct
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
@@ -126,29 +146,37 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **GetObjectStoreBucketStatus**
+
+## GetObjectStoreBucketStatus
+
 > GetObjectStoreBucketStatus(ctx, orgId, name, cloudType, optional)
+
 Get object store bucket status
 
 Retrieves the status of the object store bucket given its name
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **name** | **string**| Bucket identification | 
-  **cloudType** | **string**| Identifies the cloud provider | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**name** | **string**| Bucket identification | 
+**cloudType** | **string**| Identifies the cloud provider | 
  **optional** | ***GetObjectStoreBucketStatusOpts** | optional parameters | nil if no parameters
 
 ### Optional Parameters
+
 Optional parameters are passed through a pointer to a GetObjectStoreBucketStatusOpts struct
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
@@ -171,27 +199,35 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: Not defined
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ListObjectStoreBuckets**
+
+## ListObjectStoreBuckets
+
 > []BucketInfo ListObjectStoreBuckets(ctx, orgId, optional)
+
 List object storage buckets
 
 List object store buckets accessible by the credentials referenced by the given secret. If no credentials provided all managed buckets are returned for all cloud types.
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
  **optional** | ***ListObjectStoreBucketsOpts** | optional parameters | nil if no parameters
 
 ### Optional Parameters
+
 Optional parameters are passed through a pointer to a ListObjectStoreBucketsOpts struct
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
@@ -210,8 +246,10 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 

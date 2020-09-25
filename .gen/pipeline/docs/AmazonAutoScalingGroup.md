@@ -1,10 +1,12 @@
 # AmazonAutoScalingGroup
 
 ## Properties
+
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Name** | **string** |  | 
 **Image** | **string** |  | 
+**VolumeSize** | **int32** | Size of root EBS volume to attach to the nodes in GBs. Zero means that the size is determined automatically. | [optional] 
 **Zones** | **[]string** |  | 
 **InstanceType** | **string** |  | 
 **LaunchConfigurationName** | **string** |  | 
@@ -12,7 +14,7 @@ Name | Type | Description | Notes
 **VpcID** | **string** |  | 
 **SecurityGroupID** | **string** |  | 
 **Subnets** | **[]string** |  | 
-**Tags** | [**map[string]map[string]interface{}**](map[string]interface{}.md) |  | 
+**Tags** | **map[string]map[string]interface{}** |  | 
 **SpotPrice** | **string** |  | 
 **Size** | [**AmazonAutoScalingGroupSize**](AmazonAutoScalingGroup_size.md) |  | 
 

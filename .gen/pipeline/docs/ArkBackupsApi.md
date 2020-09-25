@@ -15,20 +15,24 @@ Method | HTTP request | Description
 [**SyncOrgBackups**](ArkBackupsApi.md#SyncOrgBackups) | **Put** /api/v1/orgs/{orgId}/backups/sync | Sync ARK backups of an Organization
 
 
-# **CreateARKBackupOfACluster**
+
+## CreateARKBackupOfACluster
+
 > CreateBackupResponse CreateARKBackupOfACluster(ctx, orgId, id, createBackupRequest)
+
 Create ARK backup
 
 Create ARK backup of a cluster
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
-  **createBackupRequest** | [**CreateBackupRequest**](CreateBackupRequest.md)|  | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
+**createBackupRequest** | [**CreateBackupRequest**](CreateBackupRequest.md)|  | 
 
 ### Return type
 
@@ -40,25 +44,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: application/json
+- **Content-Type**: application/json
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **DeleteARKBackup**
+
+## DeleteARKBackup
+
 > DeleteBackupResponse DeleteARKBackup(ctx, orgId, id, backupId)
+
 Delete ARK backup
 
 Delete ARK backup
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
-  **backupId** | **int32**| ID of the backup | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
+**backupId** | **int32**| ID of the backup | 
 
 ### Return type
 
@@ -70,29 +80,35 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **DownloadARKBackupContents**
-> string DownloadARKBackupContents(ctx, orgId, id, backupId)
+
+## DownloadARKBackupContents
+
+> *os.File DownloadARKBackupContents(ctx, orgId, id, backupId)
+
 Download ARK backup contents
 
 Download ARK backup contents
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
-  **backupId** | **int32**| ID of the backup | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
+**backupId** | **int32**| ID of the backup | 
 
 ### Return type
 
-**string**
+[***os.File**](*os.File.md)
 
 ### Authorization
 
@@ -100,25 +116,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/x-gzip, application/json
+- **Content-Type**: Not defined
+- **Accept**: application/x-gzip, application/json, application/problem+json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **GetARKBackup**
+
+## GetARKBackup
+
 > BackupResponse GetARKBackup(ctx, orgId, id, backupId)
+
 Get ARK backup
 
 Get ARK backup
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
-  **backupId** | **int32**| ID of the backup | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
+**backupId** | **int32**| ID of the backup | 
 
 ### Return type
 
@@ -130,25 +152,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **GetARKBackupLogs**
+
+## GetARKBackupLogs
+
 > string GetARKBackupLogs(ctx, orgId, id, backupId)
+
 Get ARK backup logs
 
 Get ARK backup logs
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
-  **backupId** | **int32**| ID of the backup | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
+**backupId** | **int32**| ID of the backup | 
 
 ### Return type
 
@@ -160,23 +188,29 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: text/plain, application/json
+- **Content-Type**: Not defined
+- **Accept**: text/plain, application/json, application/problem+json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ListARKBackupsForOrganization**
+
+## ListARKBackupsForOrganization
+
 > []BackupResponse ListARKBackupsForOrganization(ctx, orgId)
+
 List ARK backups of an Organization
 
 List ARK backups of an Organization
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
 
 ### Return type
 
@@ -188,24 +222,30 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ListARKBackupsOfACluster**
+
+## ListARKBackupsOfACluster
+
 > []BackupResponse ListARKBackupsOfACluster(ctx, orgId, id)
+
 List ARK backups of a cluster
 
 List ARK backups of a cluster
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
 
 ### Return type
 
@@ -217,24 +257,30 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **SyncARKBackupsOfACluster**
+
+## SyncARKBackupsOfACluster
+
 > SyncARKBackupsOfACluster(ctx, orgId, id)
+
 Sync ARK backups of a cluster
 
 Sync ARK backups of a cluster
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
-  **id** | **int32**| Selected cluster identification (number) | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
 
 ### Return type
 
@@ -246,23 +292,29 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **SyncOrgBackups**
+
+## SyncOrgBackups
+
 > SyncOrgBackups(ctx, orgId)
+
 Sync ARK backups of an Organization
 
 Sync ARK backups of an Organization
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
 
 ### Return type
 
@@ -274,8 +326,10 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
