@@ -25,6 +25,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/pipeline/ready"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/runtime/container"
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/runtime/kubernetes"
+	"github.com/banzaicloud/pke/cmd/pke/app/util/pipeline"
 	"github.com/spf13/cobra"
 )
 
@@ -34,6 +35,31 @@ func NewCmdInstall(c config.Config) *cobra.Command {
 		Use:   "install",
 		Short: "Install a single Banzai Cloud Pipeline Kubernetes Engine (PKE) machine",
 		Args:  cobra.NoArgs,
+	}
+
+	statusReporter := pipeline.NewPipelineStatusReporter()
+	cmd.PersistentPreRun = func(cmd *cobra.Command, _ []string) {
+		err := statusReporter.Init(cmd)
+		if err != nil {
+			return
+		}
+
+		err = statusReporter.ReportStep(cmd.Use, "starting")
+		if err != nil {
+			return
+		}
+
+		orig := cmd.RunE
+		cmd.RunE = func(cmd *cobra.Command, args []string) (err error) {
+			if orig == nil {
+				cmd.Run(cmd, args)
+			} else {
+				err = orig(cmd, args)
+			}
+
+			_ = statusReporter.ReportResult(cmd.Use, err, cmd.CalledAs() != "")
+			return err
+		}
 	}
 
 	cmd.AddCommand(single(c))
