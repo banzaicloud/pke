@@ -77,6 +77,8 @@ const (
 	auditLogDir                   = "/var/log/audit/apiserver"
 	encryptionSecretLength        = 32
 	ciliumBpfMountSystemd         = "/etc/systemd/system/sys-fs-bpf.mount"
+	kubeSchedulerManifest         = "/etc/kubernetes/manifests/kube-scheduler.yaml"
+	kubeControllerManagerManifest = "/etc/kubernetes/manifests/kube-controller-manager.yaml"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -878,6 +880,17 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 
 	// apply default storage class
 	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider, c.azureStorageAccountType, c.azureStorageKind); err != nil {
+		return err
+	}
+
+	// sed -i "/^[ \t]*- --port=0$/d" /etc/kubernetes/manifests/kube-scheduler.yaml
+	err = runner.Cmd(out, "sed", "-i", "/^[ \t]*- --port=0$/d", kubeSchedulerManifest).Run()
+	if err != nil {
+		return err
+	}
+	// sed -i "/^[ \t]*- --port=0$/d" /etc/kubernetes/manifests/kube-controller-manager.yaml
+	err = runner.Cmd(out, "sed", "-i", "/^[ \t]*- --port=0$/d", kubeControllerManagerManifest).Run()
+	if err != nil {
 		return err
 	}
 
