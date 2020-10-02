@@ -75,19 +75,7 @@ func NewDnfInstaller() *DnfInstaller {
 }
 
 func (y *DnfInstaller) InstallKubernetesPrerequisites(out io.Writer, kubernetesVersion string) error {
-	// Set SELinux in permissive mode (effectively disabling it)
-	// setenforce 0
-	err := runner.Cmd(out, "setenforce", "0").Run()
-	if err != nil {
-		return err
-	}
-	// sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
-	err = runner.Cmd(out, "sed", "-i", "s/^SELINUX=enforcing$/SELINUX=permissive/", selinuxConfig).Run()
-	if err != nil {
-		return err
-	}
-
-	if err = SwapOff(out); err != nil {
+	if err := SwapOff(out); err != nil {
 		return err
 	}
 
