@@ -341,7 +341,7 @@ func (c *ControlPlane) generateNewKubeadmConfig(out io.Writer, from, to *semver.
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
 		c.kubeadmConfigMap.UseHyperKubeImage = true
 		conf = kubeadmConfigV1Beta1Template()
-	case 18:
+	case 18, 19:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
 		conf = kubeadmConfigV1Beta2Template()
 	default:

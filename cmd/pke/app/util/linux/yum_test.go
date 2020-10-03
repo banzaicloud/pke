@@ -44,8 +44,11 @@ func TestMapYumPackageVersion(t *testing.T) {
 		{kubeadm, "1.18.4", "kubeadm-1.18.4-1"},
 		{kubectl, "1.18.4", "kubectl-1.18.4-1"},
 		{kubelet, "1.18.4", "kubelet-1.18.4-1"},
-		{kubernetescni, "1.17.0", "kubernetes-cni-0.8.6-0"},
-		{kubernetescni, "1.18.4", "kubernetes-cni-0.8.6-0"},
+		{kubernetescni, "1.17.0", "kubernetes-cni-0.8.7-0"},
+		{kubernetescni, "1.18.4", "kubernetes-cni-0.8.7-0"},
+		{kubeadm, "1.19.2", "kubeadm-1.19.2-0"},
+		{kubectl, "1.19.2", "kubectl-1.19.2-0"},
+		{kubelet, "1.19.2", "kubelet-1.19.2-0"},
 	}
 	for _, tc := range testCases {
 		got := mapYumPackageVersion(tc.pkg, tc.kubernetesVersion)
@@ -62,7 +65,7 @@ func TestParseRpmPackageOutput(t *testing.T) {
 		arch    string
 		err     bool
 	}{
-		{"kubernetes-cni-0.8.6-0.x86_64", "kubernetes-cni", "0.8.6", "0", "x86_64", false},
+		{"kubernetes-cni-0.8.7-0.x86_64", "kubernetes-cni", "0.8.7", "0", "x86_64", false},
 		{"kubeadm-1.18.0-0.x86_64", "kubeadm", "1.18.0", "0", "x86_64", false},
 		{"kubeadm", "", "", "", "", true},
 		{"util-linux-2.23.2-59.el7.x86_64", "util-linux", "2.23.2", "59.el7", "x86_64", false},

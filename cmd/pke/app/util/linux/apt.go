@@ -134,7 +134,7 @@ func mapAptPackageVersion(pkg, kubernetesVersion string) string {
 		return "kubelet=" + getAptPackageVersion(kubernetesVersion)
 
 	case kubernetescni:
-		return "kubernetes-cni=0.8.6-00"
+		return "kubernetes-cni=0.8.7-00"
 
 	default:
 		return ""
