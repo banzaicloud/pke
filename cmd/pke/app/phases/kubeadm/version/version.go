@@ -32,7 +32,7 @@ const (
 	use   = "kubernetes-version"
 	short = "Check Kubernetes version is supported or not"
 
-	constraint = "1.15.x-0 || 1.16.x-0 || 1.17.x-0 || 1.18.x-0"
+	constraint = "1.15.x-0 || 1.16.x-0 || 1.17.x-0 || 1.18.x-0 || 1.19.x-0"
 )
 
 var _ phases.Runnable = (*Version)(nil)

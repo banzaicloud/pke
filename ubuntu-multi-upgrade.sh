@@ -3,7 +3,7 @@
 # build latest pke tool
 GOOS=linux make pke
 
-KUBERNETES_VERSION="${1:-v1.18.4}"
+KUBERNETES_VERSION="${1:-v1.18.9}"
 
 # upgrade first master node
 echo ""

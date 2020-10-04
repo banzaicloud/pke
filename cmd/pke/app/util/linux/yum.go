@@ -220,7 +220,7 @@ func mapYumPackageVersion(pkg, kubernetesVersion string) string {
 		return "kubelet-" + getYumPackageVersion(kubernetesVersion)
 
 	case kubernetescni:
-		return "kubernetes-cni-0.8.6-0"
+		return "kubernetes-cni-0.8.7-0"
 
 	default:
 		return ""
