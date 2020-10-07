@@ -55,7 +55,7 @@ spec:
       serviceAccountName: local-path-provisioner-service-account
       containers:
       - name: local-path-provisioner
-        image: banzaicloud/local-path-provisioner:v0.0.9
+        image: {{ .ImageRepository }}/local-path-provisioner:v0.0.9
         imagePullPolicy: Always
         command:
         - local-path-provisioner

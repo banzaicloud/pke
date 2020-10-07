@@ -27,7 +27,7 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
 
-func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider string, azureStorageAccountType, azureStorageKind string) error {
+func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cloudProvider string, azureStorageAccountType, azureStorageKind string, imageRepository string) error {
 	if disableDefaultStorageClass {
 		return nil
 	}
@@ -44,7 +44,7 @@ func applyDefaultStorageClass(out io.Writer, disableDefaultStorageClass bool, cl
 		// TODO: out-of-tree CSI volume plugins
 		return nil
 	default:
-		err = writeStorageClassLocalPathStorage(out, storageClassConfig)
+		err = writeStorageClassLocalPathStorage(out, storageClassConfig, imageRepository)
 	}
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func writeStorageClassAzure(out io.Writer, filename string, storageAccountType, 
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f storageClassLocalPathStorage storage_class_local_path_storage.yaml.tmpl
 
-func writeStorageClassLocalPathStorage(out io.Writer, filename string) error {
+func writeStorageClassLocalPathStorage(out io.Writer, filename string, imageRepository string) error {
 	_, _ = fmt.Fprintf(out, "[%s] creating local default storage class\n", use)
 
 	tmpl, err := template.New("storage-class-local-path").Parse(storageClassLocalPathStorageTemplate())
@@ -156,9 +156,13 @@ func writeStorageClassLocalPathStorage(out io.Writer, filename string) error {
 		return err
 	}
 
-	type data struct{}
+	type data struct {
+		ImageRepository string
+	}
 
-	d := data{}
+	d := data{
+		ImageRepository: imageRepository,
+	}
 
 	return file.WriteTemplate(filename, tmpl, d)
 }

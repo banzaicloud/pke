@@ -878,7 +878,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// apply default storage class
-	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider, c.azureStorageAccountType, c.azureStorageKind); err != nil {
+	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider, c.azureStorageAccountType, c.azureStorageKind, c.imageRepository); err != nil {
 		return err
 	}
 
