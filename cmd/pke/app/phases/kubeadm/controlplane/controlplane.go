@@ -861,7 +861,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// apply AutoApprover
-	if err := writeCertificateAutoApprover(out); err != nil {
+	if err := writeCertificateAutoApprover(out, c.imageRepository); err != nil {
 		return err
 	}
 	// apply PSP
@@ -1061,7 +1061,7 @@ func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error 
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f certificateAutoApprover certificate_auto_approver.yaml.tmpl
 
-func writeCertificateAutoApprover(out io.Writer) error {
+func writeCertificateAutoApprover(out io.Writer, imageRepository string) error {
 	filename := certificateAutoApprover
 	dir := filepath.Dir(filename)
 
@@ -1071,7 +1071,26 @@ func writeCertificateAutoApprover(out io.Writer) error {
 		return err
 	}
 
-	err = file.Overwrite(filename, certificateAutoApproverTemplate())
+	tmpl, err := template.New("").Parse(certificateAutoApproverTemplate())
+	if err != nil {
+		return err
+	}
+
+	type data struct {
+		ImageRepository string
+	}
+
+	d := data{
+		ImageRepository: imageRepository,
+	}
+
+	var b bytes.Buffer
+	err = tmpl.Execute(&b, d)
+	if err != nil {
+		return err
+	}
+
+	err = file.Overwrite(filename, b.String())
 	if err != nil {
 		return err
 	}
