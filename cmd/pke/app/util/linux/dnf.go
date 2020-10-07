@@ -94,10 +94,6 @@ func (y *DnfInstaller) InstallKubernetesPrerequisites(out io.Writer, kubernetesV
 		}
 	}
 
-	if _, err := runner.Cmd(out, cmdDnf, "update", "-y").CombinedOutputAsync(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
