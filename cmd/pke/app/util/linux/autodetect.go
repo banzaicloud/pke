@@ -28,9 +28,13 @@ func KubernetesPackagesImpl(out io.Writer) (KubernetesPackages, error) {
 	}
 	if err == nil {
 		v, _ := semver.NewVersion(ver)
-		c, _ := semver.NewConstraint("7.x-0 || 8.x-0")
-		if c.Check(v) {
+		c7, _ := semver.NewConstraint("7.x-0")
+		c8, _ := semver.NewConstraint("8.x-0")
+		if c7.Check(v) {
 			return NewYumInstaller(), nil
+		}
+		if c8.Check(v) {
+			return NewDnfInstaller(), nil
 		}
 	}
 
@@ -56,9 +60,13 @@ func ContainerdPackagesImpl(out io.Writer) (ContainerdPackages, error) {
 	}
 	if err == nil {
 		v, _ := semver.NewVersion(ver)
-		c, _ := semver.NewConstraint("7.x-0 || 8.x-0")
-		if c.Check(v) {
+		c7, _ := semver.NewConstraint("7.x-0")
+		c8, _ := semver.NewConstraint("8.x-0")
+		if c7.Check(v) {
 			return NewYumInstaller(), nil
+		}
+		if c8.Check(v) {
+			return NewDnfInstaller(), nil
 		}
 	}
 

@@ -1,0 +1,83 @@
+$enable_serial_logging = false
+
+raise "vagrant-vbguest plugin must be installed" unless Vagrant.has_plugin? "vagrant-vbguest"
+
+Vagrant.configure("2") do |config|
+    # Sync time with the local host
+    config.vm.provider 'virtualbox' do |vb|
+        vb.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 1000 ]
+    end
+
+    # sync build folder
+    config.vm.synced_folder '.', '/vagrant', disabled: true
+    config.vm.synced_folder 'scripts/vagrant/', '/scripts/', create: true
+    config.vm.synced_folder 'build/', '/banzaicloud/', create: true
+
+    $num_instances = 4
+
+    # centos 7 nodes
+    (1..$num_instances).each do |n|
+        config.vm.define "centos#{n}" do |node|
+            node.vm.box = "centos/8"
+            node.vm.network "private_network", ip: "192.168.64.#{n+10}"
+            node.vm.hostname = "centos#{n}"
+
+            # Monkey patch for https://github.com/dotless-de/vagrant-vbguest/issues/367
+            class Foo < VagrantVbguest::Installers::CentOS
+              def has_rel_repo?
+                unless instance_variable_defined?(:@has_rel_repo)
+                  rel = release_version
+                  @has_rel_repo = communicate.test("yum repolist")
+                end
+                @has_rel_repo
+              end
+
+              def install_kernel_devel(opts=nil, &block)
+                cmd = "yum update kernel -y"
+                communicate.sudo(cmd, opts, &block)
+
+                cmd = "yum install -y kernel-devel"
+                communicate.sudo(cmd, opts, &block)
+
+                cmd = "shutdown -r now"
+                communicate.sudo(cmd, opts, &block)
+
+                begin
+                  sleep 5
+                end until @vm.communicate.ready?
+              end
+            end
+            node.vbguest.installer = Foo
+
+            node.vm.provider "virtualbox" do |vb|
+                vb.name = "centos#{n}"
+                vb.memory = "2048"
+                vb.cpus = "2"
+                vb.customize ["modifyvm", :id, "--audio", "none"]
+                vb.customize ["modifyvm", :id, "--memory", "2048"]
+                vb.customize ["modifyvm", :id, "--cpus", "2"]
+            end
+
+            node.vm.provision "shell" do |s|
+                s.inline = <<-SHELL
+                dnf install -y yum-utils wget curl chrony vim net-tools socat
+                echo 'sync time'
+                systemctl enable --now chronyd
+                swapoff -a
+
+                echo 'set host name resolution'
+                cat >> /etc/hosts <<EOF
+192.168.64.11 centos1
+192.168.64.12 centos2
+192.168.64.13 centos3
+192.168.64.14 centos4
+EOF
+                cat /etc/hosts
+
+                hostnamectl set-hostname centos#{n}
+
+                SHELL
+            end
+        end
+    end
+end
