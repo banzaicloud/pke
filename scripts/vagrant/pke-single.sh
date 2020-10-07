@@ -3,7 +3,7 @@
 KUBERNETES_VERSION=$1
 APISERVER_ADDRESS="${2:-192.168.64.11:6443}"
 CONTAINER_RUNTIME="${3:-containerd}"
-NETWORK_PROVIDER="${4:-calico}"
+NETWORK_PROVIDER="${4:-cilium}"
 
 systemctl is-active kubelet || ( \
     /banzaicloud/pke version -o yaml || ( \
