@@ -127,11 +127,6 @@ func (y *DnfInstaller) InstallContainerdPrerequisites(out io.Writer, containerdV
 	if err := DnfInstall(out, []string{"libseccomp"}); err != nil {
 		return errors.Wrap(err, "unable to install libseccomp package")
 	}
-	// dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
-	_, err := runner.Cmd(out, cmdDnf, []string{"config-manager", "--add-repo=https://download.docker.com/linux/centos/docker-ce.repo"}...).CombinedOutputAsync()
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
