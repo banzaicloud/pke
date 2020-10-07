@@ -60,7 +60,6 @@ Vagrant.configure("2") do |config|
 
             node.vm.provision "shell" do |s|
                 s.inline = <<-SHELL
-                dnf update
                 dnf install -y yum-utils wget curl chrony vim net-tools socat
                 echo 'sync time'
                 systemctl enable --now chronyd
@@ -82,4 +81,3 @@ EOF
         end
     end
 end
-
