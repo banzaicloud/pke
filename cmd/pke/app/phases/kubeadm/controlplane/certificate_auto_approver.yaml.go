@@ -94,7 +94,7 @@ func certificateAutoApproverTemplate() string {
 		"      priorityClassName: system-cluster-critical\n" +
 		"      containers:\n" +
 		"        - name: auto-approver\n" +
-		"          image: banzaicloud/auto-approver:0.1.0\n" +
+		"          image: {{ .ImageRepository }}/auto-approver:0.1.0\n" +
 		"          imagePullPolicy: Always\n" +
 		"          env:\n" +
 		"            - name: WATCH_NAMESPACE\n" +

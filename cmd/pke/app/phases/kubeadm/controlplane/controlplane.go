@@ -15,6 +15,7 @@
 package controlplane
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
@@ -496,7 +497,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 			return err
 		}
 	case constants.NetworkProviderCilium:
-		if err := installCilium(out, kubeConfig, c.mtu); err != nil {
+		if err := installCilium(out, kubeConfig, c.imageRepository, c.mtu); err != nil {
 			return err
 		}
 	}
@@ -860,7 +861,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// apply AutoApprover
-	if err := writeCertificateAutoApprover(out); err != nil {
+	if err := writeCertificateAutoApprover(out, c.imageRepository); err != nil {
 		return err
 	}
 	// apply PSP
@@ -877,7 +878,7 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 	}
 
 	// apply default storage class
-	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider, c.azureStorageAccountType, c.azureStorageKind); err != nil {
+	if err := applyDefaultStorageClass(out, c.disableDefaultStorageClass, c.cloudProvider, c.azureStorageAccountType, c.azureStorageKind, c.imageRepository); err != nil {
 		return err
 	}
 
@@ -937,7 +938,7 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 //go:generate templify -t ${GOTMPL} -p controlplane -f cilium cilium.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f ciliumSysFsBpf cilium_sys_fs_bpf.mount.tmpl
 
-func installCilium(out io.Writer, kubeConfig string, mtu uint) error {
+func installCilium(out io.Writer, kubeConfig string, imageRepository string, mtu uint) error {
 	if _, err := os.Stat("/sys/fs/bpf"); err != nil {
 		// Mounting BPF filesystem
 		if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
@@ -949,11 +950,29 @@ func installCilium(out io.Writer, kubeConfig string, mtu uint) error {
 	}
 
 	// https://raw.githubusercontent.com/cilium/cilium/v1.6/install/kubernetes/quick-install.yaml
-	input := ciliumTemplate()
+	tmpl, err := template.New("").Parse(ciliumTemplate())
+	if err != nil {
+		return err
+	}
+
+	type data struct {
+		ImageRepository string
+	}
+
+	d := data{
+		ImageRepository: imageRepository,
+	}
+
+	var b bytes.Buffer
+	err = tmpl.Execute(&b, d)
+	if err != nil {
+		return err
+	}
+
 	cmd := runner.Cmd(out, cmdKubectl, "apply", "-f", "-")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	cmd.Stdin = strings.NewReader(input)
-	_, err := cmd.CombinedOutputAsync()
+	cmd.Stdin = strings.NewReader(b.String())
+	_, err = cmd.CombinedOutputAsync()
 	return err
 }
 
@@ -1042,7 +1061,7 @@ func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error 
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f certificateAutoApprover certificate_auto_approver.yaml.tmpl
 
-func writeCertificateAutoApprover(out io.Writer) error {
+func writeCertificateAutoApprover(out io.Writer, imageRepository string) error {
 	filename := certificateAutoApprover
 	dir := filepath.Dir(filename)
 
@@ -1052,7 +1071,26 @@ func writeCertificateAutoApprover(out io.Writer) error {
 		return err
 	}
 
-	err = file.Overwrite(filename, certificateAutoApproverTemplate())
+	tmpl, err := template.New("").Parse(certificateAutoApproverTemplate())
+	if err != nil {
+		return err
+	}
+
+	type data struct {
+		ImageRepository string
+	}
+
+	d := data{
+		ImageRepository: imageRepository,
+	}
+
+	var b bytes.Buffer
+	err = tmpl.Execute(&b, d)
+	if err != nil {
+		return err
+	}
+
+	err = file.Overwrite(filename, b.String())
 	if err != nil {
 		return err
 	}
