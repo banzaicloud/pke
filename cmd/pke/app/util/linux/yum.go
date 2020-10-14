@@ -15,31 +15,20 @@
 package linux
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"strings"
 
 	"emperror.dev/errors"
-	"github.com/Masterminds/semver"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
 
 const (
-	dotS                      = "."
-	dashS                     = "-"
-	cmdYum                    = "/bin/yum"
-	cmdRpm                    = "/bin/rpm"
-	kubeadm                   = "kubeadm"
-	kubectl                   = "kubectl"
-	kubelet                   = "kubelet"
-	kubernetescni             = "kubernetes-cni"
-	disableExcludesKubernetes = "--disableexcludes=kubernetes"
-	selinuxConfig             = "/etc/selinux/config"
-	banzaiCloudRPMRepo        = "/etc/yum.repos.d/banzaicloud.repo"
-	k8sRPMRepoFile            = "/etc/yum.repos.d/kubernetes.repo"
-	k8sRPMRepo                = `[kubernetes]
+	cmdYum             = "/bin/yum"
+	banzaiCloudRPMRepo = "/etc/yum.repos.d/banzaicloud.repo"
+	k8sRPMRepoFile     = "/etc/yum.repos.d/kubernetes.repo"
+	k8sRPMRepo         = `[kubernetes]
 name=Kubernetes
 baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
 enabled=1
@@ -49,75 +38,20 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cl
 exclude=kube*`
 )
 
-var (
-	errorUnableToParseRPMOutput = errors.New("Unable to parse rpm output")
-)
+func yumErrorMatcher(text string) bool {
+	return strings.Contains(strings.ToLower(text), "error") || strings.Contains(text, "No package ")
+}
 
-func YumInstall(out io.Writer, packages []string) error {
-	_, err := runner.Cmd(out, cmdYum, append([]string{"install", "-y"}, packages...)...).CombinedOutputAsync()
+func YumInstall(out io.Writer, packages packages) error {
+	cmd := runner.Cmd(out, cmdYum, append([]string{"install", "-y", disableExcludesKubernetes}, packages.strings()...)...)
+	cmd.ErrorMatcher(yumErrorMatcher)
+	text, err := cmd.CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
 
-	for _, pkg := range packages {
-		if pkg == "" {
-			continue
-		}
-		if pkg[:1] == "-" {
-			continue
-		}
-
-		name, ver, rel, arch, err := rpmQuery(out, pkg)
-		if err != nil {
-			return err
-		}
-		if name == pkg ||
-			name+"-"+ver == pkg ||
-			name+"-"+ver+"-"+rel == pkg ||
-			name+"-"+ver+"-"+rel+"."+arch == pkg {
-			continue
-		}
-		return errors.New(fmt.Sprintf("expected packgae version after installation: %q, got: %q", pkg, name+"-"+ver+"-"+rel+"."+arch))
-	}
-
-	return nil
-}
-
-func rpmQuery(out io.Writer, pkg string) (name, version, release, arch string, err error) {
-	b, err := runner.Cmd(out, cmdRpm, []string{"-q", pkg}...).Output()
-	if err != nil {
-		return
-	}
-
-	return parseRpmPackageOutput(string(b))
-}
-
-func parseRpmPackageOutput(pkg string) (name, version, release, arch string, err error) {
-	idx := strings.LastIndex(pkg, dotS)
-	if idx < 0 {
-		err = errorUnableToParseRPMOutput
-		return
-	}
-	arch = pkg[idx+1:]
-
-	pkg = pkg[:idx]
-	idx = strings.LastIndex(pkg, dashS)
-	if idx < 0 {
-		err = errorUnableToParseRPMOutput
-		return
-	}
-	release = pkg[idx+1:]
-
-	pkg = pkg[:idx]
-	idx = strings.LastIndex(pkg, dashS)
-	if idx < 0 {
-		err = errorUnableToParseRPMOutput
-		return
-	}
-	version = pkg[idx+1:]
-	name = pkg[:idx]
-
-	return
+	err = checkRPMPackages(out, packages)
+	return errors.WrapIff(err, "yum installation failed [%s]", text)
 }
 
 var _ ContainerdPackages = (*YumInstaller)(nil)
@@ -176,63 +110,28 @@ func NewYumInstaller() *YumInstaller {
 
 func (y *YumInstaller) InstallKubernetesPackages(out io.Writer, kubernetesVersion string) error {
 	// yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
-	p := []string{
-		mapYumPackageVersion(kubelet, kubernetesVersion),
-		mapYumPackageVersion(kubeadm, kubernetesVersion),
-		mapYumPackageVersion(kubectl, kubernetesVersion),
-		mapYumPackageVersion(kubernetescni, kubernetesVersion),
-		disableExcludesKubernetes,
-	}
+	pkg := packages{{kubeadm, kubernetesVersion},
+		{kubelet, kubernetesVersion},
+		{kubectl, kubernetesVersion},
+		{kubernetescni, kubernetesCNIVersion}}
 
-	return YumInstall(out, p)
+	return YumInstall(out, pkg)
 }
 
 func (y *YumInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion string) error {
 	// yum install -y kubeadm --disableexcludes=kubernetes
-	pkg := []string{
-		mapYumPackageVersion(kubeadm, kubernetesVersion),
-		mapYumPackageVersion(kubelet, kubernetesVersion),       // kubeadm dependency
-		mapYumPackageVersion(kubernetescni, kubernetesVersion), // kubeadm dependency
-		disableExcludesKubernetes,
-	}
+	pkg := []pkg{{kubeadm, kubernetesVersion},
+		{kubelet, kubernetesVersion},
+		{kubernetescni, kubernetesCNIVersion}}
 
 	return YumInstall(out, pkg)
 }
 
 func (y *YumInstaller) InstallContainerdPrerequisites(out io.Writer, containerdVersion string) error {
 	// yum install -y libseccomp
-	if err := YumInstall(out, []string{"libseccomp"}); err != nil {
+	if err := YumInstall(out, packages{{"libseccomp", ""}}); err != nil {
 		return errors.Wrap(err, "unable to install libseccomp package")
 	}
 
 	return nil
-}
-
-func mapYumPackageVersion(pkg, kubernetesVersion string) string {
-	switch pkg {
-	case kubeadm:
-		return "kubeadm-" + getYumPackageVersion(kubernetesVersion)
-
-	case kubectl:
-		return "kubectl-" + getYumPackageVersion(kubernetesVersion)
-
-	case kubelet:
-		return "kubelet-" + getYumPackageVersion(kubernetesVersion)
-
-	case kubernetescni:
-		return "kubernetes-cni-0.8.7-0"
-
-	default:
-		return ""
-	}
-}
-
-func getYumPackageVersion(kubernetesVersion string) string {
-	ver, _ := semver.NewVersion(kubernetesVersion)
-	// There was an issue with bundled CNI plugin so new package was released in case of versions below. (https://github.com/kubernetes/kubernetes/issues/92242)
-	c, _ := semver.NewConstraint("=1.16.11 || =1.17.7 || =1.18.4")
-	if c.Check(ver) {
-		return kubernetesVersion + "-1"
-	}
-	return kubernetesVersion + "-0"
 }

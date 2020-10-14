@@ -15,6 +15,10 @@
 package runner
 
 import (
+	"path/filepath"
+
+	"emperror.dev/errors"
+
 	"bufio"
 	"bytes"
 	"fmt"
@@ -25,20 +29,30 @@ import (
 )
 
 type Command struct {
-	name string
-	arg  []string
-	w    io.Writer
-	ts   time.Time
+	name         string
+	arg          []string
+	w            io.Writer
+	ts           time.Time
+	errorMatcher func(string) bool
 	*exec.Cmd
+}
+
+func trivialErrorMatcher(text string) bool {
+	return strings.Contains(strings.ToLower(text), "error")
 }
 
 func Cmd(w io.Writer, name string, arg ...string) *Command {
 	return &Command{
-		name: name,
-		arg:  arg,
-		w:    w,
-		Cmd:  exec.Command(name, arg...),
+		name:         name,
+		arg:          arg,
+		w:            w,
+		errorMatcher: trivialErrorMatcher,
+		Cmd:          exec.Command(name, arg...),
 	}
+}
+
+func (c *Command) ErrorMatcher(e func(string) bool) {
+	c.errorMatcher = e
 }
 
 func (c *Command) CombinedOutput() ([]byte, error) {
@@ -53,34 +67,36 @@ func (c *Command) CombinedOutput() ([]byte, error) {
 
 func (c *Command) CombinedOutputAsync() (string, error) {
 	lastLine := ""
+	firstError := ""
 
 	c.ts = time.Now()
+
 	stdout, err := c.Cmd.StdoutPipe()
 	if err != nil {
 		return lastLine, err
 	}
+
+	stdOutChan := make(chan string)
+	go func() {
+		scanner := bufio.NewScanner(stdout)
+		for scanner.Scan() {
+			stdOutChan <- scanner.Text()
+		}
+		close(stdOutChan)
+	}()
+
 	stderr, err := c.Cmd.StderrPipe()
 	if err != nil {
 		return lastLine, err
 	}
-	wait := make(chan bool, 2)
-	go func() {
-		scanner := bufio.NewScanner(stdout)
-		for scanner.Scan() {
-			m := scanner.Text()
-			lastLine = m
-			_, _ = fmt.Fprintf(c.w, "  out> %s\n", m)
-		}
-		wait <- true
-	}()
+
+	stdErrChan := make(chan string)
 	go func() {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
-			m := scanner.Text()
-			lastLine = m
-			_, _ = fmt.Fprintf(c.w, "  err> %s\n", m)
+			stdErrChan <- scanner.Text()
 		}
-		wait <- true
+		close(stdErrChan)
 	}()
 
 	err = c.Start()
@@ -88,10 +104,39 @@ func (c *Command) CombinedOutputAsync() (string, error) {
 		return lastLine, err
 	}
 
-	err = c.Wait()
-	<-wait
+	for stdErrChan != nil || stdOutChan != nil {
+		var text string
+		var more bool
+		select {
+		case text, more = <-stdOutChan:
+			_, _ = fmt.Fprintln(c.w, "out>", text)
+			if !more {
+				stdOutChan = nil
+			}
+		case text, more = <-stdErrChan:
+			_, _ = fmt.Fprintln(c.w, "err>", text)
+			if !more {
+				stdErrChan = nil
+			}
+		}
 
-	return lastLine, err
+		if firstError == "" && c.errorMatcher != nil && c.errorMatcher(text) {
+			firstError = text
+		}
+		lastLine = text
+	}
+
+	err = c.Wait()
+
+	var target error = &exec.ExitError{}
+	if errors.As(err, &target) {
+		err = errors.WrapIff(err, "%s failed [%s]", filepath.Base(c.Args[0]), firstError)
+	}
+
+	if firstError == "" {
+		firstError = lastLine
+	}
+	return firstError, err
 }
 
 func (c *Command) Output() ([]byte, error) {

@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"os"
+	"strings"
 
 	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
@@ -117,8 +118,14 @@ func (a *AptInstaller) InstallContainerdPrerequisites(out io.Writer, containerdV
 	return nil
 }
 
+func aptErrorMatcher(text string) bool {
+	return strings.HasPrefix(text, "E:")
+}
+
 func AptInstall(out io.Writer, packages []string) error {
-	_, err := runner.Cmd(out, cmdApt, append([]string{"install", "-y"}, packages...)...).CombinedOutputAsync()
+	cmd := runner.Cmd(out, cmdApt, append([]string{"install", "-y"}, packages...)...)
+	cmd.ErrorMatcher(aptErrorMatcher)
+	_, err := cmd.CombinedOutputAsync()
 	return err
 }
 
