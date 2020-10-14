@@ -114,7 +114,7 @@ func (n *Node) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagAPIServerHostPort, "", "Kubernetes API Server host port")
 	flags.String(constants.FlagKubeadmToken, "", "PKE join token")
 	flags.String(constants.FlagCACertHash, "", "CA cert hash")
-	flags.Bool(constants.FlagResetOnFailure, true, "Roll back changes after failures")
+	flags.Bool(constants.FlagResetOnFailure, false, "Roll back changes after failures")
 	// Pipeline nodepool name (optional)
 	flags.String(constants.FlagPipelineNodepool, "", "name of the nodepool the node belongs to")
 	// Azure cloud
