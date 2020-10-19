@@ -31,7 +31,7 @@ import (
 
 const (
 	use   = "image-pull"
-	short = "Pull images used bye PKE tool"
+	short = "Pull images used by PKE tool"
 
 	cmdKubeadm    = "kubeadm"
 	kubeadmConfig = "/etc/kubernetes/kubeadm.conf"
