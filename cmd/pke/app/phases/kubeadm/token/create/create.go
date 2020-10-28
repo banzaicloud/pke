@@ -81,7 +81,7 @@ func (c *Create) Run(out io.Writer) error {
 
 	cmd := runner.Cmd(ioutil.Discard, cmdKubeadm, "token", "create")
 	cmd.Env = append(os.Environ(), "KUBECONFIG="+kubeConfig)
-	o, err := cmd.CombinedOutput()
+	o, err := cmd.Output()
 	if err != nil {
 		return errors.Wrap(err, "failed to create secret")
 	}
