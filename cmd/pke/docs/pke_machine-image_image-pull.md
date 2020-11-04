@@ -4,11 +4,11 @@ generated_file: true
 ---
 ## pke machine-image image-pull
 
-Pull images used bye PKE tool
+Pull images used by PKE tool
 
 ### Synopsis
 
-Pull images used bye PKE tool
+Pull images used by PKE tool
 
 ```
 pke machine-image image-pull [flags]
@@ -19,7 +19,7 @@ pke machine-image image-pull [flags]
 ```
   -h, --help                        help for image-pull
       --image-repository string     Prefix for image repository (default "banzaicloud")
-      --kubernetes-version string   Kubernetes version (default "1.17.5")
+      --kubernetes-version string   Kubernetes version (default "1.18.9")
 ```
 
 ### SEE ALSO

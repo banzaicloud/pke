@@ -19,7 +19,7 @@ pke machine-image write-config [flags]
 ```
   -h, --help                                  help for write-config
       --kubernetes-container-runtime string   Kubernetes container runtime (default "containerd")
-      --kubernetes-version string             Kubernetes version (default "1.17.5")
+      --kubernetes-version string             Kubernetes version (default "1.18.9")
 ```
 
 ### SEE ALSO

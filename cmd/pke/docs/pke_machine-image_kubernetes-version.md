@@ -18,7 +18,7 @@ pke machine-image kubernetes-version [flags]
 
 ```
   -h, --help                        help for kubernetes-version
-      --kubernetes-version string   Kubernetes version (default "1.17.5")
+      --kubernetes-version string   Kubernetes version (default "1.18.9")
 ```
 
 ### SEE ALSO

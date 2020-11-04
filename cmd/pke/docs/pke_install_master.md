@@ -56,7 +56,7 @@ pke install master [flags]
       --kubernetes-oidc-issuer-url string                 URL of the OIDC provider which allows the API server to discover public signing keys
       --kubernetes-pod-network-cidr string                range of IP addresses for the pod network (default "10.20.0.0/16")
       --kubernetes-service-cidr string                    range of IP address for service VIPs (default "10.10.0.0/16")
-      --kubernetes-version string                         Kubernetes version (default "1.17.5")
+      --kubernetes-version string                         Kubernetes version (default "1.18.9")
       --lb-range string                                   Advertise the specified IPv4 range via ARP and allocate addresses for LoadBalancer Services (non-cloud only, example: 192.168.0.100-192.168.0.110)
       --pipeline-cluster-id int32                         Cluster ID to use with Pipeline API
       --pipeline-insecure                                 If the Pipeline API should not verify the API's certificate
@@ -64,7 +64,7 @@ pke install master [flags]
       --pipeline-org-id int32                             Organization ID to use with Pipeline API
   -t, --pipeline-token string                             Token for accessing Pipeline API
   -u, --pipeline-url string                               Pipeline API server url
-      --reset-on-failure                                  Roll back changes after failures (default true)
+      --reset-on-failure                                  Roll back changes after failures
       --taints strings                                    Specifies the taints the Node should be registered with (default [node-role.kubernetes.io/master:NoSchedule])
       --vsphere-datacenter string                         The name of the datacenter to use to store persistent volumes (and deploy temporary VMs to create them)
       --vsphere-datastore string                          The name of the datastore that is in the given datacenter, and is available on all nodes
