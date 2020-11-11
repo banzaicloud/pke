@@ -80,15 +80,15 @@ func kubeadmConfigV1Beta2Template() string {
 		"    terminated-pod-gc-threshold: \"10\"\n" +
 		"    feature-gates: \"RotateKubeletServerCertificate=true\"\n" +
 		"    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.ClusterSigningCertFile }}cluster-signing-cert-file: {{ .KubeadmConfig.ControllerManager.ExtraArgs.ClusterSigningCertFile }}{{end}}\n" +
-		"    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}cloud-provider: \"{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}\n" +
-		"    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}cloud-config: \"{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}\n" +
+		"    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}cloud-provider: \"{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}\"\n" +
+		"    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}cloud-config: \"{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}\"\n" +
 		"  extraVolumes:\n" +
 		"  {{range $k, $volume := .KubeadmConfig.ControllerManager.ExtraVolumes }}\n" +
 		"    - name: {{ $volume.Name }}\n" +
-		"\t    hostPath: {{ $volume.HostPath }}\n" +
-		"\t    mountPath: {{ $volume.MountPath }}\n" +
-		"\t    pathType: {{ $volume.PathType }}\n" +
-		"\t    readOnly: {{ $volume.ReadOnly }}{{end}}{{end}}{{end}}\n" +
+		"      hostPath: {{ $volume.HostPath }}\n" +
+		"      mountPath: {{ $volume.MountPath }}\n" +
+		"      pathType: {{ $volume.PathType }}\n" +
+		"      readOnly: {{ $volume.ReadOnly }}{{end}}{{end}}{{end}}\n" +
 		"etcd:\n" +
 		"  {{ if .KubeadmConfig.Etcd.External.Endpoints }}\n" +
 		"  external:\n" +

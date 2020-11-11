@@ -62,15 +62,15 @@ controllerManager:
     terminated-pod-gc-threshold: "10"
     feature-gates: "RotateKubeletServerCertificate=true"
     {{ if .KubeadmConfig.ControllerManager.ExtraArgs.ClusterSigningCertFile }}cluster-signing-cert-file: {{ .KubeadmConfig.ControllerManager.ExtraArgs.ClusterSigningCertFile }}{{end}}
-    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}cloud-provider: "{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}
-    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}cloud-config: "{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}
+    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}cloud-provider: "{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudProvider }}"
+    {{ if .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}cloud-config: "{{ .KubeadmConfig.ControllerManager.ExtraArgs.CloudConfig }}"
   extraVolumes:
   {{range $k, $volume := .KubeadmConfig.ControllerManager.ExtraVolumes }}
     - name: {{ $volume.Name }}
-	    hostPath: {{ $volume.HostPath }}
-	    mountPath: {{ $volume.MountPath }}
-	    pathType: {{ $volume.PathType }}
-	    readOnly: {{ $volume.ReadOnly }}{{end}}{{end}}{{end}}
+      hostPath: {{ $volume.HostPath }}
+      mountPath: {{ $volume.MountPath }}
+      pathType: {{ $volume.PathType }}
+      readOnly: {{ $volume.ReadOnly }}{{end}}{{end}}{{end}}
 etcd:
   {{ if .KubeadmConfig.Etcd.External.Endpoints }}
   external:
