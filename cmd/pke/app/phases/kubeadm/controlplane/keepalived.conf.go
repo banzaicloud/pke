@@ -29,16 +29,16 @@ func keepalivedConfTemplate() string {
 		"  rise 2\n" +
 		"}\n" +
 		"vrrp_instance VI_1 {\n" +
-		"    state {{ .state }}\n" +
-		"    interface {{ .iface }}\n" +
+		"    state {{ .State }}\n" +
+		"    interface {{ .Iface }}\n" +
 		"    virtual_router_id 51\n" +
-		"    priority {{ .priority }}\n" +
+		"    priority {{ .Priority }}\n" +
 		"    authentication {\n" +
 		"        auth_type PASS\n" +
-		"        auth_pass {{ .pass }}\n" +
+		"        auth_pass {{ .Pass }}\n" +
 		"    }\n" +
 		"    virtual_ipaddress {\n" +
-		"          {{ .vip }}\n" +
+		"          {{ .VIP }}\n" +
 		"    }\n" +
 		"    track_script {\n" +
 		"        check_apiserver\n" +

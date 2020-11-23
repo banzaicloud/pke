@@ -11,16 +11,16 @@ vrrp_script check_apiserver {
   rise 2
 }
 vrrp_instance VI_1 {
-    state {{ .state }}
-    interface {{ .iface }}
+    state {{ .State }}
+    interface {{ .Iface }}
     virtual_router_id 51
-    priority {{ .priority }}
+    priority {{ .Priority }}
     authentication {
         auth_type PASS
-        auth_pass {{ .pass }}
+        auth_pass {{ .Pass }}
     }
     virtual_ipaddress {
-          {{ .vip }}
+          {{ .VIP }}
     }
     track_script {
         check_apiserver

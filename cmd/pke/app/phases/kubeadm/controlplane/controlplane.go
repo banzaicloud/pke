@@ -1001,22 +1001,22 @@ func installKeepalived(vip, iface, uuid string, leader bool, out io.Writer) erro
 	}
 
 	data := struct {
-		state    string
-		iface    string
-		priority int
-		pass     string
-		vip      string
+		State    string
+		Iface    string
+		Priority int
+		Pass     string
+		VIP      string
 	}{
-		state:    "BACKUP",
-		priority: 100,
-		iface:    iface,
-		pass:     passFromUUID(uuid),
-		vip:      vip,
+		State:    "BACKUP",
+		Priority: 100,
+		Iface:    iface,
+		Pass:     passFromUUID(uuid),
+		VIP:      vip,
 	}
 
 	if leader {
-		data.state = "MASTER"
-		data.priority = 101
+		data.State = "MASTER"
+		data.Priority = 101
 	}
 
 	keepalivedFile, err := os.Create("/etc/keepalived/keepalived.conf")
