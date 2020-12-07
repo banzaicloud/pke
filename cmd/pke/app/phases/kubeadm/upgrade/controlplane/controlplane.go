@@ -37,7 +37,8 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
@@ -51,6 +52,8 @@ const (
 	cmdKubeadm                    = "kubeadm"
 	cmdKubectl                    = "kubectl"
 	certificateAutoApproverUpdate = "/etc/kubernetes/admission-control/deploy-auto-approver-update.yaml"
+	advertiseAddressAnnotation    = "kubeadm.kubernetes.io/kube-apiserver.advertise-address.endpoint"
+	kubeAPIServerManifestFile     = "/etc/kubernetes/manifests/kube-apiserver.yaml"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -62,6 +65,7 @@ type ControlPlane struct {
 	kubernetesAdditionalControlPlane bool
 	kubeadmConfigMap                 kubeadmConfigMap
 	kubeadmConfigUpgrade             string
+	advertiseAddress                 []string
 }
 
 type kubeadmConfigMap struct {
@@ -238,7 +242,12 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 	} else {
 		version, _ := semver.NewConstraint(">1.14")
 		if version.Check(to) {
-			err := c.getKubeadmConfigmap(out)
+			err := c.getKubeadmConfigmap()
+			if err != nil {
+				return err
+			}
+
+			err = c.getKubeAPIServerManifest()
 			if err != nil {
 				return err
 			}
@@ -321,7 +330,7 @@ func (c *ControlPlane) uploadKubeadmConf(out io.Writer) error {
 	return nil
 }
 
-func (c *ControlPlane) getKubeadmConfigmap(out io.Writer) error {
+func (c *ControlPlane) getKubeadmConfigmap() error {
 	cmd := runner.Cmd(ioutil.Discard, cmdKubeadm, "config", "view")
 	o, err := cmd.Output()
 	if err != nil {
@@ -331,6 +340,47 @@ func (c *ControlPlane) getKubeadmConfigmap(out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (c *ControlPlane) getKubeAPIServerManifest() error {
+	yamlFile, err := ioutil.ReadFile(kubeAPIServerManifestFile)
+	if err != nil {
+		return err
+	}
+
+	kubeAPIServerManifest := &corev1.Pod{}
+	err = yaml.Unmarshal(yamlFile, kubeAPIServerManifest)
+	if err != nil {
+		return err
+	}
+
+	advertiseAddress := make([]string, 2)
+	if kubeAPIServerManifest.Annotations != nil {
+		if kubeAPIServerManifest.Annotations[advertiseAddressAnnotation] != "" {
+			advertiseAddress = strings.Split(kubeAPIServerManifest.Annotations[advertiseAddressAnnotation], ":")
+		}
+	} else {
+		lines := []string{}
+		for _, container := range kubeAPIServerManifest.Spec.Containers {
+			if container.Name == "kube-apiserver" {
+				lines = container.Command
+			}
+		}
+
+		for _, line := range lines {
+			if strings.Contains(line, "--advertise-address") {
+				advertiseAddress[0] = strings.Split(line, "=")[1]
+				continue
+			}
+			if strings.Contains(line, "--secure-port") {
+				advertiseAddress[1] = strings.Split(line, "=")[1]
+				continue
+			}
+		}
+	}
+	c.advertiseAddress = advertiseAddress
+
 	return nil
 }
 
@@ -370,11 +420,10 @@ func (c *ControlPlane) generateNewKubeadmConfig(out io.Writer, from, to *semver.
 	d := data{
 		KubeadmConfig: c.kubeadmConfigMap,
 	}
-	apiServerAddress := []string{}
-	if c.kubeadmConfigMap.ControlPlaneEndpoint != "" {
-		apiServerAddress = strings.Split(c.kubeadmConfigMap.ControlPlaneEndpoint, ":")
-		d.APIServerAdvertiseAddress = apiServerAddress[0]
-		d.APIServerBindPort = apiServerAddress[1]
+
+	if c.advertiseAddress != nil {
+		d.APIServerAdvertiseAddress = c.advertiseAddress[0]
+		d.APIServerBindPort = c.advertiseAddress[1]
 	}
 
 	tmpl, err := template.New("kubeadm-config-ugrade").Parse(conf)
