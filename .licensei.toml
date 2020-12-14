@@ -13,4 +13,9 @@ ignored = [
     "go.uber.org/atomic",
     "go.uber.org/multierr",
     "github.com/russross/blackfriday",
+    "github.com/gogo/protobuf",
+    "sigs.k8s.io/structured-merge-diff/v3",
+    "sigs.k8s.io/yaml",
+    "k8s.io/klog/v2",
+    "sigs.k8s.io/structured-merge-diff/v4",
 ]
