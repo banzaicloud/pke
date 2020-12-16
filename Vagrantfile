@@ -58,7 +58,7 @@ EOF
     # Ubuntu LTS nodes
     (1..$num_instances).each do |n|
         config.vm.define "ubuntu#{n}" do |node|
-            node.vm.box = "ubuntu/bionic64"
+            node.vm.box = "ubuntu/focal64"
             node.vm.network "private_network", ip: "192.168.64.#{n+20}"
             node.vm.hostname = "ubuntu#{n}"
 
@@ -97,7 +97,7 @@ EOF
     end
 
     config.vm.define "ubuntu-docker" do |node|
-        node.vm.box = "ubuntu/bionic64"
+        node.vm.box = "ubuntu/focal64"
         node.vm.network "private_network", ip: "192.168.64.30"
         node.vm.hostname = "ubuntu-docker"
 
