@@ -4,6 +4,7 @@
 GOOS=linux make pke
 
 KUBERNETES_VERSION="${1:-v1.19.6}"
+export VAGRANT_VAGRANTFILE=Vagrantfile-centos8
 
 # upgrade first master node
 echo ""
