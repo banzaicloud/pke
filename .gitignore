@@ -5,6 +5,8 @@
 /pke-single-config.yaml
 /pke-multi-config.yaml
 
+/crt/*.crt
+
 **/.vagrant*
 .DS_Store
 
