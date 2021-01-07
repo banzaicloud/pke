@@ -2,6 +2,7 @@
 
 KUBERNETES_VERSION=$1
 APISERVER_ADDRESS="${2:-192.168.64.11:6443}"
+NETWORK_PROVIDER="${3:-cilium}"
 
 systemctl is-active kubelet || ( \
     /banzaicloud/pke version -o yaml || ( \
@@ -15,7 +16,8 @@ systemctl is-active kubelet || ( \
       --kubernetes-master-mode=ha \
       --kubernetes-version="${KUBERNETES_VERSION}" \
       --kubernetes-advertise-address="${APISERVER_ADDRESS}" \
-      --kubernetes-api-server="${APISERVER_ADDRESS}" && \
+      --kubernetes-api-server="${APISERVER_ADDRESS}" \
+      --kubernetes-network-provider="${NETWORK_PROVIDER}" && \
     mkdir -p $HOME/.kube && \
     cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && \
     chown $(id -u):$(id -g) $HOME/.kube/config

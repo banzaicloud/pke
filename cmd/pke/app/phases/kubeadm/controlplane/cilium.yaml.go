@@ -17,7 +17,21 @@ package controlplane
 // ciliumTemplate is a generated function returning the template as a string.
 func ciliumTemplate() string {
 	var tmpl = "---\n" +
-		"# Source: cilium/charts/config/templates/configmap.yaml\n" +
+		"# Source: cilium/templates/cilium-agent-serviceaccount.yaml\n" +
+		"apiVersion: v1\n" +
+		"kind: ServiceAccount\n" +
+		"metadata:\n" +
+		"  name: cilium\n" +
+		"  namespace: kube-system\n" +
+		"---\n" +
+		"# Source: cilium/templates/cilium-operator-serviceaccount.yaml\n" +
+		"apiVersion: v1\n" +
+		"kind: ServiceAccount\n" +
+		"metadata:\n" +
+		"  name: cilium-operator\n" +
+		"  namespace: kube-system\n" +
+		"---\n" +
+		"# Source: cilium/templates/cilium-configmap.yaml\n" +
 		"apiVersion: v1\n" +
 		"kind: ConfigMap\n" +
 		"metadata:\n" +
@@ -36,9 +50,14 @@ func ciliumTemplate() string {
 		"  #   the kvstore by commenting out the identity-allocation-mode below, or\n" +
 		"  #   setting it to \"kvstore\".\n" +
 		"  identity-allocation-mode: crd\n" +
+		"  cilium-endpoint-gc-interval: \"5m0s\"\n" +
 		"\n" +
 		"  # If you want to run cilium in debug mode change this value to true\n" +
 		"  debug: \"false\"\n" +
+		"  # The agent can be put into the following three policy enforcement modes\n" +
+		"  # default, always and never.\n" +
+		"  # https://docs.cilium.io/en/latest/policy/intro/#policy-enforcement-modes\n" +
+		"  enable-policy: \"default\"\n" +
 		"\n" +
 		"  # Enable IPv4 addressing. If enabled, all endpoints are allocated an IPv4\n" +
 		"  # address.\n" +
@@ -47,26 +66,35 @@ func ciliumTemplate() string {
 		"  # Enable IPv6 addressing. If enabled, all endpoints are allocated an IPv6\n" +
 		"  # address.\n" +
 		"  enable-ipv6: \"false\"\n" +
-		"\n" +
+		"  # Users who wish to specify their own custom CNI configuration file must set\n" +
+		"  # custom-cni-conf to \"true\", otherwise Cilium may overwrite the configuration.\n" +
+		"  custom-cni-conf: \"false\"\n" +
+		"  enable-bpf-clock-probe: \"true\"\n" +
 		"  # If you want cilium monitor to aggregate tracing for packets, set this level\n" +
 		"  # to \"low\", \"medium\", or \"maximum\". The higher the level, the less packets\n" +
 		"  # that will be seen in monitor output.\n" +
 		"  monitor-aggregation: medium\n" +
 		"\n" +
-		"  # ct-global-max-entries-* specifies the maximum number of connections\n" +
-		"  # supported across all endpoints, split by protocol: tcp or other. One pair\n" +
-		"  # of maps uses these values for IPv4 connections, and another pair of maps\n" +
-		"  # use these values for IPv6 connections.\n" +
+		"  # The monitor aggregation interval governs the typical time between monitor\n" +
+		"  # notification events for each allowed connection.\n" +
 		"  #\n" +
-		"  # If these values are modified, then during the next Cilium startup the\n" +
-		"  # tracking of ongoing connections may be disrupted. This may lead to brief\n" +
-		"  # policy drops or a change in loadbalancing decisions for a connection.\n" +
-		"  #\n" +
-		"  # For users upgrading from Cilium 1.2 or earlier, to minimize disruption\n" +
-		"  # during the upgrade process, comment out these options.\n" +
-		"  bpf-ct-global-tcp-max: \"524288\"\n" +
-		"  bpf-ct-global-any-max: \"262144\"\n" +
+		"  # Only effective when monitor aggregation is set to \"medium\" or higher.\n" +
+		"  monitor-aggregation-interval: 5s\n" +
 		"\n" +
+		"  # The monitor aggregation flags determine which TCP flags which, upon the\n" +
+		"  # first observation, cause monitor notifications to be generated.\n" +
+		"  #\n" +
+		"  # Only effective when monitor aggregation is set to \"medium\" or higher.\n" +
+		"  monitor-aggregation-flags: all\n" +
+		"  # Specifies the ratio (0.0-1.0) of total system memory to use for dynamic\n" +
+		"  # sizing of the TCP CT, non-TCP CT, NAT and policy BPF maps.\n" +
+		"  bpf-map-dynamic-size-ratio: \"0.0025\"\n" +
+		"  # bpf-policy-map-max specifies the maximum number of entries in endpoint\n" +
+		"  # policy map (per endpoint)\n" +
+		"  bpf-policy-map-max: \"16384\"\n" +
+		"  # bpf-lb-map-max specifies the maximum number of entries in bpf lb service,\n" +
+		"  # backend and affinity maps.\n" +
+		"  bpf-lb-map-max: \"65536\"\n" +
 		"  # Pre-allocation of map entries allows per-packet latency to be reduced, at\n" +
 		"  # the expense of up-front memory allocation for the entries in the maps. The\n" +
 		"  # default value below will minimize memory usage in the default installation;\n" +
@@ -77,9 +105,8 @@ func ciliumTemplate() string {
 		"  #\n" +
 		"  # If this value is modified, then during the next Cilium startup the restore\n" +
 		"  # of existing endpoints and tracking of ongoing connections may be disrupted.\n" +
-		"  # This may lead to policy drops or a change in loadbalancing decisions for a\n" +
-		"  # connection for some time. Endpoints may need to be recreated to restore\n" +
-		"  # connectivity.\n" +
+		"  # As a result, reply packets may be dropped and the load-balancing decisions\n" +
+		"  # for established connections may change.\n" +
 		"  #\n" +
 		"  # If this option is set to \"false\" during an upgrade from 1.3 or earlier to\n" +
 		"  # 1.4 or later, then it may cause one-time disruptions during the upgrade.\n" +
@@ -98,76 +125,42 @@ func ciliumTemplate() string {
 		"\n" +
 		"  # Name of the cluster. Only relevant when building a mesh of clusters.\n" +
 		"  cluster-name: default\n" +
-		"\n" +
-		"  # DNS Polling periodically issues a DNS lookup for each `matchName` from\n" +
-		"  # cilium-agent. The result is used to regenerate endpoint policy.\n" +
-		"  # DNS lookups are repeated with an interval of 5 seconds, and are made for\n" +
-		"  # A(IPv4) and AAAA(IPv6) addresses. Should a lookup fail, the most recent IP\n" +
-		"  # data is used instead. An IP change will trigger a regeneration of the Cilium\n" +
-		"  # policy for each endpoint and increment the per cilium-agent policy\n" +
-		"  # repository revision.\n" +
-		"  #\n" +
-		"  # This option is disabled by default starting from version 1.4.x in favor\n" +
-		"  # of a more powerful DNS proxy-based implementation, see [0] for details.\n" +
-		"  # Enable this option if you want to use FQDN policies but do not want to use\n" +
-		"  # the DNS proxy.\n" +
-		"  #\n" +
-		"  # To ease upgrade, users may opt to set this option to \"true\".\n" +
-		"  # Otherwise please refer to the Upgrade Guide [1] which explains how to\n" +
-		"  # prepare policy rules for upgrade.\n" +
-		"  #\n" +
-		"  # [0] http://docs.cilium.io/en/stable/policy/language/#dns-based\n" +
-		"  # [1] http://docs.cilium.io/en/stable/install/upgrade/#changes-that-may-require-action\n" +
-		"  tofqdns-enable-poller: \"false\"\n" +
+		"  # Enables L7 proxy for L7 policy enforcement and visibility\n" +
+		"  enable-l7-proxy: \"true\"\n" +
 		"\n" +
 		"  # wait-bpf-mount makes init container wait until bpf filesystem is mounted\n" +
 		"  wait-bpf-mount: \"false\"\n" +
 		"\n" +
-		"  # Enable fetching of container-runtime specific metadata\n" +
-		"  #\n" +
-		"  # By default, the Kubernetes pod and namespace labels are retrieved and\n" +
-		"  # associated with endpoints for identification purposes. By integrating\n" +
-		"  # with the container runtime, container runtime specific labels can be\n" +
-		"  # retrieved, such labels will be prefixed with container:\n" +
-		"  #\n" +
-		"  # CAUTION: The container runtime labels can include information such as pod\n" +
-		"  # annotations which may result in each pod being associated a unique set of\n" +
-		"  # labels which can result in excessive security identities being allocated.\n" +
-		"  # Please review the labels filter when enabling container runtime labels.\n" +
-		"  #\n" +
-		"  # Supported values:\n" +
-		"  # - containerd\n" +
-		"  # - crio\n" +
-		"  # - docker\n" +
-		"  # - none\n" +
-		"  # - auto (automatically detect the container runtime)\n" +
-		"  #\n" +
-		"  container-runtime: none\n" +
-		"\n" +
 		"  masquerade: \"true\"\n" +
+		"  enable-bpf-masquerade: \"true\"\n" +
 		"\n" +
+		"  enable-xt-socket-fallback: \"true\"\n" +
 		"  install-iptables-rules: \"true\"\n" +
+		"\n" +
 		"  auto-direct-node-routes: \"false\"\n" +
-		"  enable-node-port: \"false\"\n" +
-		"\n" +
+		"  enable-bandwidth-manager: \"false\"\n" +
+		"  enable-local-redirect-policy: \"false\"\n" +
+		"  kube-proxy-replacement:  \"probe\"\n" +
+		"  kube-proxy-replacement-healthz-bind-address: \"\"\n" +
+		"  enable-health-check-nodeport: \"true\"\n" +
+		"  node-port-bind-protection: \"true\"\n" +
+		"  enable-auto-protect-node-port-range: \"true\"\n" +
+		"  enable-session-affinity: \"true\"\n" +
+		"  enable-endpoint-health-checking: \"true\"\n" +
+		"  enable-health-checking: \"true\"\n" +
+		"  enable-well-known-identities: \"false\"\n" +
+		"  enable-remote-node-identity: \"true\"\n" +
+		"  operator-api-serve-addr: \"127.0.0.1:9234\"\n" +
+		"  # Enable Hubble gRPC service.\n" +
+		"  enable-hubble: \"true\"\n" +
+		"  # UNIX domain socket for Hubble server to listen to.\n" +
+		"  hubble-socket-path:  \"/var/run/cilium/hubble.sock\"\n" +
+		"  ipam: \"cluster-pool\"\n" +
+		"  cluster-pool-ipv4-cidr: \"{{ .PodCIDR }}\"\n" +
+		"  cluster-pool-ipv4-mask-size: \"24\"\n" +
+		"  disable-cnp-status-updates: \"true\"\n" +
 		"---\n" +
-		"# Source: cilium/charts/agent/templates/serviceaccount.yaml\n" +
-		"apiVersion: v1\n" +
-		"kind: ServiceAccount\n" +
-		"metadata:\n" +
-		"  name: cilium\n" +
-		"  namespace: kube-system\n" +
-		"\n" +
-		"---\n" +
-		"# Source: cilium/charts/operator/templates/serviceaccount.yaml\n" +
-		"apiVersion: v1\n" +
-		"kind: ServiceAccount\n" +
-		"metadata:\n" +
-		"  name: cilium-operator\n" +
-		"  namespace: kube-system\n" +
-		"\n" +
-		"---\n" +
-		"# Source: cilium/charts/agent/templates/clusterrole.yaml\n" +
+		"# Source: cilium/templates/cilium-agent-clusterrole.yaml\n" +
 		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRole\n" +
 		"metadata:\n" +
@@ -177,6 +170,14 @@ func ciliumTemplate() string {
 		"  - networking.k8s.io\n" +
 		"  resources:\n" +
 		"  - networkpolicies\n" +
+		"  verbs:\n" +
+		"  - get\n" +
+		"  - list\n" +
+		"  - watch\n" +
+		"- apiGroups:\n" +
+		"  - discovery.k8s.io\n" +
+		"  resources:\n" +
+		"  - endpointslices\n" +
 		"  verbs:\n" +
 		"  - get\n" +
 		"  - list\n" +
@@ -196,6 +197,16 @@ func ciliumTemplate() string {
 		"  - \"\"\n" +
 		"  resources:\n" +
 		"  - pods\n" +
+		"  - pods/finalizers\n" +
+		"  verbs:\n" +
+		"  - get\n" +
+		"  - list\n" +
+		"  - watch\n" +
+		"  - update\n" +
+		"  - delete\n" +
+		"- apiGroups:\n" +
+		"  - \"\"\n" +
+		"  resources:\n" +
 		"  - nodes\n" +
 		"  verbs:\n" +
 		"  - get\n" +
@@ -210,40 +221,44 @@ func ciliumTemplate() string {
 		"  verbs:\n" +
 		"  - patch\n" +
 		"- apiGroups:\n" +
-		"  - extensions\n" +
-		"  resources:\n" +
-		"  - ingresses\n" +
-		"  verbs:\n" +
-		"  - create\n" +
-		"  - get\n" +
-		"  - list\n" +
-		"  - watch\n" +
-		"- apiGroups:\n" +
 		"  - apiextensions.k8s.io\n" +
 		"  resources:\n" +
 		"  - customresourcedefinitions\n" +
 		"  verbs:\n" +
+		"  # Deprecated for removal in v1.10\n" +
 		"  - create\n" +
-		"  - get\n" +
 		"  - list\n" +
 		"  - watch\n" +
 		"  - update\n" +
+		"\n" +
+		"  # This is used when validating policies in preflight. This will need to stay\n" +
+		"  # until we figure out how to avoid \"get\" inside the preflight, and then\n" +
+		"  # should be removed ideally.\n" +
+		"  - get\n" +
 		"- apiGroups:\n" +
 		"  - cilium.io\n" +
 		"  resources:\n" +
 		"  - ciliumnetworkpolicies\n" +
 		"  - ciliumnetworkpolicies/status\n" +
+		"  - ciliumnetworkpolicies/finalizers\n" +
+		"  - ciliumclusterwidenetworkpolicies\n" +
+		"  - ciliumclusterwidenetworkpolicies/status\n" +
+		"  - ciliumclusterwidenetworkpolicies/finalizers\n" +
 		"  - ciliumendpoints\n" +
 		"  - ciliumendpoints/status\n" +
+		"  - ciliumendpoints/finalizers\n" +
 		"  - ciliumnodes\n" +
 		"  - ciliumnodes/status\n" +
+		"  - ciliumnodes/finalizers\n" +
 		"  - ciliumidentities\n" +
-		"  - ciliumidentities/status\n" +
+		"  - ciliumidentities/finalizers\n" +
+		"  - ciliumlocalredirectpolicies\n" +
+		"  - ciliumlocalredirectpolicies/status\n" +
+		"  - ciliumlocalredirectpolicies/finalizers\n" +
 		"  verbs:\n" +
 		"  - '*'\n" +
-		"\n" +
 		"---\n" +
-		"# Source: cilium/charts/operator/templates/clusterrole.yaml\n" +
+		"# Source: cilium/templates/cilium-operator-clusterrole.yaml\n" +
 		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRole\n" +
 		"metadata:\n" +
@@ -261,12 +276,16 @@ func ciliumTemplate() string {
 		"  - watch\n" +
 		"  - delete\n" +
 		"- apiGroups:\n" +
+		"  - discovery.k8s.io\n" +
+		"  resources:\n" +
+		"  - endpointslices\n" +
+		"  verbs:\n" +
+		"  - get\n" +
+		"  - list\n" +
+		"  - watch\n" +
+		"- apiGroups:\n" +
 		"  - \"\"\n" +
 		"  resources:\n" +
-		"  # to automatically read from k8s and import the node's pod CIDR to cilium's\n" +
-		"  # etcd so all nodes know how to reach another pod running in in a different\n" +
-		"  # node.\n" +
-		"  - nodes\n" +
 		"  # to perform the translation of a CNP that contains `ToGroup` to its endpoints\n" +
 		"  - services\n" +
 		"  - endpoints\n" +
@@ -281,17 +300,53 @@ func ciliumTemplate() string {
 		"  resources:\n" +
 		"  - ciliumnetworkpolicies\n" +
 		"  - ciliumnetworkpolicies/status\n" +
+		"  - ciliumnetworkpolicies/finalizers\n" +
+		"  - ciliumclusterwidenetworkpolicies\n" +
+		"  - ciliumclusterwidenetworkpolicies/status\n" +
+		"  - ciliumclusterwidenetworkpolicies/finalizers\n" +
 		"  - ciliumendpoints\n" +
 		"  - ciliumendpoints/status\n" +
+		"  - ciliumendpoints/finalizers\n" +
 		"  - ciliumnodes\n" +
 		"  - ciliumnodes/status\n" +
+		"  - ciliumnodes/finalizers\n" +
 		"  - ciliumidentities\n" +
 		"  - ciliumidentities/status\n" +
+		"  - ciliumidentities/finalizers\n" +
+		"  - ciliumlocalredirectpolicies\n" +
+		"  - ciliumlocalredirectpolicies/status\n" +
+		"  - ciliumlocalredirectpolicies/finalizers\n" +
 		"  verbs:\n" +
 		"  - '*'\n" +
-		"\n" +
+		"- apiGroups:\n" +
+		"  - apiextensions.k8s.io\n" +
+		"  resources:\n" +
+		"  - customresourcedefinitions\n" +
+		"  verbs:\n" +
+		"  - create\n" +
+		"  - get\n" +
+		"  - list\n" +
+		"  - update\n" +
+		"  - watch\n" +
+		"# For cilium-operator running in HA mode.\n" +
+		"#\n" +
+		"# Cilium operator running in HA mode requires the use of ResourceLock for Leader Election\n" +
+		"# between mulitple running instances.\n" +
+		"# The preferred way of doing this is to use LeasesResourceLock as edits to Leases are less\n" +
+		"# common and fewer objects in the cluster watch \"all Leases\".\n" +
+		"# The support for leases was introduced in coordination.k8s.io/v1 during Kubernetes 1.14 release.\n" +
+		"# In Cilium we currently don't support HA mode for K8s version < 1.14. This condition make sure\n" +
+		"# that we only authorize access to leases resources in supported K8s versions.\n" +
+		"- apiGroups:\n" +
+		"  - coordination.k8s.io\n" +
+		"  resources:\n" +
+		"  - leases\n" +
+		"  verbs:\n" +
+		"  - create\n" +
+		"  - get\n" +
+		"  - update\n" +
 		"---\n" +
-		"# Source: cilium/charts/agent/templates/clusterrolebinding.yaml\n" +
+		"# Source: cilium/templates/cilium-agent-clusterrolebinding.yaml\n" +
 		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRoleBinding\n" +
 		"metadata:\n" +
@@ -304,9 +359,8 @@ func ciliumTemplate() string {
 		"- kind: ServiceAccount\n" +
 		"  name: cilium\n" +
 		"  namespace: kube-system\n" +
-		"\n" +
 		"---\n" +
-		"# Source: cilium/charts/operator/templates/clusterrolebinding.yaml\n" +
+		"# Source: cilium/templates/cilium-operator-clusterrolebinding.yaml\n" +
 		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRoleBinding\n" +
 		"metadata:\n" +
@@ -319,22 +373,23 @@ func ciliumTemplate() string {
 		"- kind: ServiceAccount\n" +
 		"  name: cilium-operator\n" +
 		"  namespace: kube-system\n" +
-		"\n" +
 		"---\n" +
-		"# Source: cilium/charts/agent/templates/daemonset.yaml\n" +
+		"# Source: cilium/templates/cilium-agent-daemonset.yaml\n" +
 		"apiVersion: apps/v1\n" +
 		"kind: DaemonSet\n" +
 		"metadata:\n" +
 		"  labels:\n" +
 		"    k8s-app: cilium\n" +
-		"    kubernetes.io/cluster-service: \"true\"\n" +
 		"  name: cilium\n" +
 		"  namespace: kube-system\n" +
 		"spec:\n" +
 		"  selector:\n" +
 		"    matchLabels:\n" +
 		"      k8s-app: cilium\n" +
-		"      kubernetes.io/cluster-service: \"true\"\n" +
+		"  updateStrategy:\n" +
+		"    rollingUpdate:\n" +
+		"      maxUnavailable: 2\n" +
+		"    type: RollingUpdate\n" +
 		"  template:\n" +
 		"    metadata:\n" +
 		"      annotations:\n" +
@@ -343,16 +398,55 @@ func ciliumTemplate() string {
 		"        # gets priority scheduling.\n" +
 		"        # https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/\n" +
 		"        scheduler.alpha.kubernetes.io/critical-pod: \"\"\n" +
-		"        scheduler.alpha.kubernetes.io/tolerations: '[{\"key\":\"dedicated\",\"operator\":\"Equal\",\"value\":\"master\",\"effect\":\"NoSchedule\"}]'\n" +
 		"      labels:\n" +
 		"        k8s-app: cilium\n" +
-		"        kubernetes.io/cluster-service: \"true\"\n" +
 		"    spec:\n" +
+		"      affinity:\n" +
+		"        podAntiAffinity:\n" +
+		"          requiredDuringSchedulingIgnoredDuringExecution:\n" +
+		"          - labelSelector:\n" +
+		"              matchExpressions:\n" +
+		"              - key: k8s-app\n" +
+		"                operator: In\n" +
+		"                values:\n" +
+		"                - cilium\n" +
+		"            topologyKey: kubernetes.io/hostname\n" +
 		"      containers:\n" +
 		"      - args:\n" +
 		"        - --config-dir=/tmp/cilium/config-map\n" +
 		"        command:\n" +
 		"        - cilium-agent\n" +
+		"        livenessProbe:\n" +
+		"          httpGet:\n" +
+		"            host: '127.0.0.1'\n" +
+		"            path: /healthz\n" +
+		"            port: 9876\n" +
+		"            scheme: HTTP\n" +
+		"            httpHeaders:\n" +
+		"            - name: \"brief\"\n" +
+		"              value: \"true\"\n" +
+		"          failureThreshold: 10\n" +
+		"          # The initial delay for the liveness probe is intentionally large to\n" +
+		"          # avoid an endless kill & restart cycle if in the event that the initial\n" +
+		"          # bootstrapping takes longer than expected.\n" +
+		"          initialDelaySeconds: 120\n" +
+		"          periodSeconds: 30\n" +
+		"          successThreshold: 1\n" +
+		"          timeoutSeconds: 5\n" +
+		"        readinessProbe:\n" +
+		"          httpGet:\n" +
+		"            host: '127.0.0.1'\n" +
+		"            path: /healthz\n" +
+		"            port: 9876\n" +
+		"            scheme: HTTP\n" +
+		"            httpHeaders:\n" +
+		"            - name: \"brief\"\n" +
+		"              value: \"true\"\n" +
+		"          failureThreshold: 3\n" +
+		"          initialDelaySeconds: 5\n" +
+		"          periodSeconds: 30\n" +
+		"          successThreshold: 1\n" +
+		"          timeoutSeconds: 5\n" +
 		"        env:\n" +
 		"        - name: K8S_NODE_NAME\n" +
 		"          valueFrom:\n" +
@@ -390,43 +484,19 @@ func ciliumTemplate() string {
 		"              key: custom-cni-conf\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        image: \"{{ .ImageRepository }}/cilium:v1.6.4\"\n" +
+		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        lifecycle:\n" +
 		"          postStart:\n" +
 		"            exec:\n" +
 		"              command:\n" +
-		"              - /cni-install.sh\n" +
+		"              - \"/cni-install.sh\"\n" +
+		"              - \"--enable-debug=false\"\n" +
 		"          preStop:\n" +
 		"            exec:\n" +
 		"              command:\n" +
 		"              - /cni-uninstall.sh\n" +
-		"        livenessProbe:\n" +
-		"          exec:\n" +
-		"            command:\n" +
-		"            - cilium\n" +
-		"            - status\n" +
-		"            - --brief\n" +
-		"          failureThreshold: 10\n" +
-		"          # The initial delay for the liveness probe is intentionally large to\n" +
-		"          # avoid an endless kill & restart cycle if in the event that the initial\n" +
-		"          # bootstrapping takes longer than expected.\n" +
-		"          initialDelaySeconds: 120\n" +
-		"          periodSeconds: 30\n" +
-		"          successThreshold: 1\n" +
-		"          timeoutSeconds: 5\n" +
 		"        name: cilium-agent\n" +
-		"        readinessProbe:\n" +
-		"          exec:\n" +
-		"            command:\n" +
-		"            - cilium\n" +
-		"            - status\n" +
-		"            - --brief\n" +
-		"          failureThreshold: 3\n" +
-		"          initialDelaySeconds: 5\n" +
-		"          periodSeconds: 30\n" +
-		"          successThreshold: 1\n" +
-		"          timeoutSeconds: 5\n" +
 		"        securityContext:\n" +
 		"          capabilities:\n" +
 		"            add:\n" +
@@ -477,7 +547,7 @@ func ciliumTemplate() string {
 		"              key: wait-bpf-mount\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        image: \"{{ .ImageRepository }}/cilium:v1.6.4\"\n" +
+		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: clean-cilium-state\n" +
 		"        securityContext:\n" +
@@ -488,9 +558,15 @@ func ciliumTemplate() string {
 		"        volumeMounts:\n" +
 		"        - mountPath: /sys/fs/bpf\n" +
 		"          name: bpf-maps\n" +
+		"          mountPropagation: HostToContainer\n" +
 		"        - mountPath: /var/run/cilium\n" +
 		"          name: cilium-run\n" +
+		"        resources:\n" +
+		"          requests:\n" +
+		"            cpu: 100m\n" +
+		"            memory: 100Mi\n" +
 		"      restartPolicy: Always\n" +
+		"      priorityClassName: system-node-critical\n" +
 		"      serviceAccount: cilium\n" +
 		"      serviceAccountName: cilium\n" +
 		"      terminationGracePeriodSeconds: 1\n" +
@@ -536,13 +612,8 @@ func ciliumTemplate() string {
 		"      - configMap:\n" +
 		"          name: cilium-config\n" +
 		"        name: cilium-config-path\n" +
-		"  updateStrategy:\n" +
-		"    rollingUpdate:\n" +
-		"      maxUnavailable: 2\n" +
-		"    type: RollingUpdate\n" +
-		"\n" +
 		"---\n" +
-		"# Source: cilium/charts/operator/templates/deployment.yaml\n" +
+		"# Source: cilium/templates/cilium-operator-deployment.yaml\n" +
 		"apiVersion: apps/v1\n" +
 		"kind: Deployment\n" +
 		"metadata:\n" +
@@ -552,7 +623,14 @@ func ciliumTemplate() string {
 		"  name: cilium-operator\n" +
 		"  namespace: kube-system\n" +
 		"spec:\n" +
+		"  # We support HA mode only for Kubernetes version > 1.14\n" +
+		"  # See docs on ServerCapabilities.LeasesResourceLock in file pkg/k8s/version/version.go\n" +
+		"  # for more details.\n" +
+		"  {{ if .Single }}\n" +
 		"  replicas: 1\n" +
+		"  {{else}}\n" +
+		"  replicas: 2\n" +
+		"  {{end}}\n" +
 		"  selector:\n" +
 		"    matchLabels:\n" +
 		"      io.cilium/app: operator\n" +
@@ -569,117 +647,69 @@ func ciliumTemplate() string {
 		"        io.cilium/app: operator\n" +
 		"        name: cilium-operator\n" +
 		"    spec:\n" +
+		"      # In HA mode, cilium-operator pods must not be scheduled on the same\n" +
+		"      # node as they will clash with each other.\n" +
+		"      affinity:\n" +
+		"        podAntiAffinity:\n" +
+		"          requiredDuringSchedulingIgnoredDuringExecution:\n" +
+		"          - labelSelector:\n" +
+		"              matchExpressions:\n" +
+		"              - key: io.cilium/app\n" +
+		"                operator: In\n" +
+		"                values:\n" +
+		"                - operator\n" +
+		"            topologyKey: kubernetes.io/hostname\n" +
 		"      containers:\n" +
 		"      - args:\n" +
+		"        - --config-dir=/tmp/cilium/config-map\n" +
 		"        - --debug=$(CILIUM_DEBUG)\n" +
-		"        - --identity-allocation-mode=$(CILIUM_IDENTITY_ALLOCATION_MODE)\n" +
 		"        command:\n" +
-		"        - cilium-operator\n" +
+		"        - cilium-operator-generic\n" +
 		"        env:\n" +
-		"        - name: CILIUM_K8S_NAMESPACE\n" +
-		"          valueFrom:\n" +
-		"            fieldRef:\n" +
-		"              apiVersion: v1\n" +
-		"              fieldPath: metadata.namespace\n" +
 		"        - name: K8S_NODE_NAME\n" +
 		"          valueFrom:\n" +
 		"            fieldRef:\n" +
 		"              apiVersion: v1\n" +
 		"              fieldPath: spec.nodeName\n" +
+		"        - name: CILIUM_K8S_NAMESPACE\n" +
+		"          valueFrom:\n" +
+		"            fieldRef:\n" +
+		"              apiVersion: v1\n" +
+		"              fieldPath: metadata.namespace\n" +
 		"        - name: CILIUM_DEBUG\n" +
 		"          valueFrom:\n" +
 		"            configMapKeyRef:\n" +
 		"              key: debug\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        - name: CILIUM_CLUSTER_NAME\n" +
-		"          valueFrom:\n" +
-		"            configMapKeyRef:\n" +
-		"              key: cluster-name\n" +
-		"              name: cilium-config\n" +
-		"              optional: true\n" +
-		"        - name: CILIUM_CLUSTER_ID\n" +
-		"          valueFrom:\n" +
-		"            configMapKeyRef:\n" +
-		"              key: cluster-id\n" +
-		"              name: cilium-config\n" +
-		"              optional: true\n" +
-		"        - name: CILIUM_IPAM\n" +
-		"          valueFrom:\n" +
-		"            configMapKeyRef:\n" +
-		"              key: ipam\n" +
-		"              name: cilium-config\n" +
-		"              optional: true\n" +
-		"        - name: CILIUM_DISABLE_ENDPOINT_CRD\n" +
-		"          valueFrom:\n" +
-		"            configMapKeyRef:\n" +
-		"              key: disable-endpoint-crd\n" +
-		"              name: cilium-config\n" +
-		"              optional: true\n" +
-		"        - name: CILIUM_KVSTORE\n" +
-		"          valueFrom:\n" +
-		"            configMapKeyRef:\n" +
-		"              key: kvstore\n" +
-		"              name: cilium-config\n" +
-		"              optional: true\n" +
-		"        - name: CILIUM_KVSTORE_OPT\n" +
-		"          valueFrom:\n" +
-		"            configMapKeyRef:\n" +
-		"              key: kvstore-opt\n" +
-		"              name: cilium-config\n" +
-		"              optional: true\n" +
-		"        - name: AWS_ACCESS_KEY_ID\n" +
-		"          valueFrom:\n" +
-		"            secretKeyRef:\n" +
-		"              key: AWS_ACCESS_KEY_ID\n" +
-		"              name: cilium-aws\n" +
-		"              optional: true\n" +
-		"        - name: AWS_SECRET_ACCESS_KEY\n" +
-		"          valueFrom:\n" +
-		"            secretKeyRef:\n" +
-		"              key: AWS_SECRET_ACCESS_KEY\n" +
-		"              name: cilium-aws\n" +
-		"              optional: true\n" +
-		"        - name: AWS_DEFAULT_REGION\n" +
-		"          valueFrom:\n" +
-		"            secretKeyRef:\n" +
-		"              key: AWS_DEFAULT_REGION\n" +
-		"              name: cilium-aws\n" +
-		"              optional: true\n" +
-		"        - name: CILIUM_IDENTITY_ALLOCATION_MODE\n" +
-		"          valueFrom:\n" +
-		"            configMapKeyRef:\n" +
-		"              key: identity-allocation-mode\n" +
-		"              name: cilium-config\n" +
-		"              optional: true\n" +
-		"        image: \"{{ .ImageRepository }}/cilium-operator:v1.6.4\"\n" +
+		"        image: \"{{ .ImageRepository }}/cilium-operator:v1.9.1\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: cilium-operator\n" +
 		"        livenessProbe:\n" +
 		"          httpGet:\n" +
+		"            host: '127.0.0.1'\n" +
 		"            path: /healthz\n" +
 		"            port: 9234\n" +
 		"            scheme: HTTP\n" +
 		"          initialDelaySeconds: 60\n" +
 		"          periodSeconds: 10\n" +
 		"          timeoutSeconds: 3\n" +
-		"\n" +
+		"        volumeMounts:\n" +
+		"        - mountPath: /tmp/cilium/config-map\n" +
+		"          name: cilium-config-path\n" +
+		"          readOnly: true\n" +
 		"      hostNetwork: true\n" +
 		"      restartPolicy: Always\n" +
+		"      priorityClassName: system-cluster-critical\n" +
 		"      serviceAccount: cilium-operator\n" +
 		"      serviceAccountName: cilium-operator\n" +
-		"\n" +
-		"---\n" +
-		"# Source: cilium/charts/agent/templates/servicemonitor.yaml\n" +
-		"\n" +
-		"---\n" +
-		"# Source: cilium/charts/agent/templates/svc.yaml\n" +
-		"\n" +
-		"---\n" +
-		"# Source: cilium/charts/operator/templates/servicemonitor.yaml\n" +
-		"\n" +
-		"---\n" +
-		"# Source: cilium/charts/operator/templates/svc.yaml\n" +
+		"      tolerations:\n" +
+		"      - operator: Exists\n" +
+		"      volumes:\n" +
+		"        # To read the configuration from the config map\n" +
+		"      - configMap:\n" +
+		"          name: cilium-config\n" +
+		"        name: cilium-config-path\n" +
 		""
 	return tmpl
 }

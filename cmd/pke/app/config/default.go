@@ -14,7 +14,7 @@
 
 package config
 
-const DefaultKubernetesVersion = "1.18.9"
+const DefaultKubernetesVersion = "1.18.14"
 
 func Default() Config {
 	return Config{

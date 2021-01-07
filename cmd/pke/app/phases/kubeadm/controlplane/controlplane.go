@@ -78,6 +78,8 @@ const (
 	auditLogDir                   = "/var/log/audit/apiserver"
 	encryptionSecretLength        = 32
 	ciliumBpfMountSystemd         = "/etc/systemd/system/sys-fs-bpf.mount"
+	singleMode                    = "single"
+	haMode                        = "ha"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -330,11 +332,11 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	}
 
 	switch c.clusterMode {
-	case "single":
+	case singleMode:
 		c.azureExcludeMasterFromStandardLB = false
 	case "default":
 		// noop
-	case "ha":
+	case haMode:
 		if err := c.pipelineJoin(cmd); err != nil {
 			return err
 		}
@@ -452,7 +454,7 @@ func (c *ControlPlane) appendAdvertiseAddressAsLoopback() error {
 func (c *ControlPlane) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", c.Use())
 
-	if c.clusterMode == "ha" {
+	if c.clusterMode == haMode {
 		// additional master node
 		if c.joinControlPlane {
 			// make sure api server stabilized operation and not restarting
@@ -497,7 +499,11 @@ func (c *ControlPlane) Run(out io.Writer) error {
 			return err
 		}
 	case constants.NetworkProviderCilium:
-		if err := installCilium(out, kubeConfig, c.imageRepository, c.mtu); err != nil {
+		var single bool
+		if c.clusterMode == singleMode {
+			single = true
+		}
+		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, c.mtu, single); err != nil {
 			return err
 		}
 	}
@@ -938,7 +944,7 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 //go:generate templify -t ${GOTMPL} -p controlplane -f cilium cilium.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f ciliumSysFsBpf cilium_sys_fs_bpf.mount.tmpl
 
-func installCilium(out io.Writer, kubeConfig string, imageRepository string, mtu uint) error {
+func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository string, mtu uint, single bool) error {
 	if _, err := os.Stat("/sys/fs/bpf"); err != nil {
 		// Mounting BPF filesystem
 		if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
@@ -957,10 +963,14 @@ func installCilium(out io.Writer, kubeConfig string, imageRepository string, mtu
 
 	type data struct {
 		ImageRepository string
+		PodCIDR         string
+		Single          bool
 	}
 
 	d := data{
 		ImageRepository: imageRepository,
+		PodCIDR:         podNetworkCIDR,
+		Single:          single,
 	}
 
 	var b bytes.Buffer
@@ -1047,7 +1057,7 @@ func waitForAPIServer(out io.Writer) error {
 }
 
 func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error {
-	if clusterMode != "single" {
+	if clusterMode != singleMode {
 		_, _ = fmt.Fprintf(out, "skipping NoSchedule taint removal\n")
 		return nil
 	}
