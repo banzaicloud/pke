@@ -497,7 +497,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 			return err
 		}
 	case constants.NetworkProviderCilium:
-		if err := installCilium(out, kubeConfig, c.imageRepository, c.mtu); err != nil {
+		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, c.mtu); err != nil {
 			return err
 		}
 	}
@@ -938,7 +938,7 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 //go:generate templify -t ${GOTMPL} -p controlplane -f cilium cilium.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f ciliumSysFsBpf cilium_sys_fs_bpf.mount.tmpl
 
-func installCilium(out io.Writer, kubeConfig string, imageRepository string, mtu uint) error {
+func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository string, mtu uint) error {
 	if _, err := os.Stat("/sys/fs/bpf"); err != nil {
 		// Mounting BPF filesystem
 		if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
@@ -957,10 +957,12 @@ func installCilium(out io.Writer, kubeConfig string, imageRepository string, mtu
 
 	type data struct {
 		ImageRepository string
+		PodCIDR         string
 	}
 
 	d := data{
 		ImageRepository: imageRepository,
+		PodCIDR:         podNetworkCIDR,
 	}
 
 	var b bytes.Buffer

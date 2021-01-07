@@ -54,6 +54,10 @@ func ciliumTemplate() string {
 		"\n" +
 		"  # If you want to run cilium in debug mode change this value to true\n" +
 		"  debug: \"false\"\n" +
+		"  # The agent can be put into the following three policy enforcement modes\n" +
+		"  # default, always and never.\n" +
+		"  # https://docs.cilium.io/en/latest/policy/intro/#policy-enforcement-modes\n" +
+		"  enable-policy: \"default\"\n" +
 		"\n" +
 		"  # Enable IPv4 addressing. If enabled, all endpoints are allocated an IPv4\n" +
 		"  # address.\n" +
@@ -152,7 +156,7 @@ func ciliumTemplate() string {
 		"  # UNIX domain socket for Hubble server to listen to.\n" +
 		"  hubble-socket-path:  \"/var/run/cilium/hubble.sock\"\n" +
 		"  ipam: \"cluster-pool\"\n" +
-		"  cluster-pool-ipv4-cidr: \"10.0.0.0/8\"\n" +
+		"  cluster-pool-ipv4-cidr: \"{{ .PodCIDR }}\"\n" +
 		"  cluster-pool-ipv4-mask-size: \"24\"\n" +
 		"  disable-cnp-status-updates: \"true\"\n" +
 		"---\n" +
@@ -480,7 +484,7 @@ func ciliumTemplate() string {
 		"              key: custom-cni-conf\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        image: quay.io/cilium/cilium:v1.9.0\n" +
+		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        lifecycle:\n" +
 		"          postStart:\n" +
@@ -543,7 +547,7 @@ func ciliumTemplate() string {
 		"              key: wait-bpf-mount\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        image: quay.io/cilium/cilium:v1.9.0\n" +
+		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: clean-cilium-state\n" +
 		"        securityContext:\n" +
@@ -674,7 +678,7 @@ func ciliumTemplate() string {
 		"              key: debug\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        image: quay.io/cilium/operator-generic:v1.9.0\n" +
+		"        image: \"{{ .ImageRepository }}/cilium-operator:v1.9.1\"\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: cilium-operator\n" +
 		"        livenessProbe:\n" +
