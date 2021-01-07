@@ -78,6 +78,8 @@ const (
 	auditLogDir                   = "/var/log/audit/apiserver"
 	encryptionSecretLength        = 32
 	ciliumBpfMountSystemd         = "/etc/systemd/system/sys-fs-bpf.mount"
+	singleMode                    = "single"
+	haMode                        = "ha"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
@@ -330,11 +332,11 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	}
 
 	switch c.clusterMode {
-	case "single":
+	case singleMode:
 		c.azureExcludeMasterFromStandardLB = false
 	case "default":
 		// noop
-	case "ha":
+	case haMode:
 		if err := c.pipelineJoin(cmd); err != nil {
 			return err
 		}
@@ -452,7 +454,7 @@ func (c *ControlPlane) appendAdvertiseAddressAsLoopback() error {
 func (c *ControlPlane) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", c.Use())
 
-	if c.clusterMode == "ha" {
+	if c.clusterMode == haMode {
 		// additional master node
 		if c.joinControlPlane {
 			// make sure api server stabilized operation and not restarting
@@ -498,7 +500,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		}
 	case constants.NetworkProviderCilium:
 		var single bool
-		if c.clusterMode == "single" {
+		if c.clusterMode == singleMode {
 			single = true
 		}
 		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, c.mtu, single); err != nil {
@@ -1055,7 +1057,7 @@ func waitForAPIServer(out io.Writer) error {
 }
 
 func taintRemoveNoSchedule(out io.Writer, clusterMode, kubeConfig string) error {
-	if clusterMode != "single" {
+	if clusterMode != singleMode {
 		_, _ = fmt.Fprintf(out, "skipping NoSchedule taint removal\n")
 		return nil
 	}
