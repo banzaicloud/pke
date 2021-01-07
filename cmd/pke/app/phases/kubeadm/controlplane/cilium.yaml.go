@@ -626,7 +626,11 @@ func ciliumTemplate() string {
 		"  # We support HA mode only for Kubernetes version > 1.14\n" +
 		"  # See docs on ServerCapabilities.LeasesResourceLock in file pkg/k8s/version/version.go\n" +
 		"  # for more details.\n" +
+		"  {{ if .Single }}\n" +
+		"  replicas: 1\n" +
+		"  {{else}}\n" +
 		"  replicas: 2\n" +
+		"  {{end}}\n" +
 		"  selector:\n" +
 		"    matchLabels:\n" +
 		"      io.cilium/app: operator\n" +

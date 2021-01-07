@@ -608,7 +608,11 @@ spec:
   # We support HA mode only for Kubernetes version > 1.14
   # See docs on ServerCapabilities.LeasesResourceLock in file pkg/k8s/version/version.go
   # for more details.
+  {{ if .Single }}
+  replicas: 1
+  {{else}}
   replicas: 2
+  {{end}}
   selector:
     matchLabels:
       io.cilium/app: operator
