@@ -1,9 +1,10 @@
 # UpdateClusterRequestV2
 
 ## Properties
+
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Nodepools** | [**[]PkeOnAzureNodePool**](PKEOnAzureNodePool.md) |  | [optional] 
+**Nodepools** | [**[]PkeOnVsphereNodePool**](PKEOnVsphereNodePool.md) |  | [optional] 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

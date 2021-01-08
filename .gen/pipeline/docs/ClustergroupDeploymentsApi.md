@@ -12,24 +12,30 @@ Method | HTTP request | Description
 [**ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsPost**](ClustergroupDeploymentsApi.md#ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsPost) | **Post** /api/v1/orgs/{orgid}/clustergroups/{clusterGroupId}/deployments | Create Cluster Group Deployment
 
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameDelete**
-> DeploymentTargetClusterStatus ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameDelete(ctx, orgid, clusterGroupId, deploymentName, optional)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameDelete
+
+> DeploymentTargetClusterStatus ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameDelete(ctx, orgId, clusterGroupId, deploymentName, optional)
+
 Delete Cluster Group Deployment
 
 deletes a cluster group deployment, also deleting deployments from member clusters
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
-  **deploymentName** | **string**| release name of a cluster group deployment | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
+**deploymentName** | **string**| release name of a cluster group deployment | 
  **optional** | ***ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameDeleteOpts** | optional parameters | nil if no parameters
 
 ### Optional Parameters
+
 Optional parameters are passed through a pointer to a ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameDeleteOpts struct
+
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
@@ -48,25 +54,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameGet**
-> DeploymentDeploymentInfo ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameGet(ctx, orgid, clusterGroupId, deploymentName)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameGet
+
+> DeploymentDeploymentInfo ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameGet(ctx, orgId, clusterGroupId, deploymentName)
+
 Get Cluster Group Deployment
 
 retrieve info about a cluster group deployment and it's status on each member cluster
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
-  **deploymentName** | **string**| release name of a cluster group deployment | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
+**deploymentName** | **string**| release name of a cluster group deployment | 
 
 ### Return type
 
@@ -78,26 +90,32 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNamePut**
-> DeploymentCreateUpdateDeploymentResponse ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNamePut(ctx, orgid, clusterGroupId, deploymentName, deploymentClusterGroupDeployment)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNamePut
+
+> DeploymentCreateUpdateDeploymentResponse ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNamePut(ctx, orgId, clusterGroupId, deploymentName, deploymentClusterGroupDeployment)
+
 Update Cluster Group Deployment
 
 updates a cluster group deployment, installs or upgrades deployment on each member cluster accordingly
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
-  **deploymentName** | **string**| release name of a cluster group deployment | 
-  **deploymentClusterGroupDeployment** | [**DeploymentClusterGroupDeployment**](DeploymentClusterGroupDeployment.md)| Deployment Update Request | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
+**deploymentName** | **string**| release name of a cluster group deployment | 
+**deploymentClusterGroupDeployment** | [**DeploymentClusterGroupDeployment**](DeploymentClusterGroupDeployment.md)| Deployment Update Request | 
 
 ### Return type
 
@@ -109,25 +127,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: application/json
+- **Content-Type**: application/json
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameSyncPut**
-> DeploymentTargetClusterStatus ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameSyncPut(ctx, orgid, clusterGroupId, deploymentName)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameSyncPut
+
+> DeploymentTargetClusterStatus ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsDeploymentNameSyncPut(ctx, orgId, clusterGroupId, deploymentName)
+
 Synchronize Cluster Group Deployment
 
 install / upgrade deployment to target clusters where deployment is not found or has wrong
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
-  **deploymentName** | **string**| release name of a cluster group deployment | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
+**deploymentName** | **string**| release name of a cluster group deployment | 
 
 ### Return type
 
@@ -139,24 +163,30 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsGet**
-> []DeploymentListDeploymentResponse ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsGet(ctx, orgid, clusterGroupId)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsGet
+
+> []DeploymentListDeploymentResponse ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsGet(ctx, orgId, clusterGroupId)
+
 Get All Deployments of a Cluster Group
 
 retrieve all deployments from a cluster group
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
 
 ### Return type
 
@@ -168,25 +198,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsPost**
-> DeploymentCreateUpdateDeploymentResponse ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsPost(ctx, orgid, clusterGroupId, deploymentClusterGroupDeployment)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsPost
+
+> DeploymentCreateUpdateDeploymentResponse ApiV1OrgsOrgidClustergroupsClusterGroupIdDeploymentsPost(ctx, orgId, clusterGroupId, deploymentClusterGroupDeployment)
+
 Create Cluster Group Deployment
 
 creates a new cluster group deployment, installs or upgrades deployment on each member cluster accordingly
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
-  **deploymentClusterGroupDeployment** | [**DeploymentClusterGroupDeployment**](DeploymentClusterGroupDeployment.md)| Deployment Create Request | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
+**deploymentClusterGroupDeployment** | [**DeploymentClusterGroupDeployment**](DeploymentClusterGroupDeployment.md)| Deployment Create Request | 
 
 ### Return type
 
@@ -198,8 +234,10 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: application/json
+- **Content-Type**: application/json
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 

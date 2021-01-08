@@ -6,21 +6,25 @@ Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**GetOrg**](OrganizationsApi.md#GetOrg) | **Get** /api/v1/orgs/{orgId} | Get organization
 [**ListOrgs**](OrganizationsApi.md#ListOrgs) | **Get** /api/v1/orgs | List organizations
-[**SyncOrgs**](OrganizationsApi.md#SyncOrgs) | **Put** /api/v1/orgs | Synchronize Github organizations
+[**SyncOrgs**](OrganizationsApi.md#SyncOrgs) | **Put** /api/v1/orgs | Synchronize organizations
 
 
-# **GetOrg**
+
+## GetOrg
+
 > OrganizationListItemResponse GetOrg(ctx, orgId)
+
 Get organization
 
 Getting organization
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgId** | **int32**| Organization identification | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
 
 ### Return type
 
@@ -32,18 +36,24 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ListOrgs**
+
+## ListOrgs
+
 > []OrganizationListItemResponse ListOrgs(ctx, )
+
 List organizations
 
 Listing organizations
 
 ### Required Parameters
+
 This endpoint does not need any parameter.
 
 ### Return type
@@ -56,16 +66,22 @@ This endpoint does not need any parameter.
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **SyncOrgs**
+
+## SyncOrgs
+
 > SyncOrgs(ctx, )
-Synchronize Github organizations
+
+Synchronize organizations
 
 ### Required Parameters
+
 This endpoint does not need any parameter.
 
 ### Return type
@@ -78,8 +94,10 @@ This endpoint does not need any parameter.
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 

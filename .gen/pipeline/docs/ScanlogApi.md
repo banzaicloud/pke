@@ -8,19 +8,23 @@ Method | HTTP request | Description
 [**ListScansByRelease**](ScanlogApi.md#ListScansByRelease) | **Get** /api/v1/orgs/{orgId}/clusters/{id}/scanlog/{releaseName} | List scans by release
 
 
-# **ListScans**
-> []ScanLogItem ListScans(ctx, id, orgId)
+
+## ListScans
+
+> []ScanLogItem ListScans(ctx, orgId, id)
+
 List scans
 
 List scans
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **id** | **int32**| Selected cluster identification (number) | 
-  **orgId** | **int32**| Organization identification | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
 
 ### Return type
 
@@ -32,25 +36,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ListScansByRelease**
-> []ScanLogItem ListScansByRelease(ctx, id, orgId, releaseName)
+
+## ListScansByRelease
+
+> []ScanLogItem ListScansByRelease(ctx, orgId, id, releaseName)
+
 List scans by release
 
 List scans by release
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **id** | **int32**| Selected cluster identification (number) | 
-  **orgId** | **int32**| Organization identification | 
-  **releaseName** | **string**| release name identification | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**id** | **int32**| Cluster identifier | 
+**releaseName** | **string**| release name identification | 
 
 ### Return type
 
@@ -62,8 +72,10 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 

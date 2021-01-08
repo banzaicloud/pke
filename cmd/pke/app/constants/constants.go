@@ -114,6 +114,8 @@ const (
 	FlagControlPlaneJoin = "kubernetes-join-control-plane"
 	// FlagAdditionalControlPlane upgrade additional control plane node.
 	FlagAdditionalControlPlane = "kubernetes-additional-control-plane"
+	// FlagResetOnFailure decides if we try to roll back on failures
+	FlagResetOnFailure = "reset-on-failure"
 
 	// FlagImageRepository prefix for image repository.
 	FlagImageRepository = "image-repository"

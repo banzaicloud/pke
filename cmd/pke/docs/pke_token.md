@@ -1,3 +1,7 @@
+---
+title: pke token
+generated_file: true
+---
 ## pke token
 
 Manage Kubernetes bootstrap tokens
@@ -14,7 +18,7 @@ Manage Kubernetes bootstrap tokens
 
 ### SEE ALSO
 
-* [pke](pke.md)	 - Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)
-* [pke token create](pke_token_create.md)	 - Create Kubernetes bootstrap token
-* [pke token list](pke_token_list.md)	 - List Kubernetes bootstrap token(s)
+* [pke](/docs/pke/cli/reference/pke/)	 - Bootstrap a secure Kubernetes cluster with Banzai Cloud Pipeline Kubernetes Engine (PKE)
+* [pke token create](/docs/pke/cli/reference/pke_token_create/)	 - Create Kubernetes bootstrap token
+* [pke token list](/docs/pke/cli/reference/pke_token_list/)	 - List Kubernetes bootstrap token(s)
 

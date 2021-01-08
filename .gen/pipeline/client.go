@@ -1,9 +1,9 @@
 /*
  * Pipeline API
  *
- * Pipeline v0.3.0 swagger
+ * Pipeline is a feature rich application platform, built for containers on top of Kubernetes to automate the DevOps experience, continuous application development and the lifecycle of deployments. 
  *
- * API version: master
+ * API version: latest
  * Contact: info@banzaicloud.com
  */
 
@@ -19,8 +19,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -35,11 +38,11 @@ import (
 )
 
 var (
-	jsonCheck = regexp.MustCompile("(?i:[application|text]/json)")
-	xmlCheck  = regexp.MustCompile("(?i:[application|text]/xml)")
+	jsonCheck = regexp.MustCompile(`(?i:(?:application|text)/(?:(?:vnd\.[^;]+\+)|(?:problem\+))?json)`)
+	xmlCheck  = regexp.MustCompile(`(?i:(?:application|text)/xml)`)
 )
 
-// APIClient manages communication with the Pipeline API API vmaster
+// APIClient manages communication with the Pipeline API API vlatest
 // In most cases there should be only one, shared, APIClient.
 type APIClient struct {
 	cfg    *Configuration
@@ -59,8 +62,6 @@ type APIClient struct {
 
 	AuthApi *AuthApiService
 
-	ClusterFeaturesApi *ClusterFeaturesApiService
-
 	ClustergroupDeploymentsApi *ClustergroupDeploymentsApiService
 
 	ClustergroupFeaturesApi *ClustergroupFeaturesApiService
@@ -73,7 +74,7 @@ type APIClient struct {
 
 	DeploymentsApi *DeploymentsApiService
 
-	DomainApi *DomainApiService
+	GoogleApi *GoogleApiService
 
 	HelmApi *HelmApiService
 
@@ -81,23 +82,21 @@ type APIClient struct {
 
 	ImagesApi *ImagesApiService
 
-	ImagescanApi *ImagescanApiService
-
 	InfoApi *InfoApiService
+
+	IntegratedServicesApi *IntegratedServicesApiService
 
 	NetworkApi *NetworkApiService
 
 	OrganizationsApi *OrganizationsApiService
 
-	PoliciesApi *PoliciesApiService
+	PipelineApi *PipelineApiService
 
-	ProjectsApi *ProjectsApiService
+	ProcessesApi *ProcessesApiService
 
 	ScanlogApi *ScanlogApiService
 
 	SecretsApi *SecretsApiService
-
-	SpotguidesApi *SpotguidesApiService
 
 	StorageApi *StorageApiService
 
@@ -128,26 +127,24 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.ArkRestoresApi = (*ArkRestoresApiService)(&c.common)
 	c.ArkSchedulesApi = (*ArkSchedulesApiService)(&c.common)
 	c.AuthApi = (*AuthApiService)(&c.common)
-	c.ClusterFeaturesApi = (*ClusterFeaturesApiService)(&c.common)
 	c.ClustergroupDeploymentsApi = (*ClustergroupDeploymentsApiService)(&c.common)
 	c.ClustergroupFeaturesApi = (*ClustergroupFeaturesApiService)(&c.common)
 	c.ClustergroupsApi = (*ClustergroupsApiService)(&c.common)
 	c.ClustersApi = (*ClustersApiService)(&c.common)
 	c.CommonApi = (*CommonApiService)(&c.common)
 	c.DeploymentsApi = (*DeploymentsApiService)(&c.common)
-	c.DomainApi = (*DomainApiService)(&c.common)
+	c.GoogleApi = (*GoogleApiService)(&c.common)
 	c.HelmApi = (*HelmApiService)(&c.common)
 	c.HpaApi = (*HpaApiService)(&c.common)
 	c.ImagesApi = (*ImagesApiService)(&c.common)
-	c.ImagescanApi = (*ImagescanApiService)(&c.common)
 	c.InfoApi = (*InfoApiService)(&c.common)
+	c.IntegratedServicesApi = (*IntegratedServicesApiService)(&c.common)
 	c.NetworkApi = (*NetworkApiService)(&c.common)
 	c.OrganizationsApi = (*OrganizationsApiService)(&c.common)
-	c.PoliciesApi = (*PoliciesApiService)(&c.common)
-	c.ProjectsApi = (*ProjectsApiService)(&c.common)
+	c.PipelineApi = (*PipelineApiService)(&c.common)
+	c.ProcessesApi = (*ProcessesApiService)(&c.common)
 	c.ScanlogApi = (*ScanlogApiService)(&c.common)
 	c.SecretsApi = (*SecretsApiService)(&c.common)
-	c.SpotguidesApi = (*SpotguidesApiService)(&c.common)
 	c.StorageApi = (*StorageApiService)(&c.common)
 	c.UsersApi = (*UsersApiService)(&c.common)
 	c.WhitelistApi = (*WhitelistApiService)(&c.common)
@@ -231,14 +228,51 @@ func parameterToString(obj interface{}, collectionFormat string) string {
 	return fmt.Sprintf("%v", obj)
 }
 
-// callAPI do the request.
-func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
-	return c.cfg.HTTPClient.Do(request)
+// helper for converting interface{} parameters to json strings
+func parameterToJson(obj interface{}) (string, error) {
+	jsonBuf, err := json.Marshal(obj)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBuf), err
 }
 
-// Change base path to allow switching to mocks
+
+// callAPI do the request.
+func (c *APIClient) callAPI(request *http.Request) (*http.Response, error) {
+	if c.cfg.Debug {
+	        dump, err := httputil.DumpRequestOut(request, true)
+		if err != nil {
+		        return nil, err
+		}
+		log.Printf("\n%s\n", string(dump))
+	}
+
+	resp, err := c.cfg.HTTPClient.Do(request)
+	if err != nil {
+		return resp, err
+	}
+
+	if c.cfg.Debug {
+		dump, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			return resp, err
+		}
+		log.Printf("\n%s\n", string(dump))
+	}
+
+	return resp, err
+}
+
+// ChangeBasePath changes base path to allow switching to mocks
 func (c *APIClient) ChangeBasePath(path string) {
 	c.cfg.BasePath = path
+}
+
+// Allow modification of underlying config for alternate implementations and testing
+// Caution: modifying the configuration while live can cause data races and potentially unwanted behavior
+func (c *APIClient) GetConfig() *Configuration {
+	return c.cfg
 }
 
 // prepareRequest build the request
@@ -300,9 +334,10 @@ func (c *APIClient) prepareRequest(
 			if err != nil {
 				return nil, err
 			}
-			// Set the Boundary in the Content-Type
-			headerParams["Content-Type"] = w.FormDataContentType()
 		}
+
+		// Set the Boundary in the Content-Type
+		headerParams["Content-Type"] = w.FormDataContentType()
 
 		// Set Content-Length
 		headerParams["Content-Length"] = fmt.Sprintf("%d", body.Len())
@@ -323,6 +358,16 @@ func (c *APIClient) prepareRequest(
 	url, err := url.Parse(path)
 	if err != nil {
 		return nil, err
+	}
+
+	// Override request host, if applicable
+	if c.cfg.Host != "" {
+		url.Host = c.cfg.Host
+	}
+
+	// Override request scheme, if applicable
+	if c.cfg.Scheme != "" {
+		url.Scheme = c.cfg.Scheme
 	}
 
 	// Adding Query Param
@@ -355,11 +400,6 @@ func (c *APIClient) prepareRequest(
 		localVarRequest.Header = headers
 	}
 
-	// Override request host, if applicable
-	if c.cfg.Host != "" {
-		localVarRequest.Host = c.cfg.Host
-	}
-
 	// Add the user agent to the request.
 	localVarRequest.Header.Add("User-Agent", c.cfg.UserAgent)
 
@@ -389,6 +429,7 @@ func (c *APIClient) prepareRequest(
 		if auth, ok := ctx.Value(ContextAccessToken).(string); ok {
 			localVarRequest.Header.Add("Authorization", "Bearer "+auth)
 		}
+
 	}
 
 	for header, value := range c.cfg.DefaultHeader {
@@ -399,17 +440,34 @@ func (c *APIClient) prepareRequest(
 }
 
 func (c *APIClient) decode(v interface{}, b []byte, contentType string) (err error) {
-		if strings.Contains(contentType, "application/xml") {
-			if err = xml.Unmarshal(b, v); err != nil {
-				return err
-			}
-			return nil
-		} else if strings.Contains(contentType, "application/json") {
-			if err = json.Unmarshal(b, v); err != nil {
-				return err
-			}
-			return nil
+	if len(b) == 0 {
+		return nil
+	}
+	if s, ok := v.(*string); ok {
+		*s = string(b)
+		return nil
+	}
+	if f, ok := v.(**os.File); ok {
+		*f, err = ioutil.TempFile("", "HttpClientFile")
+		if err != nil {
+			return
 		}
+		_, err = (*f).Write(b)
+		_, err = (*f).Seek(0, io.SeekStart)
+		return
+	}
+	if xmlCheck.MatchString(contentType) {
+		if err = xml.Unmarshal(b, v); err != nil {
+			return err
+		}
+		return nil
+	}
+	if jsonCheck.MatchString(contentType) {
+		if err = json.Unmarshal(b, v); err != nil {
+			return err
+		}
+		return nil
+	}
 	return errors.New("undefined response type")
 }
 
@@ -452,7 +510,7 @@ func setBody(body interface{}, contentType string) (bodyBuf *bytes.Buffer, err e
 	} else if jsonCheck.MatchString(contentType) {
 		err = json.NewEncoder(bodyBuf).Encode(body)
 	} else if xmlCheck.MatchString(contentType) {
-		xml.NewEncoder(bodyBuf).Encode(body)
+		err = xml.NewEncoder(bodyBuf).Encode(body)
 	}
 
 	if err != nil {

@@ -1,3 +1,7 @@
+---
+title: pke install master pipeline-ready
+generated_file: true
+---
 ## pke install master pipeline-ready
 
 Register node as ready at Pipeline
@@ -25,5 +29,5 @@ pke install master pipeline-ready [flags]
 
 ### SEE ALSO
 
-* [pke install master](pke_install_master.md)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
+* [pke install master](/docs/pke/cli/reference/pke_install_master/)	 - Installs Banzai Cloud Pipeline Kubernetes Engine (PKE) Master node
 

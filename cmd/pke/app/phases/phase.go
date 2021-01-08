@@ -59,6 +59,17 @@ func RunEAllSubcommands(cmd *cobra.Command, args []string) error {
 				}
 			})
 		}
+		for p := c; p != nil; p = p.Parent() {
+			if p.PersistentPreRunE != nil {
+				if err := p.PersistentPreRunE(c, args); err != nil {
+					return err
+				}
+				break
+			} else if p.PersistentPreRun != nil {
+				p.PersistentPreRun(c, args)
+				break
+			}
+		}
 		err := c.RunE(c, args)
 		if err != nil {
 			return err

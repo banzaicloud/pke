@@ -15,7 +15,6 @@
 package linux
 
 import (
-	"fmt"
 	"io"
 	"os"
 
@@ -32,37 +31,17 @@ baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg`
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+excludepkgs=[kube*]`
 )
 
-func DnfInstall(out io.Writer, packages []string) error {
-	_, err := runner.Cmd(out, cmdDnf, append([]string{"install", "-y"}, packages...)...).CombinedOutputAsync()
+func DnfInstall(out io.Writer, packages packages) error {
+	_, err := runner.Cmd(out, cmdDnf, append([]string{"install", "-y", disableExcludesKubernetes}, packages.strings()...)...).CombinedOutputAsync()
 	if err != nil {
 		return err
 	}
 
-	for _, pkg := range packages {
-		if pkg == "" {
-			continue
-		}
-		if pkg[:1] == "-" {
-			continue
-		}
-
-		name, ver, rel, arch, err := rpmQuery(out, pkg)
-		if err != nil {
-			return err
-		}
-		if name == pkg ||
-			name+"-"+ver == pkg ||
-			name+"-"+ver+"-"+rel == pkg ||
-			name+"-"+ver+"-"+rel+"."+arch == pkg {
-			continue
-		}
-		return errors.New(fmt.Sprintf("expected package version after installation: %q, got: %q", pkg, name+"-"+ver+"-"+rel+"."+arch))
-	}
-
-	return nil
+	return checkRPMPackages(out, packages)
 }
 
 var _ ContainerdPackages = (*DnfInstaller)(nil)
@@ -99,20 +78,20 @@ func (y *DnfInstaller) InstallKubernetesPrerequisites(out io.Writer, kubernetesV
 
 func (y *DnfInstaller) InstallKubernetesPackages(out io.Writer, kubernetesVersion string) error {
 	// dnf install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
-	p := []string{
-		"kubelet-" + kubernetesVersion,
-		"kubeadm-" + kubernetesVersion,
-		"kubectl-" + kubernetesVersion,
+	pkg := packages{
+		{"kubelet", kubernetesVersion},
+		{"kubeadm", kubernetesVersion},
+		{"kubectl", kubernetesVersion},
 	}
 
-	return DnfInstall(out, p)
+	return DnfInstall(out, pkg)
 }
 
 func (y *DnfInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion string) error {
 	// dnf install -y kubeadm --disableexcludes=kubernetes
-	pkg := []string{
-		"kubelet-" + kubernetesVersion,
-		"kubeadm-" + kubernetesVersion,
+	pkg := packages{
+		{"kubelet", kubernetesVersion},
+		{"kubeadm", kubernetesVersion},
 	}
 
 	return DnfInstall(out, pkg)
@@ -120,7 +99,7 @@ func (y *DnfInstaller) InstallKubeadmPackage(out io.Writer, kubernetesVersion st
 
 func (y *DnfInstaller) InstallContainerdPrerequisites(out io.Writer, containerdVersion string) error {
 	// dnf install -y libseccomp
-	if err := DnfInstall(out, []string{"libseccomp"}); err != nil {
+	if err := DnfInstall(out, packages{{"libseccomp", ""}}); err != nil {
 		return errors.Wrap(err, "unable to install libseccomp package")
 	}
 

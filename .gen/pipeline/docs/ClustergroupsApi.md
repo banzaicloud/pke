@@ -11,19 +11,23 @@ Method | HTTP request | Description
 [**ApiV1OrgsOrgidClustergroupsPost**](ClustergroupsApi.md#ApiV1OrgsOrgidClustergroupsPost) | **Post** /api/v1/orgs/{orgid}/clustergroups | Create Cluster Group
 
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdDelete**
-> string ApiV1OrgsOrgidClustergroupsClusterGroupIdDelete(ctx, orgid, clusterGroupId)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdDelete
+
+> string ApiV1OrgsOrgidClustergroupsClusterGroupIdDelete(ctx, orgId, clusterGroupId)
+
 Delete Cluster Group
 
 delete a cluster group, disable all enabled features, delete related deployments
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
 
 ### Return type
 
@@ -35,24 +39,30 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdGet**
-> ApiClusterGroup ApiV1OrgsOrgidClustergroupsClusterGroupIdGet(ctx, orgid, clusterGroupId)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdGet
+
+> ApiClusterGroup ApiV1OrgsOrgidClustergroupsClusterGroupIdGet(ctx, orgId, clusterGroupId)
+
 Get Cluster Group
 
 retrieve info about a cluster group, members, status of member clusters, features
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
 
 ### Return type
 
@@ -64,25 +74,31 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsClusterGroupIdPut**
-> ApiUpdateResponse ApiV1OrgsOrgidClustergroupsClusterGroupIdPut(ctx, orgid, clusterGroupId, apiUpdateRequest)
+
+## ApiV1OrgsOrgidClustergroupsClusterGroupIdPut
+
+> ApiUpdateResponse ApiV1OrgsOrgidClustergroupsClusterGroupIdPut(ctx, orgId, clusterGroupId, apiUpdateRequest)
+
 Update Cluster Group
 
 update name & member clusters for a cluster group
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **clusterGroupId** | **int32**| Cluster Group ID | 
-  **apiUpdateRequest** | [**ApiUpdateRequest**](ApiUpdateRequest.md)| Update Cluster Group Request | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**clusterGroupId** | **int32**| Cluster Group ID | 
+**apiUpdateRequest** | [**ApiUpdateRequest**](ApiUpdateRequest.md)| Update Cluster Group Request | 
 
 ### Return type
 
@@ -94,23 +110,29 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: application/json
+- **Content-Type**: application/json
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsGet**
-> []ApiClusterGroup ApiV1OrgsOrgidClustergroupsGet(ctx, orgid)
+
+## ApiV1OrgsOrgidClustergroupsGet
+
+> []ApiClusterGroup ApiV1OrgsOrgidClustergroupsGet(ctx, orgId)
+
 List Cluster Groups of an Organization
 
 retrieve list of cluster groups of an organization
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
 
 ### Return type
 
@@ -122,24 +144,30 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: Not defined
- - **Accept**: application/json
+- **Content-Type**: Not defined
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
-# **ApiV1OrgsOrgidClustergroupsPost**
-> ApiCreateResponse ApiV1OrgsOrgidClustergroupsPost(ctx, orgid, apiCreateRequest)
+
+## ApiV1OrgsOrgidClustergroupsPost
+
+> ApiCreateResponse ApiV1OrgsOrgidClustergroupsPost(ctx, orgId, apiCreateRequest)
+
 Create Cluster Group
 
 create a group of clusters, joining clusters together with a name
 
 ### Required Parameters
 
+
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-  **orgid** | **int32**| Organization ID | 
-  **apiCreateRequest** | [**ApiCreateRequest**](ApiCreateRequest.md)| Create Cluster Group Request | 
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**orgId** | **int32**| Organization identifier | 
+**apiCreateRequest** | [**ApiCreateRequest**](ApiCreateRequest.md)| Create Cluster Group Request | 
 
 ### Return type
 
@@ -151,8 +179,10 @@ Name | Type | Description  | Notes
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
- - **Accept**: application/json
+- **Content-Type**: application/json
+- **Accept**: application/json, application/problem+json, 
 
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
