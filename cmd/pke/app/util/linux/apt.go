@@ -118,6 +118,14 @@ func (a *AptInstaller) InstallContainerdPrerequisites(out io.Writer, containerdV
 	return nil
 }
 
+func (y *AptInstaller) InstallKeepalivedPackage(out io.Writer) error {
+	if err := AptInstall(out, []string{"keepalived"}); err != nil {
+		return errors.Wrap(err, "unable to install keepalived package")
+	}
+
+	return nil
+}
+
 func aptErrorMatcher(text string) bool {
 	return strings.HasPrefix(text, "E:")
 }

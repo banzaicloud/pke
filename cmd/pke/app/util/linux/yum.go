@@ -135,3 +135,11 @@ func (y *YumInstaller) InstallContainerdPrerequisites(out io.Writer, containerdV
 
 	return nil
 }
+
+func (y *YumInstaller) InstallKeepalivedPackage(out io.Writer) error {
+	if err := YumInstall(out, packages{{"keepalived", ""}}); err != nil {
+		return errors.Wrap(err, "unable to install keepalived package")
+	}
+
+	return nil
+}
