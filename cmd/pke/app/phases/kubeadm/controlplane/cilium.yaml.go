@@ -140,7 +140,7 @@ func ciliumTemplate() string {
 		"  auto-direct-node-routes: \"false\"\n" +
 		"  enable-bandwidth-manager: \"false\"\n" +
 		"  enable-local-redirect-policy: \"false\"\n" +
-		"  kube-proxy-replacement:  \"probe\"\n" +
+		"  kube-proxy-replacement:  \"disabled\"\n" +
 		"  kube-proxy-replacement-healthz-bind-address: \"\"\n" +
 		"  enable-health-check-nodeport: \"true\"\n" +
 		"  node-port-bind-protection: \"true\"\n" +
