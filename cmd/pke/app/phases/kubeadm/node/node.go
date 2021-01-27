@@ -42,15 +42,16 @@ const (
 	use   = "kubernetes-node"
 	short = "Kubernetes worker node installation"
 
-	cmdKubeadm          = "kubeadm"
-	kubeProxyConfig     = "/var/lib/kube-proxy/config.conf"
-	kubeadmConfig       = "/etc/kubernetes/kubeadm.conf"
-	kubeadmAmazonConfig = "/etc/kubernetes/aws.conf"
-	kubeadmAzureConfig  = "/etc/kubernetes/azure.conf"
-	cniDir              = "/etc/cni/net.d"
-	cniBridgeConfig     = "/etc/cni/net.d/10-bridge.conf"
-	cniLoopbackConfig   = "/etc/cni/net.d/99-loopback.conf"
-	maxJoinRetries      = 5
+	cmdKubeadm           = "kubeadm"
+	kubeProxyConfig      = "/var/lib/kube-proxy/config.conf"
+	kubeadmConfig        = "/etc/kubernetes/kubeadm.conf"
+	kubeadmAmazonConfig  = "/etc/kubernetes/aws.conf"
+	kubeadmAzureConfig   = "/etc/kubernetes/azure.conf"
+	kubeadmVsphereConfig = "/etc/kubernetes/vsphere.conf"
+	cniDir               = "/etc/cni/net.d"
+	cniBridgeConfig      = "/etc/cni/net.d/10-bridge.conf"
+	cniLoopbackConfig    = "/etc/cni/net.d/99-loopback.conf"
+	maxJoinRetries       = 5
 )
 
 var _ phases.Runnable = (*Node)(nil)
@@ -76,6 +77,15 @@ type Node struct {
 	azureVMType            string
 	azureLoadBalancerSku   string
 	azureRouteTableName    string
+	vsphereServer          string
+	vspherePort            int
+	vsphereFingerprint     string
+	vsphereDatacenter      string
+	vsphereDatastore       string
+	vsphereResourcePool    string
+	vsphereFolder          string
+	vsphereUsername        string
+	vspherePassword        string
 	taints                 []string
 	labels                 []string
 }
@@ -273,6 +283,33 @@ func (n *Node) workerBootstrapParameters(cmd *cobra.Command) (err error) {
 	if err != nil {
 		return
 	}
+	if n.vsphereServer, err = cmd.Flags().GetString(constants.FlagVsphereServer); err != nil {
+		return
+	}
+	if n.vspherePort, err = cmd.Flags().GetInt(constants.FlagVspherePort); err != nil {
+		return
+	}
+	if n.vsphereFingerprint, err = cmd.Flags().GetString(constants.FlagVsphereFingerprint); err != nil {
+		return
+	}
+	if n.vsphereDatacenter, err = cmd.Flags().GetString(constants.FlagVsphereDatacenter); err != nil {
+		return
+	}
+	if n.vsphereDatastore, err = cmd.Flags().GetString(constants.FlagVsphereDatastore); err != nil {
+		return
+	}
+	if n.vsphereResourcePool, err = cmd.Flags().GetString(constants.FlagVsphereResourcePool); err != nil {
+		return
+	}
+	if n.vsphereFolder, err = cmd.Flags().GetString(constants.FlagVsphereFolder); err != nil {
+		return
+	}
+	if n.vsphereUsername, err = cmd.Flags().GetString(constants.FlagVsphereUsername); err != nil {
+		return
+	}
+	if n.vspherePassword, err = cmd.Flags().GetString(constants.FlagVspherePassword); err != nil {
+		return
+	}
 	n.taints, err = cmd.Flags().GetStringSlice(constants.FlagTaints)
 	if err != nil {
 		return
@@ -301,6 +338,12 @@ func (n *Node) install(out io.Writer) error {
 
 	// write kubeadm azure.conf
 	err = kubeadm.WriteKubeadmAzureConfig(out, kubeadmAzureConfig, n.cloudProvider, n.azureTenantID, n.azureSubnetName, n.azureSecurityGroupName, n.azureVNetName, n.azureVNetResourceGroup, n.azureVMType, n.azureLoadBalancerSku, n.azureRouteTableName, true)
+	if err != nil {
+		return err
+	}
+
+	// write vsphere.conf
+	err = kubeadm.WriteKubeadmVsphereConfig(out, kubeadmVsphereConfig, n.cloudProvider, n.vsphereServer, n.vspherePort, n.vsphereFingerprint, n.vsphereDatacenter, n.vsphereDatastore, n.vsphereResourcePool, n.vsphereFolder, n.vsphereUsername, n.vspherePassword)
 	if err != nil {
 		return err
 	}
