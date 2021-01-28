@@ -11,6 +11,7 @@ Vagrant.configure("2") do |config|
     # sync build folder
     config.vm.synced_folder '.', '/vagrant', disabled: true
     config.vm.synced_folder 'scripts/vagrant/', '/scripts/', create: true
+    config.vm.synced_folder 'crt/', '/opt/crt/', create: true
     config.vm.synced_folder 'build/', '/banzaicloud/', create: true
 
     $num_instances = 4
@@ -33,6 +34,12 @@ Vagrant.configure("2") do |config|
 
             node.vm.provision "shell" do |s|
                 s.inline = <<-SHELL
+                yum install -y ca-certificates
+                update-ca-trust enable
+                cd /opt/crt
+                find . -type f -name '*.crt' -execdir cp {} /etc/pki/ca-trust/source/anchors/{} \\;
+                update-ca-trust extract
+
                 dnf install -y yum-utils wget curl chrony vim net-tools socat
                 echo 'sync time'
                 systemctl enable --now chronyd
