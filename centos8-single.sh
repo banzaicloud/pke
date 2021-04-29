@@ -3,7 +3,7 @@
 # build latest pke tool
 GOOS=linux make pke
 
-KUBERNETES_VERSION="${1:-v1.18.14}"
+KUBERNETES_VERSION="${1:-v1.19.10}"
 
 export VAGRANT_VAGRANTFILE=Vagrantfile-centos8
 vagrant up centos1
