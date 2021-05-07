@@ -16,7 +16,7 @@ package controlplane
 
 // certificateAutoApproverRbacUpdateTemplate is a generated function returning the template as a string.
 func certificateAutoApproverRbacUpdateTemplate() string {
-	var tmpl = "apiVersion: rbac.authorization.k8s.io/v1beta1\n" +
+	var tmpl = "apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRole\n" +
 		"metadata:\n" +
 		"  name: auto-approver\n" +
