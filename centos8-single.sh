@@ -5,7 +5,6 @@ GOOS=linux make pke
 
 KUBERNETES_VERSION="${1:-v1.19.10}"
 
-export VAGRANT_VAGRANTFILE=Vagrantfile-centos8
 vagrant up centos1
 vagrant ssh centos1 -c "sudo /scripts/pke-single.sh '$KUBERNETES_VERSION' '192.168.64.11:6443' containerd cilium"
 vagrant ssh centos1 -c 'sudo cat /etc/kubernetes/admin.conf' > pke-single-config.yaml

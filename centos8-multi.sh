@@ -7,7 +7,6 @@ jq --version || (echo "Please install jq command line tool. https://stedolan.git
 GOOS=linux make pke
 
 KUBERNETES_VERSION="${1:-v1.19.10}"
-export VAGRANT_VAGRANTFILE=Vagrantfile-centos8
 
 # install first master node
 echo ""
