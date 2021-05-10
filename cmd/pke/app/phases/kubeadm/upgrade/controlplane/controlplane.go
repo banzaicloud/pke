@@ -232,34 +232,30 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 			"upgrade",
 			"node",
 		}
-		version, _ := semver.NewConstraint("<1.15")
-		if version.Check(to) {
-			args = append(args, "experimental-control-plane")
-		} else {
-			args = append(args, "--kubelet-version")
+
+		c, _ := semver.NewConstraint("<1.20")
+		if c.Check(to) { // target version
+			args = append(args, "--kubelet-version", to.String())
 		}
 
 	} else {
-		version, _ := semver.NewConstraint(">1.14")
-		if version.Check(to) {
-			err := c.getKubeadmConfigmap()
-			if err != nil {
-				return err
-			}
+		err := c.getKubeadmConfigmap()
+		if err != nil {
+			return err
+		}
 
-			err = c.getKubeAPIServerManifest()
-			if err != nil {
-				return err
-			}
+		err = c.getKubeAPIServerManifest()
+		if err != nil {
+			return err
+		}
 
-			err = c.generateNewKubeadmConfig(out, from, to)
-			if err != nil {
-				return err
-			}
-			err = c.uploadKubeadmConf(out)
-			if err != nil {
-				return err
-			}
+		err = c.generateNewKubeadmConfig(out, from, to)
+		if err != nil {
+			return err
+		}
+		err = c.uploadKubeadmConf(out)
+		if err != nil {
+			return err
 		}
 
 		args = []string{
@@ -267,13 +263,9 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 			"apply",
 			"-f",
 		}
-		version, _ = semver.NewConstraint("1.16.x")
-		if version.Check(to) {
-			args = append(args, "--ignore-preflight-errors=CoreDNSUnsupportedPlugins")
-		}
+		// target version
+		args = append(args, to.String())
 	}
-	// target version
-	args = append(args, to.String())
 
 	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {

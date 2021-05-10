@@ -37,8 +37,9 @@ var _ phases.Runnable = (*Runtime)(nil)
 type Runtime struct {
 	config config.Config
 
-	containerRuntime string
-	imageRepository  string
+	containerRuntime        string
+	imageRepository         string
+	useImageRepositoryToK8s bool
 }
 
 func NewCommand(config config.Config) *cobra.Command {
@@ -59,6 +60,9 @@ func (r *Runtime) RegisterFlags(flags *pflag.FlagSet) {
 
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+
+	// Use defined image repository for K8s images as well
+	flags.Bool(constants.FlagUseImageRepositoryToK8s, false, "Use defined image repository for K8s Images as well")
 }
 
 func (r *Runtime) Validate(cmd *cobra.Command) (err error) {
@@ -71,10 +75,14 @@ func (r *Runtime) Validate(cmd *cobra.Command) (err error) {
 	if err != nil {
 		return err
 	}
-
+	r.useImageRepositoryToK8s, err = cmd.Flags().GetBool(constants.FlagUseImageRepositoryToK8s)
+	if err != nil {
+		return err
+	}
 	if err := validator.NotEmpty(map[string]interface{}{
-		constants.FlagContainerRuntime: r.containerRuntime,
-		constants.FlagImageRepository:  r.imageRepository,
+		constants.FlagContainerRuntime:        r.containerRuntime,
+		constants.FlagImageRepository:         r.imageRepository,
+		constants.FlagUseImageRepositoryToK8s: r.useImageRepositoryToK8s,
 	}); err != nil {
 		return err
 	}

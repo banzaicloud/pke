@@ -120,6 +120,9 @@ const (
 	// FlagImageRepository prefix for image repository.
 	FlagImageRepository = "image-repository"
 
+	// FlagUseImageRepositoryToK8s enable using defined image rpository to K8s images as well
+	FlagUseImageRepositoryToK8s = "use-image-repo-for-k8s"
+
 	// FlagAdmissionPluginPodSecurityPolicy enable admission plugin PodSecurityPolicy.
 	FlagAdmissionPluginPodSecurityPolicy = "with-plugin-psp"
 

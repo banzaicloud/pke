@@ -148,6 +148,11 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		KubeReservedMemory              string
 	}
 
+	imageRepository := "k8s.gcr.io"
+	if c.useImageRepositoryToK8s {
+		imageRepository = c.imageRepository
+	}
+
 	d := data{
 		APIServerAdvertiseAddress:       c.advertiseAddress,
 		APIServerBindPort:               bindPort,
@@ -168,7 +173,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ControllerManagerSigningCA:      c.controllerManagerSigningCA,
 		OIDCIssuerURL:                   c.oidcIssuerURL,
 		OIDCClientID:                    c.oidcClientID,
-		ImageRepository:                 c.imageRepository,
+		ImageRepository:                 imageRepository,
 		EncryptionProviderPrefix:        encryptionProviderPrefix,
 		WithPluginPSP:                   c.withPluginPSP,
 		WithoutPluginDenyEscalatingExec: c.withoutPluginDenyEscalatingExec,

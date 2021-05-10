@@ -106,6 +106,7 @@ type ControlPlane struct {
 	oidcIssuerURL                    string
 	oidcClientID                     string
 	imageRepository                  string
+	useImageRepositoryToK8s          bool
 	withPluginPSP                    bool
 	withoutPluginDenyEscalatingExec  bool
 	useHyperKubeImage                bool
@@ -196,6 +197,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagOIDCClientID, "", "A client ID that all OIDC tokens must be issued for")
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+	// Use defined image repository for K8s images as well
+	flags.Bool(constants.FlagUseImageRepositoryToK8s, false, "Use defined image repository for K8s Images as well")
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
 	// DenyEscalatingExec admission plugin
@@ -271,14 +274,15 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 	}
 
 	if err := validator.NotEmpty(map[string]interface{}{
-		constants.FlagKubernetesVersion: c.kubernetesVersion,
-		constants.FlagContainerRuntime:  c.containerRuntime,
-		constants.FlagNetworkProvider:   c.networkProvider,
-		constants.FlagServiceCIDR:       c.serviceCIDR,
-		constants.FlagPodNetworkCIDR:    c.podNetworkCIDR,
-		constants.FlagClusterName:       c.clusterName,
-		constants.FlagClusterMode:       c.clusterMode,
-		constants.FlagImageRepository:   c.imageRepository,
+		constants.FlagKubernetesVersion:       c.kubernetesVersion,
+		constants.FlagContainerRuntime:        c.containerRuntime,
+		constants.FlagNetworkProvider:         c.networkProvider,
+		constants.FlagServiceCIDR:             c.serviceCIDR,
+		constants.FlagPodNetworkCIDR:          c.podNetworkCIDR,
+		constants.FlagClusterName:             c.clusterName,
+		constants.FlagClusterMode:             c.clusterMode,
+		constants.FlagImageRepository:         c.imageRepository,
+		constants.FlagUseImageRepositoryToK8s: c.useImageRepositoryToK8s,
 	}); err != nil {
 		return err
 	}
@@ -636,6 +640,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.imageRepository, err = cmd.Flags().GetString(constants.FlagImageRepository)
+	if err != nil {
+		return
+	}
+	c.useImageRepositoryToK8s, err = cmd.Flags().GetBool(constants.FlagUseImageRepositoryToK8s)
 	if err != nil {
 		return
 	}
