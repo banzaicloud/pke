@@ -18,7 +18,7 @@ pke install single pipeline-certificates [flags]
 
 ```
   -h, --help                        help for pipeline-certificates
-      --kubernetes-version string   Kubernetes version (default "1.18.9")
+      --kubernetes-version string   Kubernetes version (default "1.19.10")
       --pipeline-cluster-id int32   Cluster ID to use with Pipeline API
       --pipeline-insecure           If the Pipeline API should not verify the API's certificate
       --pipeline-org-id int32       Organization ID to use with Pipeline API

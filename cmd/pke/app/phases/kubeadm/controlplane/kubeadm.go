@@ -66,10 +66,10 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 
 	var conf string
 	switch ver.Minor() {
-	case 15, 16, 17:
+	case 17:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
 		conf = kubeadmConfigV1Beta1Template()
-	case 18, 19:
+	case 18, 19, 20, 21:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
 		conf = kubeadmConfigV1Beta2Template()
 	default:
@@ -148,6 +148,11 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		KubeReservedMemory              string
 	}
 
+	imageRepository := "k8s.gcr.io"
+	if c.useImageRepositoryToK8s {
+		imageRepository = c.imageRepository
+	}
+
 	d := data{
 		APIServerAdvertiseAddress:       c.advertiseAddress,
 		APIServerBindPort:               bindPort,
@@ -168,7 +173,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 		ControllerManagerSigningCA:      c.controllerManagerSigningCA,
 		OIDCIssuerURL:                   c.oidcIssuerURL,
 		OIDCClientID:                    c.oidcClientID,
-		ImageRepository:                 c.imageRepository,
+		ImageRepository:                 imageRepository,
 		EncryptionProviderPrefix:        encryptionProviderPrefix,
 		WithPluginPSP:                   c.withPluginPSP,
 		WithoutPluginDenyEscalatingExec: c.withoutPluginDenyEscalatingExec,

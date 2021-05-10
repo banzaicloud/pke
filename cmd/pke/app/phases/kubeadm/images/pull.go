@@ -42,8 +42,9 @@ var _ phases.Runnable = (*Image)(nil)
 type Image struct {
 	config config.Config
 
-	kubernetesVersion string
-	imageRepository   string
+	kubernetesVersion       string
+	imageRepository         string
+	useImageRepositoryToK8s bool
 }
 
 func NewCommand(config config.Config) *cobra.Command {
@@ -63,6 +64,8 @@ func (i *Image) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagKubernetesVersion, i.config.Kubernetes.Version, "Kubernetes version")
 	// Image repository
 	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+	// Use defined image repository for K8s images as well
+	flags.Bool(constants.FlagUseImageRepositoryToK8s, false, "Use defined image repository for K8s Images as well")
 }
 
 func (i *Image) Validate(cmd *cobra.Command) error {
@@ -81,10 +84,14 @@ func (i *Image) Validate(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-
+	i.useImageRepositoryToK8s, err = cmd.Flags().GetBool(constants.FlagUseImageRepositoryToK8s)
+	if err != nil {
+		return err
+	}
 	if err := validator.NotEmpty(map[string]interface{}{
-		constants.FlagKubernetesVersion: i.kubernetesVersion,
-		constants.FlagImageRepository:   i.imageRepository,
+		constants.FlagKubernetesVersion:       i.kubernetesVersion,
+		constants.FlagImageRepository:         i.imageRepository,
+		constants.FlagUseImageRepositoryToK8s: i.useImageRepositoryToK8s,
 	}); err != nil {
 		return err
 	}
@@ -95,7 +102,11 @@ func (i *Image) Validate(cmd *cobra.Command) error {
 func (i *Image) Run(out io.Writer) error {
 	_, _ = fmt.Fprintf(out, "[%s] running\n", i.Use())
 
-	c := controlplane.NewDefault(i.kubernetesVersion, i.imageRepository)
+	imageRepository := "k8s.gcr.io"
+	if i.useImageRepositoryToK8s {
+		imageRepository = i.imageRepository
+	}
+	c := controlplane.NewDefault(i.kubernetesVersion, imageRepository)
 
 	err := c.WriteKubeadmConfig(out, kubeadmConfig)
 	if err != nil {

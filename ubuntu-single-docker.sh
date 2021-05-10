@@ -3,7 +3,7 @@
 # build latest pke tool
 GOOS=linux make pke
 
-KUBERNETES_VERSION="${2:-v1.18.14}"
+KUBERNETES_VERSION="${2:-v1.19.10}"
 UBUNTU_VERSION=${1:-focal}
 
 vagrant up ubuntu-docker-${UBUNTU_VERSION}

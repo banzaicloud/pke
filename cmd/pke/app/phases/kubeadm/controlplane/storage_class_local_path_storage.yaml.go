@@ -41,7 +41,7 @@ func storageClassLocalPathStorageTemplate() string {
 		"  resources: [\"storageclasses\"]\n" +
 		"  verbs: [\"get\", \"list\", \"watch\"]\n" +
 		"---\n" +
-		"apiVersion: rbac.authorization.k8s.io/v1beta1\n" +
+		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRoleBinding\n" +
 		"metadata:\n" +
 		"  name: local-path-provisioner-bind\n" +

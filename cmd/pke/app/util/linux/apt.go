@@ -151,7 +151,7 @@ func mapAptPackageVersion(pkg, kubernetesVersion string) string {
 func getAptPackageVersion(kubernetesVersion string) string {
 	ver, _ := semver.NewVersion(kubernetesVersion)
 	// There was an issue with bundled CNI plugin so new package was released in case of versions below. (https://github.com/kubernetes/kubernetes/issues/92242)
-	c, _ := semver.NewConstraint("=1.16.11 || =1.17.7 || =1.18.4")
+	c, _ := semver.NewConstraint("=1.17.7 || =1.18.4")
 	if c.Check(ver) {
 		return kubernetesVersion + "-01"
 	}

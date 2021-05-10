@@ -22,7 +22,7 @@ func certificateAutoApproverTemplate() string {
 		"  name: auto-approver\n" +
 		"  namespace: kube-system\n" +
 		"---\n" +
-		"apiVersion: rbac.authorization.k8s.io/v1beta1\n" +
+		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRole\n" +
 		"metadata:\n" +
 		"  name: auto-approver\n" +

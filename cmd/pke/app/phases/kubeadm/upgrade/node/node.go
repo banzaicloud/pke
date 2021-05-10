@@ -114,13 +114,10 @@ func (n *Node) upgrade(out io.Writer, from, to *semver.Version) error {
 		"upgrade",
 		"node",
 	}
-	c, _ := semver.NewConstraint("<1.15")
-	if c.Check(to) {
-		args = append(args, "config")
+	c, _ := semver.NewConstraint("<1.20")
+	if c.Check(to) { // target version
+		args = append(args, "--kubelet-version", to.String())
 	}
-
-	// target version
-	args = append(args, "--kubelet-version", to.String())
 
 	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {

@@ -15,13 +15,40 @@ Vagrant.configure("2") do |config|
 
     $num_instances = 4
 
-    # centos 7 nodes
+    # centos 8 nodes
     (1..$num_instances).each do |n|
         config.vm.define "centos#{n}" do |node|
-            node.vm.box = "centos/7"
+            node.vm.box = "centos/8"
+
+            # Monkey patch for https://github.com/dotless-de/vagrant-vbguest/issues/367
+            class Foo < VagrantVbguest::Installers::CentOS
+                def has_rel_repo?
+                    unless instance_variable_defined?(:@has_rel_repo)
+                        rel = release_version
+                        @has_rel_repo = communicate.test("yum repolist")
+                    end
+                    @has_rel_repo
+                end
+
+                def install_kernel_devel(opts=nil, &block)
+                    cmd = "yum update kernel -y"
+                    communicate.sudo(cmd, opts, &block)
+
+                    cmd = "yum install -y kernel-devel"
+                    communicate.sudo(cmd, opts, &block)
+
+                    cmd = "shutdown -r now"
+                    communicate.sudo(cmd, opts, &block)
+
+                    begin
+                        sleep 5
+                    end until @vm.communicate.ready?
+                end
+            end
+            node.vbguest.installer = Foo
+
             node.vm.network "private_network", ip: "192.168.64.#{n+10}"
             node.vm.hostname = "centos#{n}"
-
             node.vm.provider "virtualbox" do |vb|
                 vb.name = "centos#{n}"
                 vb.memory = "2048"
@@ -33,12 +60,12 @@ Vagrant.configure("2") do |config|
 
             node.vm.provision "shell" do |s|
                 s.inline = <<-SHELL
-                yum update
-                yum install -y ntp wget curl vim net-tools socat
+                dnf install -y yum-utils wget curl chrony vim net-tools socat
                 echo 'sync time'
-                systemctl start ntpd
-                systemctl enable ntpd
-
+                systemctl enable --now chronyd
+                swapoff -a
+                modprobe ip_tables
+                echo 'ip_tables' >> /etc/modules-load.d/iptables.conf
                 echo 'set host name resolution'
                 cat >> /etc/hosts <<EOF
 192.168.64.11 centos1
