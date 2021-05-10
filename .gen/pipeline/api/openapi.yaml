@@ -22258,7 +22258,7 @@ components:
     EksUpdateClusterRequest:
       properties:
         version:
-          example: "1.19"
+          example: "1.17"
           type: string
       type: object
     PostLeaderElectionResponse:
