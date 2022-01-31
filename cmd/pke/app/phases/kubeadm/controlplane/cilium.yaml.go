@@ -484,7 +484,11 @@ func ciliumTemplate() string {
 		"              key: custom-cni-conf\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
+		"        {{if .UseImageRepositoryToK8s}}\n" +
 		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
+		"        {{else}}\n" +
+		"        image: \"cilium/cilium:v1.9.1\"\n" +
+		"        {{end}}\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        lifecycle:\n" +
 		"          postStart:\n" +
@@ -547,7 +551,11 @@ func ciliumTemplate() string {
 		"              key: wait-bpf-mount\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
+		"        {{if .UseImageRepositoryToK8s}}\n" +
 		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
+		"        {{else}}\n" +
+		"        image: \"cilium/cilium:v1.9.1\"\n" +
+		"        {{end}}\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: clean-cilium-state\n" +
 		"        securityContext:\n" +
@@ -664,7 +672,7 @@ func ciliumTemplate() string {
 		"        - --config-dir=/tmp/cilium/config-map\n" +
 		"        - --debug=$(CILIUM_DEBUG)\n" +
 		"        command:\n" +
-		"        - cilium-operator-generic\n" +
+		"        - cilium-operator\n" +
 		"        env:\n" +
 		"        - name: K8S_NODE_NAME\n" +
 		"          valueFrom:\n" +
@@ -682,7 +690,11 @@ func ciliumTemplate() string {
 		"              key: debug\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
+		"        {{if .UseImageRepositoryToK8s}}\n" +
 		"        image: \"{{ .ImageRepository }}/cilium-operator:v1.9.1\"\n" +
+		"        {{else}} \n" +
+		"        image: \"cilium/operator:v1.9.1\"\n" +
+		"        {{end}}\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: cilium-operator\n" +
 		"        livenessProbe:\n" +

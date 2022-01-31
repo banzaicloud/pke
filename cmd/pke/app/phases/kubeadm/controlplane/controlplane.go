@@ -509,7 +509,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		if c.clusterMode == singleMode {
 			single = true
 		}
-		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, c.mtu, single); err != nil {
+		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, c.useImageRepositoryToK8s, c.mtu, single); err != nil {
 			return err
 		}
 	}
@@ -954,7 +954,7 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 //go:generate templify -t ${GOTMPL} -p controlplane -f cilium cilium.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f ciliumSysFsBpf cilium_sys_fs_bpf.mount.tmpl
 
-func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository string, mtu uint, single bool) error {
+func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository string, useImageRepositoryToK8s bool, mtu uint, single bool) error {
 	if _, err := os.Stat("/sys/fs/bpf"); err != nil {
 		// Mounting BPF filesystem
 		if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
@@ -972,15 +972,17 @@ func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository st
 	}
 
 	type data struct {
-		ImageRepository string
-		PodCIDR         string
-		Single          bool
+		UseImageRepositoryToK8s bool
+		ImageRepository         string
+		PodCIDR                 string
+		Single                  bool
 	}
 
 	d := data{
-		ImageRepository: imageRepository,
-		PodCIDR:         podNetworkCIDR,
-		Single:          single,
+		UseImageRepositoryToK8s: useImageRepositoryToK8s,
+		ImageRepository:         imageRepository,
+		PodCIDR:                 podNetworkCIDR,
+		Single:                  single,
 	}
 
 	var b bytes.Buffer
