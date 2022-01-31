@@ -50,7 +50,7 @@ func kubeadmConfigV1Beta2Template() string {
 		"    caCertHashes:\n" +
 		"      - {{ .CACertHash }}\n" +
 		"---\n" +
-		"apiVersion: kubelet.config.k8s.io/v1beta2\n" +
+		"apiVersion: kubelet.config.k8s.io/v1beta1\n" +
 		"kind: KubeletConfiguration\n" +
 		"serverTLSBootstrap: true\n" +
 		"systemReserved:\n" +
