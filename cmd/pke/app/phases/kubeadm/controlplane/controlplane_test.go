@@ -35,7 +35,7 @@ func TestWriteKubeadmConfig(t *testing.T) {
 		apiServerHostPort:               "192.168.64.11:6443",
 		kubeletCertificateAuthority:     "/etc/kubernetes/pki/ca.crt",
 		clusterName:                     "my-cluster",
-		kubernetesVersion:               "1.18.0",
+		kubernetesVersion:               "1.21.0",
 		serviceCIDR:                     "10.32.0.0/24",
 		podNetworkCIDR:                  "10.200.0.0/16",
 		cloudProvider:                   constants.CloudProviderAmazon,

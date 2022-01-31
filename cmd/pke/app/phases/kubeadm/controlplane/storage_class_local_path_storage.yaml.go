@@ -22,7 +22,7 @@ func storageClassLocalPathStorageTemplate() string {
 		"  name: local-path-provisioner-service-account\n" +
 		"  namespace: kube-system\n" +
 		"---\n" +
-		"apiVersion: rbac.authorization.k8s.io/v1beta1\n" +
+		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRole\n" +
 		"metadata:\n" +
 		"  name: local-path-provisioner-role\n" +

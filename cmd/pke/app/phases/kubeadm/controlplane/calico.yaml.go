@@ -66,7 +66,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"# Source: calico/templates/kdd-crds.yaml\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"   name: felixconfigurations.crd.projectcalico.org\n" +
@@ -80,7 +80,7 @@ func calicoTemplate() string {
 		"    singular: felixconfiguration\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: ipamblocks.crd.projectcalico.org\n" +
@@ -95,7 +95,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: blockaffinities.crd.projectcalico.org\n" +
@@ -110,7 +110,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: ipamhandles.crd.projectcalico.org\n" +
@@ -125,7 +125,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: ipamconfigs.crd.projectcalico.org\n" +
@@ -140,7 +140,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: bgppeers.crd.projectcalico.org\n" +
@@ -155,7 +155,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: bgpconfigurations.crd.projectcalico.org\n" +
@@ -170,7 +170,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: ippools.crd.projectcalico.org\n" +
@@ -185,7 +185,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: hostendpoints.crd.projectcalico.org\n" +
@@ -200,7 +200,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: clusterinformations.crd.projectcalico.org\n" +
@@ -215,7 +215,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: globalnetworkpolicies.crd.projectcalico.org\n" +
@@ -230,7 +230,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: globalnetworksets.crd.projectcalico.org\n" +
@@ -245,7 +245,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: networkpolicies.crd.projectcalico.org\n" +
@@ -260,7 +260,7 @@ func calicoTemplate() string {
 		"\n" +
 		"---\n" +
 		"\n" +
-		"apiVersion: apiextensions.k8s.io/v1beta1\n" +
+		"apiVersion: apiextensions.k8s.io/v1\n" +
 		"kind: CustomResourceDefinition\n" +
 		"metadata:\n" +
 		"  name: networksets.crd.projectcalico.org\n" +

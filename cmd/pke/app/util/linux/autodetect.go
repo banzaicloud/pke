@@ -28,11 +28,7 @@ func KubernetesPackagesImpl(out io.Writer) (KubernetesPackages, error) {
 	}
 	if err == nil {
 		v, _ := semver.NewVersion(ver)
-		c7, _ := semver.NewConstraint("7.x-0")
 		c8, _ := semver.NewConstraint("8.x-0")
-		if c7.Check(v) {
-			return NewYumInstaller(), nil
-		}
 		if c8.Check(v) {
 			return NewDnfInstaller(), nil
 		}
@@ -42,7 +38,7 @@ func KubernetesPackagesImpl(out io.Writer) (KubernetesPackages, error) {
 		if distro == "Ubuntu" {
 			relNum, err := LSBReleaseReleaseNumber(out)
 			if err == nil {
-				if relNum == "18.04" || relNum == "20.04" {
+				if relNum == "20.04" {
 					return NewAptInstaller(), nil
 				}
 			}
@@ -60,11 +56,7 @@ func ContainerdPackagesImpl(out io.Writer) (ContainerdPackages, error) {
 	}
 	if err == nil {
 		v, _ := semver.NewVersion(ver)
-		c7, _ := semver.NewConstraint("7.x-0")
 		c8, _ := semver.NewConstraint("8.x-0")
-		if c7.Check(v) {
-			return NewYumInstaller(), nil
-		}
 		if c8.Check(v) {
 			return NewDnfInstaller(), nil
 		}
@@ -74,7 +66,7 @@ func ContainerdPackagesImpl(out io.Writer) (ContainerdPackages, error) {
 		if distro == "Ubuntu" {
 			relNum, err := LSBReleaseReleaseNumber(out)
 			if err == nil {
-				if relNum == "18.04" || relNum == "20.04" {
+				if relNum == "20.04" {
 					return NewAptInstaller(), nil
 				}
 			}

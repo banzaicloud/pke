@@ -41,7 +41,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-//go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta2 kubeadm_v1beta2.yaml.tmpl
 
 const (
@@ -292,15 +291,6 @@ func (c *ControlPlane) upgrade(out io.Writer, from, to *semver.Version) error {
 		return err
 	}
 
-	fromVersion, _ := semver.NewConstraint("1.17.x")
-	toVersion, _ := semver.NewConstraint("1.18.x")
-	if fromVersion.Check(from) && toVersion.Check(to) {
-		// apply AutoApproverRbacUpdate
-		if err := writeCertificateAutoApproverRbacUpdate(out); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -379,28 +369,11 @@ func (c *ControlPlane) getKubeAPIServerManifest() error {
 func (c *ControlPlane) generateNewKubeadmConfig(out io.Writer, from, to *semver.Version) error {
 	var conf string
 	switch to.Minor() {
-	case 17:
-		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
-		c.kubeadmConfigMap.UseHyperKubeImage = true
-		conf = kubeadmConfigV1Beta1Template()
-	case 18, 19, 20, 21:
+	case 19, 20, 21:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
 		conf = kubeadmConfigV1Beta2Template()
 	default:
 		return errors.New(fmt.Sprintf("unsupported Kubernetes version %q for upgrade", c.kubernetesVersion))
-	}
-
-	version, _ := semver.NewConstraint(">1.17")
-	if version.Check(to) {
-		c.kubeadmConfigMap.UseHyperKubeImage = false
-		admissionPlugins := strings.Split(c.kubeadmConfigMap.APIServer.ExtraArgs.EnableAdmissionPlugins, ",")
-		upgradeAddmissionPlugins := []string{}
-		for _, plugin := range admissionPlugins {
-			if plugin != "DenyEscalatingExec" {
-				upgradeAddmissionPlugins = append(upgradeAddmissionPlugins, plugin)
-			}
-		}
-		c.kubeadmConfigMap.APIServer.ExtraArgs.EnableAdmissionPlugins = strings.Join(upgradeAddmissionPlugins, ",")
 	}
 
 	type data struct {

@@ -33,7 +33,6 @@ import (
 	"github.com/pbnjay/memory"
 )
 
-//go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta2 kubeadm_v1beta2.yaml.tmpl
 
 func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
@@ -66,10 +65,7 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 
 	var conf string
 	switch ver.Minor() {
-	case 17:
-		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
-		conf = kubeadmConfigV1Beta1Template()
-	case 18, 19, 20, 21:
+	case 19, 20, 21:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
 		conf = kubeadmConfigV1Beta2Template()
 	default:

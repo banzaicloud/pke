@@ -32,7 +32,7 @@ func TestWriteConfig(t *testing.T) {
 	t.Log(fileName)
 
 	c := &WriteConfig{
-		kubernetesVersion: "1.18.0",
+		kubernetesVersion: "1.21.0",
 		containerRuntime:  "containerd",
 	}
 
@@ -43,7 +43,7 @@ func TestWriteConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	const expected = `kubernetes:
-  version: 1.18.0
+  version: 1.21.0
   installed: true
 containerRuntime:
   type: containerd
