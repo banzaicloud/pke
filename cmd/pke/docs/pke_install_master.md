@@ -35,7 +35,7 @@ pke install master [flags]
       --etcd-key-file string                              An SSL key file used to secure etcd communication
       --etcd-prefix string                                The prefix to prepend to all resource paths in etcd
   -h, --help                                              help for master
-      --image-repository string                           Prefix for image repository (default "banzaicloud")
+      --image-repository string                           Prefix for image repository
       --kubelet-certificate-authority string              Path to a cert file for the certificate authority. Used for kubelet server certificate verify. (default "/etc/kubernetes/pki/ca.crt")
       --kubernetes-advertise-address string               Kubernetes API Server advertise address
       --kubernetes-api-server string                      Kubernetes API Server host port

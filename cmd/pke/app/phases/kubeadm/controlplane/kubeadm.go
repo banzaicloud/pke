@@ -148,7 +148,9 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 
 	imageRepository := "k8s.gcr.io"
 	if c.useImageRepositoryToK8s {
-		imageRepository = c.imageRepository
+		if c.imageRepository != "" {
+			imageRepository = c.imageRepository
+		}
 	}
 
 	d := data{

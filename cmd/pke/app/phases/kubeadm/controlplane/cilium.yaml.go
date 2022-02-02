@@ -479,7 +479,7 @@ func ciliumTemplate() string {
 		"              key: custom-cni-conf\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        {{ if ne .ImageRepository \"banzaicloud\" }}\n" +
+		"        {{ if ne .ImageRepository \"\" }}\n" +
 		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
 		"        {{ else }}\n" +
 		"        image: \"cilium/cilium:{{ .Version }}\"\n" +
@@ -546,7 +546,7 @@ func ciliumTemplate() string {
 		"              key: wait-bpf-mount\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        {{ if ne .ImageRepository \"banzaicloud\" }}\n" +
+		"        {{ if ne .ImageRepository \"\" }}\n" +
 		"        image: \"{{ .ImageRepository }}/cilium:{{ .Version }}\"\n" +
 		"        {{ else }}\n" +
 		"        image: \"cilium/cilium:{{ .Version }}\"\n" +
@@ -685,7 +685,7 @@ func ciliumTemplate() string {
 		"              key: debug\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        {{ if ne .ImageRepository \"banzaicloud\" }}\n" +
+		"        {{ if ne .ImageRepository \"\" }}\n" +
 		"        image: \"{{ .ImageRepository }}/cilium-operator:{{ .Version }}\"\n" +
 		"        {{ else }}\n" +
 		"        image: \"cilium/operator:{{ .Version }}\"\n" +

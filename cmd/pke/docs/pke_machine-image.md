@@ -18,7 +18,7 @@ pke machine-image [flags]
 
 ```
   -h, --help                                  help for machine-image
-      --image-repository string               Prefix for image repository (default "banzaicloud")
+      --image-repository string               Prefix for image repository
       --kubernetes-container-runtime string   Kubernetes container runtime (default "containerd")
       --kubernetes-version string             Kubernetes version (default "1.22.1")
       --use-image-repo-for-k8s                Use defined image repository for K8s Images as well

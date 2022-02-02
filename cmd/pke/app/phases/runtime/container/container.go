@@ -59,7 +59,7 @@ func (r *Runtime) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagContainerRuntime, r.config.ContainerRuntime.Type, "Kubernetes container runtime")
 
 	// Image repository
-	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+	flags.String(constants.FlagImageRepository, "", "Prefix for image repository")
 
 	// Use defined image repository for K8s images as well
 	flags.Bool(constants.FlagUseImageRepositoryToK8s, false, "Use defined image repository for K8s Images as well")
@@ -81,7 +81,6 @@ func (r *Runtime) Validate(cmd *cobra.Command) (err error) {
 	}
 	if err := validator.NotEmpty(map[string]interface{}{
 		constants.FlagContainerRuntime:        r.containerRuntime,
-		constants.FlagImageRepository:         r.imageRepository,
 		constants.FlagUseImageRepositoryToK8s: r.useImageRepositoryToK8s,
 	}); err != nil {
 		return err

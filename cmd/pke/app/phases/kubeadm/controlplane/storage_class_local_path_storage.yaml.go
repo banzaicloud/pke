@@ -73,7 +73,7 @@ func storageClassLocalPathStorageTemplate() string {
 		"      serviceAccountName: local-path-provisioner-service-account\n" +
 		"      containers:\n" +
 		"      - name: local-path-provisioner\n" +
-		"        {{ if ne .ImageRepository \"banzaicloud\" }}\n" +
+		"        {{ if ne .ImageRepository \"\" }}\n" +
 		"        image: \"{{ .ImageRepository }}/local-path-provisioner:v0.0.21\"\n" +
 		"        {{ else }}\n" +
 		"        image: \"rancher/local-path-provisioner:v0.0.21\"\n" +

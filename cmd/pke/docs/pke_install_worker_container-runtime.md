@@ -18,7 +18,7 @@ pke install worker container-runtime [flags]
 
 ```
   -h, --help                                  help for container-runtime
-      --image-repository string               Prefix for image repository (default "banzaicloud")
+      --image-repository string               Prefix for image repository
       --kubernetes-container-runtime string   Kubernetes container runtime (default "containerd")
       --use-image-repo-for-k8s                Use defined image repository for K8s Images as well
 ```

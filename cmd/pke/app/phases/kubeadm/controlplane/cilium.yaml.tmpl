@@ -461,7 +461,7 @@ spec:
               key: custom-cni-conf
               name: cilium-config
               optional: true
-        {{ if ne .ImageRepository "banzaicloud" }}
+        {{ if ne .ImageRepository "" }}
         image: "{{ .ImageRepository }}/cilium:v1.9.1"
         {{ else }}
         image: "cilium/cilium:{{ .Version }}"
@@ -528,7 +528,7 @@ spec:
               key: wait-bpf-mount
               name: cilium-config
               optional: true
-        {{ if ne .ImageRepository "banzaicloud" }}
+        {{ if ne .ImageRepository "" }}
         image: "{{ .ImageRepository }}/cilium:{{ .Version }}"
         {{ else }}
         image: "cilium/cilium:{{ .Version }}"
@@ -667,7 +667,7 @@ spec:
               key: debug
               name: cilium-config
               optional: true
-        {{ if ne .ImageRepository "banzaicloud" }}
+        {{ if ne .ImageRepository "" }}
         image: "{{ .ImageRepository }}/cilium-operator:{{ .Version }}"
         {{ else }}
         image: "cilium/operator:{{ .Version }}"

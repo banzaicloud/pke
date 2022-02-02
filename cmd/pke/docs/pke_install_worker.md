@@ -26,7 +26,7 @@ pke install worker [flags]
       --azure-vnet-name string                      The name of the VNet that the cluster is deployed in
       --azure-vnet-resource-group string            The name of the resource group that the Vnet is deployed in
   -h, --help                                        help for worker
-      --image-repository string                     Prefix for image repository (default "banzaicloud")
+      --image-repository string                     Prefix for image repository
       --kubernetes-api-server string                Kubernetes API Server host port
       --kubernetes-api-server-ca-cert-hash string   CA cert hash
       --kubernetes-cloud-provider string            cloud provider. example: aws

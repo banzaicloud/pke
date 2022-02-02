@@ -85,7 +85,7 @@ func certificateAutoApproverTemplate() string {
 		"      priorityClassName: system-cluster-critical\n" +
 		"      containers:\n" +
 		"        - name: kubelet-csr-approver\n" +
-		"          {{ if ne .ImageRepository \"banzaicloud\" }}\n" +
+		"          {{ if ne .ImageRepository \"\" }}\n" +
 		"          image: \"{{ .ImageRepository }}/kubelet-csr-approver:v0.1.2\"\n" +
 		"          {{ else }}\n" +
 		"          image: \"postfinance/kubelet-csr-approver:v0.1.2\"\n" +

@@ -67,7 +67,7 @@ spec:
       priorityClassName: system-cluster-critical
       containers:
         - name: kubelet-csr-approver
-          {{ if ne .ImageRepository "banzaicloud" }}
+          {{ if ne .ImageRepository "" }}
           image: "{{ .ImageRepository }}/kubelet-csr-approver:v0.1.2"
           {{ else }}
           image: "postfinance/kubelet-csr-approver:v0.1.2"

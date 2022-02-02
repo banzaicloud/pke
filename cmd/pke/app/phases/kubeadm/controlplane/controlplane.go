@@ -194,7 +194,7 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagOIDCIssuerURL, "", "URL of the OIDC provider which allows the API server to discover public signing keys")
 	flags.String(constants.FlagOIDCClientID, "", "A client ID that all OIDC tokens must be issued for")
 	// Image repository
-	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+	flags.String(constants.FlagImageRepository, "", "Prefix for image repository")
 	// Use defined image repository for K8s images as well
 	flags.Bool(constants.FlagUseImageRepositoryToK8s, false, "Use defined image repository for K8s Images as well")
 	// PodSecurityPolicy admission plugin
@@ -277,7 +277,6 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 		constants.FlagPodNetworkCIDR:          c.podNetworkCIDR,
 		constants.FlagClusterName:             c.clusterName,
 		constants.FlagClusterMode:             c.clusterMode,
-		constants.FlagImageRepository:         c.imageRepository,
 		constants.FlagUseImageRepositoryToK8s: c.useImageRepositoryToK8s,
 	}); err != nil {
 		return err
