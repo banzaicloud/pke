@@ -1,4 +1,4 @@
-apiVersion: kubeadm.k8s.io/v1beta2
+apiVersion: kubeadm.k8s.io/v1beta3
 kind: InitConfiguration
 {{ if .APIServerAdvertiseAddress}}
 localAPIEndpoint:
@@ -26,7 +26,7 @@ nodeRegistration:
     authorization-mode: "Webhook"
     experimental-kernel-memcg-notification: "true"
 ---
-apiVersion: kubeadm.k8s.io/v1beta2
+apiVersion: kubeadm.k8s.io/v1beta3
 kind: ClusterConfiguration
 clusterName: "{{ .ClusterName }}"
 imageRepository: {{ .ImageRepository }}

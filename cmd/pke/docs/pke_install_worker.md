@@ -35,7 +35,7 @@ pke install worker [flags]
       --kubernetes-node-labels strings              Specifies the labels the Node should be registered with
       --kubernetes-node-token string                PKE join token
       --kubernetes-pod-network-cidr string          range of IP addresses for the pod network on the current node
-      --kubernetes-version string                   Kubernetes version (default "1.19.10")
+      --kubernetes-version string                   Kubernetes version (default "1.22.1")
       --pipeline-cluster-id int32                   Cluster ID to use with Pipeline API
       --pipeline-insecure                           If the Pipeline API should not verify the API's certificate
       --pipeline-nodepool string                    name of the nodepool the node belongs to

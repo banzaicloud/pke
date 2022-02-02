@@ -505,12 +505,6 @@ func calicoTemplate() string {
 		"    metadata:\n" +
 		"      labels:\n" +
 		"        k8s-app: calico-node\n" +
-		"      annotations:\n" +
-		"        # This, along with the CriticalAddonsOnly toleration below,\n" +
-		"        # marks the pod as a critical add-on, ensuring it gets\n" +
-		"        # priority scheduling and that its resources are reserved\n" +
-		"        # if it ever gets evicted.\n" +
-		"        scheduler.alpha.kubernetes.io/critical-pod: ''\n" +
 		"    spec:\n" +
 		"      nodeSelector:\n" +
 		"        beta.kubernetes.io/os: linux\n" +
@@ -756,8 +750,6 @@ func calicoTemplate() string {
 		"      namespace: kube-system\n" +
 		"      labels:\n" +
 		"        k8s-app: calico-kube-controllers\n" +
-		"      annotations:\n" +
-		"        scheduler.alpha.kubernetes.io/critical-pod: ''\n" +
 		"    spec:\n" +
 		"      nodeSelector:\n" +
 		"        beta.kubernetes.io/os: linux\n" +

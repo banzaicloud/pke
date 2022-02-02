@@ -3,7 +3,7 @@
 # build latest pke tool
 GOOS=linux make pke
 
-KUBERNETES_VERSION="${1:-v1.20.6}"
+KUBERNETES_VERSION="${1:-v1.22.6}"
 
 vagrant up ubuntu1
 vagrant ssh ubuntu1 -c "sudo /scripts/pke-single.sh '$KUBERNETES_VERSION' '192.168.64.21:6443'"

@@ -28,9 +28,9 @@ import (
 )
 
 const (
-	containerdVersion     = "1.3.3"
-	containerdSHA256      = "24ce7ad6b489fb25d07d2a3bb50e443fcce1ac3318f8cc0831e00668c2c9fd86"
-	containerdURL         = "https://storage.googleapis.com/cri-containerd-release/cri-containerd-%s.linux-amd64.tar.gz"
+	containerdVersion     = "1.5.9"
+	containerdSHA256      = "f64c8e3b736b370c963b08c33ac70f030fc311bc48fcfd00461465af2fff3488"
+	containerdURL         = "https://github.com/containerd/containerd/releases/download/v%s/cri-containerd-cni-%s-linux-amd64.tar.gz"
 	containerdVersionPath = "/opt/containerd/cluster/version"
 	containerdConf        = "/etc/containerd/config.toml"
 
@@ -108,18 +108,20 @@ func installContainerd(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "unable to create temporary file: %q", f.Name())
 	}
 	defer func() { _ = f.Close() }()
-	// export CONTAINERD_VERSION="1.3.3"
-	// export CONTAINERD_SHA256="24ce7ad6b489fb25d07d2a3bb50e443fcce1ac3318f8cc0831e00668c2c9fd86"
-	// wget https://storage.googleapis.com/cri-containerd-release/cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz
-	dl := fmt.Sprintf(containerdURL, containerdVersion)
+	// export CONTAINERD_VERSION="1.5.9"
+	// export CONTAINERD_SHA256="f64c8e3b736b370c963b08c33ac70f030fc311bc48fcfd00461465af2fff3488"
+	// wget https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/cri-containerd-cni-${CONTAINERD_VERSION}-linux-amd64.tar.gz
+	dl := fmt.Sprintf(containerdURL, containerdVersion, containerdVersion)
 	u, err := url.Parse(dl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse url: %q", dl)
 	}
 	_, _ = fmt.Fprintf(out, "wget %q -O %s\n", u.String(), f.Name())
+
 	if err = file.Download(u, f.Name()); err != nil {
 		return errors.Wrapf(err, "unable to download containerd. url: %q", u.String())
 	}
+
 	// echo "${CONTAINERD_SHA256} cri-containerd-${CONTAINERD_VERSION}.linux-amd64.tar.gz" | sha256sum --check -
 	_, _ = fmt.Fprintf(out, "echo \"%s %s\" | sha256sum --check -\n", containerdSHA256, f.Name())
 	err = file.SHA256File(f.Name(), containerdSHA256)

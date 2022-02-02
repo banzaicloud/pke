@@ -24,25 +24,35 @@ import (
 	"os"
 
 	"emperror.dev/errors"
+	retry "github.com/avast/retry-go"
 )
 
 func Download(u *url.URL, f string) error {
-	resp, err := http.Get(u.String())
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("unhandled http status code: %d", resp.StatusCode)
-	}
-	defer func() { _ = resp.Body.Close() }()
+	err := retry.Do(
+		func() error {
+			resp, err := http.Get(u.String())
+			if err != nil {
+				return err
+			}
+			if resp.StatusCode != http.StatusOK {
+				return errors.Errorf("unhandled http status code: %d", resp.StatusCode)
+			}
+			defer func() { _ = resp.Body.Close() }()
 
-	out, err := os.Create(f)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = out.Close() }()
+			out, err := os.Create(f)
+			if err != nil {
+				return err
+			}
+			defer func() { _ = out.Close() }()
 
-	_, err = io.Copy(out, resp.Body)
+			_, err = io.Copy(out, resp.Body)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	)
 	if err != nil {
 		return err
 	}

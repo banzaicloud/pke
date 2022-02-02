@@ -1,2 +1,6 @@
 [plugins.cri]
+{{ if ne .ImageRepository "banzaicloud" }}
 sandbox_image = "{{ .ImageRepository }}/pause:3.1"
+{{ else }}
+sandbox_image = "k8s.gcr.io/pause:3.6"
+{{ end }}

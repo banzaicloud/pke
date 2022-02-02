@@ -108,8 +108,6 @@ type ControlPlane struct {
 	imageRepository                  string
 	useImageRepositoryToK8s          bool
 	withPluginPSP                    bool
-	withoutPluginDenyEscalatingExec  bool
-	useHyperKubeImage                bool
 	withoutAuditLog                  bool
 	node                             *node.Node
 	azureTenantID                    string
@@ -201,8 +199,6 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Bool(constants.FlagUseImageRepositoryToK8s, false, "Use defined image repository for K8s Images as well")
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
-	// DenyEscalatingExec admission plugin
-	flags.Bool(constants.FlagNoAdmissionPluginDenyEscalatingExec, false, "Disable DenyEscalatingExec admission plugin")
 
 	// AuditLog enable
 	flags.Bool(constants.FlagAuditLog, false, "Disable apiserver audit log")
@@ -509,7 +505,9 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		if c.clusterMode == singleMode {
 			single = true
 		}
-		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, c.useImageRepositoryToK8s, c.mtu, single); err != nil {
+		// TODO get cilium version from flag
+		version := "v1.11.1"
+		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, version, c.mtu, single); err != nil {
 			return err
 		}
 	}
@@ -648,10 +646,6 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.withPluginPSP, err = cmd.Flags().GetBool(constants.FlagAdmissionPluginPodSecurityPolicy)
-	if err != nil {
-		return
-	}
-	c.withoutPluginDenyEscalatingExec, err = cmd.Flags().GetBool(constants.FlagNoAdmissionPluginDenyEscalatingExec)
 	if err != nil {
 		return
 	}
@@ -954,7 +948,7 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 //go:generate templify -t ${GOTMPL} -p controlplane -f cilium cilium.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f ciliumSysFsBpf cilium_sys_fs_bpf.mount.tmpl
 
-func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository string, useImageRepositoryToK8s bool, mtu uint, single bool) error {
+func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository, version string, mtu uint, single bool) error {
 	if _, err := os.Stat("/sys/fs/bpf"); err != nil {
 		// Mounting BPF filesystem
 		if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
@@ -976,13 +970,14 @@ func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository st
 		ImageRepository         string
 		PodCIDR                 string
 		Single                  bool
+		Version                 string
 	}
 
 	d := data{
-		UseImageRepositoryToK8s: useImageRepositoryToK8s,
-		ImageRepository:         imageRepository,
-		PodCIDR:                 podNetworkCIDR,
-		Single:                  single,
+		ImageRepository: imageRepository,
+		PodCIDR:         podNetworkCIDR,
+		Single:          single,
+		Version:         version,
 	}
 
 	var b bytes.Buffer

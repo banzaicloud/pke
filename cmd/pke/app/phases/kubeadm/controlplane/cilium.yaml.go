@@ -393,11 +393,6 @@ func ciliumTemplate() string {
 		"  template:\n" +
 		"    metadata:\n" +
 		"      annotations:\n" +
-		"        # This annotation plus the CriticalAddonsOnly toleration makes\n" +
-		"        # cilium to be a critical pod in the cluster, which ensures cilium\n" +
-		"        # gets priority scheduling.\n" +
-		"        # https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/\n" +
-		"        scheduler.alpha.kubernetes.io/critical-pod: \"\"\n" +
 		"      labels:\n" +
 		"        k8s-app: cilium\n" +
 		"    spec:\n" +
@@ -484,11 +479,11 @@ func ciliumTemplate() string {
 		"              key: custom-cni-conf\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        {{if .UseImageRepositoryToK8s}}\n" +
+		"        {{ if ne .ImageRepository \"banzaicloud\" }}\n" +
 		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
-		"        {{else}}\n" +
-		"        image: \"cilium/cilium:v1.9.1\"\n" +
-		"        {{end}}\n" +
+		"        {{ else }}\n" +
+		"        image: \"cilium/cilium:{{ .Version }}\"\n" +
+		"        {{ end }}\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        lifecycle:\n" +
 		"          postStart:\n" +
@@ -551,11 +546,11 @@ func ciliumTemplate() string {
 		"              key: wait-bpf-mount\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        {{if .UseImageRepositoryToK8s}}\n" +
-		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
-		"        {{else}}\n" +
-		"        image: \"cilium/cilium:v1.9.1\"\n" +
-		"        {{end}}\n" +
+		"        {{ if ne .ImageRepository \"banzaicloud\" }}\n" +
+		"        image: \"{{ .ImageRepository }}/cilium:{{ .Version }}\"\n" +
+		"        {{ else }}\n" +
+		"        image: \"cilium/cilium:{{ .Version }}\"\n" +
+		"        {{ end }}\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: clean-cilium-state\n" +
 		"        securityContext:\n" +
@@ -690,11 +685,11 @@ func ciliumTemplate() string {
 		"              key: debug\n" +
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
-		"        {{if .UseImageRepositoryToK8s}}\n" +
-		"        image: \"{{ .ImageRepository }}/cilium-operator:v1.9.1\"\n" +
-		"        {{else}} \n" +
-		"        image: \"cilium/operator:v1.9.1\"\n" +
-		"        {{end}}\n" +
+		"        {{ if ne .ImageRepository \"banzaicloud\" }}\n" +
+		"        image: \"{{ .ImageRepository }}/cilium-operator:{{ .Version }}\"\n" +
+		"        {{ else }}\n" +
+		"        image: \"cilium/operator:{{ .Version }}\"\n" +
+		"        {{ end }}\n" +
 		"        imagePullPolicy: IfNotPresent\n" +
 		"        name: cilium-operator\n" +
 		"        livenessProbe:\n" +

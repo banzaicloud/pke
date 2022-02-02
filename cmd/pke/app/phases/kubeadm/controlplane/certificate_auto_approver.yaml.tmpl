@@ -1,20 +1,19 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: auto-approver
+  name: kubelet-csr-approver
   namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: auto-approver
+  name: kubelet-csr-approver
 rules:
 - apiGroups:
   - certificates.k8s.io
   resources:
   - certificatesigningrequests
   verbs:
-  - delete
   - get
   - list
   - watch
@@ -23,67 +22,80 @@ rules:
   resources:
   - certificatesigningrequests/approval
   verbs:
-  - create
   - update
 - apiGroups:
   - certificates.k8s.io
-  resources:
-  - signers
   resourceNames:
   - kubernetes.io/kubelet-serving
-  - kubernetes.io/kube-apiserver-client-kubelet
+  resources:
+  - signers
   verbs:
   - approve
-- apiGroups:
-  - authorization.k8s.io
-  resources:
-  - subjectaccessreviews
-  verbs:
-  - create
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
-  name: auto-approver
+  name: kubelet-csr-approver
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubelet-csr-approver
 subjects:
 - kind: ServiceAccount
+  name: kubelet-csr-approver
   namespace: kube-system
-  name: auto-approver
-roleRef:
-  kind: ClusterRole
-  name: auto-approver
-  apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auto-approver
+  name: kubelet-csr-approver
   namespace: kube-system
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      name: auto-approver
+      app: kubelet-csr-approver
   template:
     metadata:
+      annotations:
+        prometheus.io/port: '8080'
+        prometheus.io/scrape: 'true'
       labels:
-        name: auto-approver
+        app: kubelet-csr-approver
     spec:
-      serviceAccountName: auto-approver
-      tolerations:
-        - effect: NoSchedule
-          operator: Exists
+      serviceAccountName: kubelet-csr-approver
       priorityClassName: system-cluster-critical
       containers:
-        - name: auto-approver
-          image: {{ .ImageRepository }}/auto-approver:0.1.0
-          imagePullPolicy: Always
+        - name: kubelet-csr-approver
+          {{ if ne .ImageRepository "banzaicloud" }}
+          image: "{{ .ImageRepository }}/kubelet-csr-approver:v0.1.2"
+          {{ else }}
+          image: "postfinance/kubelet-csr-approver:v0.1.2"
+          {{ end }}
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          args:
+            - -metrics-bind-address
+            - ":8080"
+            - -health-probe-bind-address
+            - ":8081"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
           env:
-            - name: WATCH_NAMESPACE
-              value: ""
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: OPERATOR_NAME
-              value: "auto-approver"
+            - name: PROVIDER_REGEX
+              value: \w*
+            - name: MAX_EXPIRATION_SECONDS
+              value: '31622400' # 366 days
+            - name: BYPASS_DNS_RESOLUTION
+              value: 'true'
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Equal
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Equal
