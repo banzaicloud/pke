@@ -10,6 +10,9 @@ echo ""
 echo "= ubuntu1 ========================================================================"
 vagrant ssh ubuntu1 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION'"
 
+# waiting 20 seconds because of apiserver
+sleep 20
+
 # upgrade second master node
 echo ""
 echo "= ubuntu2 ========================================================================"

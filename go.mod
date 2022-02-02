@@ -14,7 +14,6 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/goph/emperror v0.17.1
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/lestrrat-go/backoff v0.0.0-20190107202757-0bc2a4274cd0
 	github.com/pbnjay/memory v0.0.0-20190104145345-974d429e7ae4

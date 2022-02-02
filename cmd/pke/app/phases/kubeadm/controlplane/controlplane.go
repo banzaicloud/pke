@@ -47,7 +47,6 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/transport"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
-	"github.com/goph/emperror"
 	"github.com/lestrrat-go/backoff"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -473,7 +472,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		// initial master node
 		_, _ = fmt.Fprintf(out, "[%s] installing initial master node\n", c.Use())
 		if err := c.appendAdvertiseAddressAsLoopback(); err != nil {
-			return emperror.Wrap(err, "failed to write to /etc/hosts")
+			return errors.Wrap(err, "failed to write to /etc/hosts")
 		}
 	}
 
@@ -1151,28 +1150,28 @@ func writeMasterConfig(out io.Writer, a bool, kubernetesVersion, encryptionSecre
 
 	if a {
 		if err := writeAuditPolicyFile(out); err != nil {
-			return emperror.Wrap(err, "writing audit policy file failed")
+			return errors.Wrap(err, "writing audit policy file failed")
 		}
 	}
 
 	err := writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
 	if err != nil {
-		return emperror.Wrap(err, "writing admission config failed")
+		return errors.Wrap(err, "writing admission config failed")
 	}
 
 	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
 	if err != nil {
-		return emperror.Wrap(err, "writing event limit config failed")
+		return errors.Wrap(err, "writing event limit config failed")
 	}
 
 	err = writeKubeProxyConfig(out, kubeProxyConfig)
 	if err != nil {
-		return emperror.Wrap(err, "writing kube proxy config failed")
+		return errors.Wrap(err, "writing kube proxy config failed")
 	}
 
 	err = kubeadm.WriteEncryptionProviderConfig(out, kubeadm.EncryptionProviderConfig, kubernetesVersion, encryptionSecret)
 	if err != nil {
-		return emperror.Wrap(err, "writing encryption provider config failed")
+		return errors.Wrap(err, "writing encryption provider config failed")
 	}
 
 	return nil

@@ -38,14 +38,10 @@ const (
 	use   = "kubernetes-controlplane"
 	short = "Kubernetes Control Plane upgrade"
 
-	kubeConfig                    = "/etc/kubernetes/admin.conf"
-	cmdKubeadm                    = "kubeadm"
-	cmdKubectl                    = "kubectl"
-	certificateAutoApproverUpdate = "/etc/kubernetes/admission-control/deploy-auto-approver-update.yaml"
-	advertiseAddressAnnotation    = "kubeadm.kubernetes.io/kube-apiserver.advertise-address.endpoint"
-	kubeAPIServerManifestFile     = "/etc/kubernetes/manifests/kube-apiserver.yaml"
-	kubeadmConfig                 = "/etc/kubernetes/kubeadm.conf"
-	kubeadmMigratedConfig         = "/etc/kubernetes/kubeadm-migrated.conf"
+	kubeConfig            = "/etc/kubernetes/admin.conf"
+	cmdKubeadm            = "kubeadm"
+	kubeadmConfig         = "/etc/kubernetes/kubeadm.conf"
+	kubeadmMigratedConfig = "/etc/kubernetes/kubeadm-migrated.conf"
 )
 
 var _ phases.Runnable = (*ControlPlane)(nil)
