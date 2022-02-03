@@ -14,9 +14,9 @@
 
 package node
 
-// kubeadmConfigV1Beta1Template is a generated function returning the template as a string.
-func kubeadmConfigV1Beta1Template() string {
-	var tmpl = "apiVersion: kubeadm.k8s.io/v1beta1\n" +
+// kubeadmConfigV1Beta3Template is a generated function returning the template as a string.
+func kubeadmConfigV1Beta3Template() string {
+	var tmpl = "apiVersion: kubeadm.k8s.io/v1beta3\n" +
 		"kind: JoinConfiguration\n" +
 		"{{ if and .APIServerAdvertiseAddress .APIServerBindPort }}\n" +
 		"controlPlane:\n" +

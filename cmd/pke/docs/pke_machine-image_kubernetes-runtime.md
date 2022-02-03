@@ -18,7 +18,7 @@ pke machine-image kubernetes-runtime [flags]
 
 ```
   -h, --help                        help for kubernetes-runtime
-      --kubernetes-version string   Kubernetes version (default "1.19.10")
+      --kubernetes-version string   Kubernetes version (default "1.22.1")
 ```
 
 ### SEE ALSO

@@ -14,9 +14,9 @@
 
 package controlplane
 
-// kubeadmConfigV1Beta1Template is a generated function returning the template as a string.
-func kubeadmConfigV1Beta1Template() string {
-	var tmpl = "apiVersion: kubeadm.k8s.io/v1beta1\n" +
+// kubeadmConfigV1Beta3Template is a generated function returning the template as a string.
+func kubeadmConfigV1Beta3Template() string {
+	var tmpl = "apiVersion: kubeadm.k8s.io/v1beta3\n" +
 		"kind: InitConfiguration\n" +
 		"{{ if .APIServerAdvertiseAddress}}\n" +
 		"localAPIEndpoint:\n" +
@@ -44,11 +44,10 @@ func kubeadmConfigV1Beta1Template() string {
 		"    authorization-mode: \"Webhook\"\n" +
 		"    experimental-kernel-memcg-notification: \"true\"\n" +
 		"---\n" +
-		"apiVersion: kubeadm.k8s.io/v1beta1\n" +
+		"apiVersion: kubeadm.k8s.io/v1beta3\n" +
 		"kind: ClusterConfiguration\n" +
 		"clusterName: \"{{ .ClusterName }}\"\n" +
 		"imageRepository: {{ .ImageRepository }}\n" +
-		"useHyperKubeImage:  {{ .UseHyperKubeImage }}\n" +
 		"networking:\n" +
 		"  serviceSubnet: \"{{ .ServiceCIDR }}\"\n" +
 		"  podSubnet: \"{{ .PodCIDR }}\"\n" +
@@ -64,7 +63,7 @@ func kubeadmConfigV1Beta1Template() string {
 		"  extraArgs:\n" +
 		"    # anonymous-auth: \"false\"\n" +
 		"    profiling: \"false\"\n" +
-		"    enable-admission-plugins: \"AlwaysPullImages,{{ if not .WithoutPluginDenyEscalatingExec }}DenyEscalatingExec,{{end}}EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}\"\n" +
+		"    enable-admission-plugins: \"AlwaysPullImages,EventRateLimit,NodeRestriction,ServiceAccount{{ if .WithPluginPSP }},PodSecurityPolicy{{end}}\"\n" +
 		"    disable-admission-plugins: \"\"\n" +
 		"    admission-control-config-file: \"{{ .AdmissionConfig }}\"\n" +
 		"    audit-log-path: \"{{ .AuditLogDir }}/apiserver.log\"\n" +

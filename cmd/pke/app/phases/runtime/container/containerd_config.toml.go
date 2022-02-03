@@ -17,7 +17,10 @@ package container
 // containerdConfigTemplate is a generated function returning the template as a string.
 func containerdConfigTemplate() string {
 	var tmpl = "[plugins.cri]\n" +
-		"sandbox_image = \"{{ .ImageRepository }}/pause:3.1\"\n" +
-		""
+		"{{ if ne .ImageRepository \"\" }}\n" +
+		"sandbox_image = \"{{ .ImageRepository }}/pause:3.6\"\n" +
+		"{{ else }}\n" +
+		"sandbox_image = \"k8s.gcr.io/pause:3.6\"\n" +
+		"{{ end }}"
 	return tmpl
 }

@@ -18,8 +18,8 @@ pke machine-image image-pull [flags]
 
 ```
   -h, --help                        help for image-pull
-      --image-repository string     Prefix for image repository (default "banzaicloud")
-      --kubernetes-version string   Kubernetes version (default "1.19.10")
+      --image-repository string     Prefix for image repository
+      --kubernetes-version string   Kubernetes version (default "1.22.1")
       --use-image-repo-for-k8s      Use defined image repository for K8s Images as well
 ```
 

@@ -22,14 +22,14 @@ func storageClassLocalPathStorageTemplate() string {
 		"  name: local-path-provisioner-service-account\n" +
 		"  namespace: kube-system\n" +
 		"---\n" +
-		"apiVersion: rbac.authorization.k8s.io/v1beta1\n" +
+		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRole\n" +
 		"metadata:\n" +
 		"  name: local-path-provisioner-role\n" +
 		"  namespace: kube-system\n" +
 		"rules:\n" +
 		"- apiGroups: [\"\"]\n" +
-		"  resources: [\"nodes\", \"persistentvolumeclaims\"]\n" +
+		"  resources: [\"nodes\", \"persistentvolumeclaims\", \"configmaps\"]\n" +
 		"  verbs: [\"get\", \"list\", \"watch\"]\n" +
 		"- apiGroups: [\"\"]\n" +
 		"  resources: [\"endpoints\", \"persistentvolumes\", \"pods\"]\n" +
@@ -73,7 +73,11 @@ func storageClassLocalPathStorageTemplate() string {
 		"      serviceAccountName: local-path-provisioner-service-account\n" +
 		"      containers:\n" +
 		"      - name: local-path-provisioner\n" +
-		"        image: {{ .ImageRepository }}/local-path-provisioner:v0.0.9\n" +
+		"        {{ if ne .ImageRepository \"\" }}\n" +
+		"        image: \"{{ .ImageRepository }}/local-path-provisioner:v0.0.21\"\n" +
+		"        {{ else }}\n" +
+		"        image: \"rancher/local-path-provisioner:v0.0.21\"\n" +
+		"        {{ end }}\n" +
 		"        imagePullPolicy: Always\n" +
 		"        command:\n" +
 		"        - local-path-provisioner\n" +
@@ -120,6 +124,51 @@ func storageClassLocalPathStorageTemplate() string {
 		"                }\n" +
 		"                ]\n" +
 		"        }\n" +
+		"  setup: |-\n" +
+		"        #!/bin/sh\n" +
+		"        while getopts \"m:s:p:\" opt\n" +
+		"        do\n" +
+		"            case $opt in\n" +
+		"                p)\n" +
+		"                absolutePath=$OPTARG\n" +
+		"                ;;\n" +
+		"                s)\n" +
+		"                sizeInBytes=$OPTARG\n" +
+		"                ;;\n" +
+		"                m)\n" +
+		"                volMode=$OPTARG\n" +
+		"                ;;\n" +
+		"            esac\n" +
+		"        done\n" +
+		"\n" +
+		"        mkdir -m 0777 -p ${absolutePath}\n" +
+		"  teardown: |-\n" +
+		"        #!/bin/sh\n" +
+		"        while getopts \"m:s:p:\" opt\n" +
+		"        do\n" +
+		"            case $opt in\n" +
+		"                p)\n" +
+		"                absolutePath=$OPTARG\n" +
+		"                ;;\n" +
+		"                s)\n" +
+		"                sizeInBytes=$OPTARG\n" +
+		"                ;;\n" +
+		"                m)\n" +
+		"                volMode=$OPTARG\n" +
+		"                ;;\n" +
+		"            esac\n" +
+		"        done\n" +
+		"\n" +
+		"        rm -rf ${absolutePath}\n" +
+		"  helperPod.yaml: |-\n" +
+		"        apiVersion: v1\n" +
+		"        kind: Pod\n" +
+		"        metadata:\n" +
+		"          name: helper-pod\n" +
+		"        spec:\n" +
+		"          containers:\n" +
+		"          - name: helper-pod\n" +
+		"            image: busybox\n" +
 		""
 	return tmpl
 }

@@ -3,12 +3,15 @@
 # build latest pke tool
 GOOS=linux make pke
 
-KUBERNETES_VERSION="${1:-v1.21.0}"
+KUBERNETES_VERSION="${1:-v1.23.3}"
 
 # upgrade first master node
 echo ""
 echo "= ubuntu1 ========================================================================"
 vagrant ssh ubuntu1 -c "sudo /banzaicloud/pke upgrade master --kubernetes-version='$KUBERNETES_VERSION'"
+
+# waiting 20 seconds because of apiserver
+sleep 20
 
 # upgrade second master node
 echo ""

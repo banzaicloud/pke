@@ -18,7 +18,7 @@ In order to run PKE, you need to meet the following requirements.
 
 #### Operating system
 
-`pke` currently is available for CentOS 7.x, RHEL 7.x. and **Ubuntu 18.04 LTS**.
+`pke` currently is available for AlmaLinux 8.x, RHEL 8.x. and **Ubuntu 20.04 LTS**.
 
 > We recommend using Ubuntu since it contains a much newer Kernel version. If you need support for an OS not listed above feel free to contact us.
 

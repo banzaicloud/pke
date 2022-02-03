@@ -375,11 +375,6 @@ spec:
   template:
     metadata:
       annotations:
-        # This annotation plus the CriticalAddonsOnly toleration makes
-        # cilium to be a critical pod in the cluster, which ensures cilium
-        # gets priority scheduling.
-        # https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
-        scheduler.alpha.kubernetes.io/critical-pod: ""
       labels:
         k8s-app: cilium
     spec:
@@ -466,7 +461,11 @@ spec:
               key: custom-cni-conf
               name: cilium-config
               optional: true
-        image: "{{ .ImageRepository }}/cilium:v1.9.1"
+        {{ if ne .ImageRepository "" }}
+        image: "{{ .ImageRepository }}/cilium:{{ .Version }}"
+        {{ else }}
+        image: "cilium/cilium:{{ .Version }}"
+        {{ end }}
         imagePullPolicy: IfNotPresent
         lifecycle:
           postStart:
@@ -529,7 +528,11 @@ spec:
               key: wait-bpf-mount
               name: cilium-config
               optional: true
-        image: "{{ .ImageRepository }}/cilium:v1.9.1"
+        {{ if ne .ImageRepository "" }}
+        image: "{{ .ImageRepository }}/cilium:{{ .Version }}"
+        {{ else }}
+        image: "cilium/cilium:{{ .Version }}"
+        {{ end }}
         imagePullPolicy: IfNotPresent
         name: clean-cilium-state
         securityContext:
@@ -646,7 +649,7 @@ spec:
         - --config-dir=/tmp/cilium/config-map
         - --debug=$(CILIUM_DEBUG)
         command:
-        - cilium-operator-generic
+        - cilium-operator
         env:
         - name: K8S_NODE_NAME
           valueFrom:
@@ -664,7 +667,11 @@ spec:
               key: debug
               name: cilium-config
               optional: true
-        image: "{{ .ImageRepository }}/cilium-operator:v1.9.1"
+        {{ if ne .ImageRepository "" }}
+        image: "{{ .ImageRepository }}/cilium-operator:{{ .Version }}"
+        {{ else }}
+        image: "cilium/operator:{{ .Version }}"
+        {{ end }}
         imagePullPolicy: IfNotPresent
         name: cilium-operator
         livenessProbe:

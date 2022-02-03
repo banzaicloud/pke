@@ -47,7 +47,6 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/transport"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
-	"github.com/goph/emperror"
 	"github.com/lestrrat-go/backoff"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -108,8 +107,6 @@ type ControlPlane struct {
 	imageRepository                  string
 	useImageRepositoryToK8s          bool
 	withPluginPSP                    bool
-	withoutPluginDenyEscalatingExec  bool
-	useHyperKubeImage                bool
 	withoutAuditLog                  bool
 	node                             *node.Node
 	azureTenantID                    string
@@ -196,13 +193,11 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.String(constants.FlagOIDCIssuerURL, "", "URL of the OIDC provider which allows the API server to discover public signing keys")
 	flags.String(constants.FlagOIDCClientID, "", "A client ID that all OIDC tokens must be issued for")
 	// Image repository
-	flags.String(constants.FlagImageRepository, "banzaicloud", "Prefix for image repository")
+	flags.String(constants.FlagImageRepository, "", "Prefix for image repository")
 	// Use defined image repository for K8s images as well
 	flags.Bool(constants.FlagUseImageRepositoryToK8s, false, "Use defined image repository for K8s Images as well")
 	// PodSecurityPolicy admission plugin
 	flags.Bool(constants.FlagAdmissionPluginPodSecurityPolicy, false, "Enable PodSecurityPolicy admission plugin")
-	// DenyEscalatingExec admission plugin
-	flags.Bool(constants.FlagNoAdmissionPluginDenyEscalatingExec, false, "Disable DenyEscalatingExec admission plugin")
 
 	// AuditLog enable
 	flags.Bool(constants.FlagAuditLog, false, "Disable apiserver audit log")
@@ -281,7 +276,6 @@ func (c *ControlPlane) Validate(cmd *cobra.Command) error {
 		constants.FlagPodNetworkCIDR:          c.podNetworkCIDR,
 		constants.FlagClusterName:             c.clusterName,
 		constants.FlagClusterMode:             c.clusterMode,
-		constants.FlagImageRepository:         c.imageRepository,
 		constants.FlagUseImageRepositoryToK8s: c.useImageRepositoryToK8s,
 	}); err != nil {
 		return err
@@ -478,7 +472,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		// initial master node
 		_, _ = fmt.Fprintf(out, "[%s] installing initial master node\n", c.Use())
 		if err := c.appendAdvertiseAddressAsLoopback(); err != nil {
-			return emperror.Wrap(err, "failed to write to /etc/hosts")
+			return errors.Wrap(err, "failed to write to /etc/hosts")
 		}
 	}
 
@@ -509,7 +503,9 @@ func (c *ControlPlane) Run(out io.Writer) error {
 		if c.clusterMode == singleMode {
 			single = true
 		}
-		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, c.mtu, single); err != nil {
+		// TODO get cilium version from flag
+		version := "v1.11.1"
+		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, version, c.mtu, single); err != nil {
 			return err
 		}
 	}
@@ -648,10 +644,6 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.withPluginPSP, err = cmd.Flags().GetBool(constants.FlagAdmissionPluginPodSecurityPolicy)
-	if err != nil {
-		return
-	}
-	c.withoutPluginDenyEscalatingExec, err = cmd.Flags().GetBool(constants.FlagNoAdmissionPluginDenyEscalatingExec)
 	if err != nil {
 		return
 	}
@@ -954,7 +946,7 @@ func installWeave(out io.Writer, cloudProvider, podNetworkCIDR, kubeConfig strin
 //go:generate templify -t ${GOTMPL} -p controlplane -f cilium cilium.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f ciliumSysFsBpf cilium_sys_fs_bpf.mount.tmpl
 
-func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository string, mtu uint, single bool) error {
+func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository, version string, mtu uint, single bool) error {
 	if _, err := os.Stat("/sys/fs/bpf"); err != nil {
 		// Mounting BPF filesystem
 		if err := file.Overwrite(ciliumBpfMountSystemd, ciliumSysFsBpfTemplate()); err != nil {
@@ -972,15 +964,18 @@ func installCilium(out io.Writer, kubeConfig, podNetworkCIDR, imageRepository st
 	}
 
 	type data struct {
-		ImageRepository string
-		PodCIDR         string
-		Single          bool
+		UseImageRepositoryToK8s bool
+		ImageRepository         string
+		PodCIDR                 string
+		Single                  bool
+		Version                 string
 	}
 
 	d := data{
 		ImageRepository: imageRepository,
 		PodCIDR:         podNetworkCIDR,
 		Single:          single,
+		Version:         version,
 	}
 
 	var b bytes.Buffer
@@ -1155,28 +1150,28 @@ func writeMasterConfig(out io.Writer, a bool, kubernetesVersion, encryptionSecre
 
 	if a {
 		if err := writeAuditPolicyFile(out); err != nil {
-			return emperror.Wrap(err, "writing audit policy file failed")
+			return errors.Wrap(err, "writing audit policy file failed")
 		}
 	}
 
 	err := writeAdmissionConfiguration(out, admissionConfig, admissionEventRateLimitConfig)
 	if err != nil {
-		return emperror.Wrap(err, "writing admission config failed")
+		return errors.Wrap(err, "writing admission config failed")
 	}
 
 	err = writeEventRateLimitConfig(out, admissionEventRateLimitConfig)
 	if err != nil {
-		return emperror.Wrap(err, "writing event limit config failed")
+		return errors.Wrap(err, "writing event limit config failed")
 	}
 
 	err = writeKubeProxyConfig(out, kubeProxyConfig)
 	if err != nil {
-		return emperror.Wrap(err, "writing kube proxy config failed")
+		return errors.Wrap(err, "writing kube proxy config failed")
 	}
 
 	err = kubeadm.WriteEncryptionProviderConfig(out, kubeadm.EncryptionProviderConfig, kubernetesVersion, encryptionSecret)
 	if err != nil {
-		return emperror.Wrap(err, "writing encryption provider config failed")
+		return errors.Wrap(err, "writing encryption provider config failed")
 	}
 
 	return nil

@@ -18,7 +18,7 @@ pke upgrade worker [flags]
 
 ```
   -h, --help                        help for worker
-      --kubernetes-version string   Kubernetes version (default "1.19.10")
+      --kubernetes-version string   Kubernetes version (default "1.22.1")
 ```
 
 ### SEE ALSO

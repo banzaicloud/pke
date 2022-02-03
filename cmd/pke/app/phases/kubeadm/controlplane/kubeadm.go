@@ -33,8 +33,8 @@ import (
 	"github.com/pbnjay/memory"
 )
 
-//go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta1 kubeadm_v1beta1.yaml.tmpl
 //go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta2 kubeadm_v1beta2.yaml.tmpl
+//go:generate templify -t ${GOTMPL} -p controlplane -f kubeadmConfigV1Beta3 kubeadm_v1beta3.yaml.tmpl
 
 func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	// API server advertisement
@@ -66,12 +66,12 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 
 	var conf string
 	switch ver.Minor() {
-	case 17:
-		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1
-		conf = kubeadmConfigV1Beta1Template()
-	case 18, 19, 20, 21:
+	case 19, 20, 21:
 		// see https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2
 		conf = kubeadmConfigV1Beta2Template()
+	case 22, 23:
+		// see https://pkg.go.dev/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3
+		conf = kubeadmConfigV1Beta3Template()
 	default:
 		return errors.New(fmt.Sprintf("unsupported Kubernetes version %q for kubeadm", c.kubernetesVersion))
 	}
@@ -112,82 +112,80 @@ func (c ControlPlane) WriteKubeadmConfig(out io.Writer, filename string) error {
 	}
 
 	type data struct {
-		APIServerAdvertiseAddress       string
-		APIServerBindPort               string
-		CRISocket                       string
-		ControlPlaneEndpoint            string
-		APIServerCertSANs               []string
-		KubeletCertificateAuthority     string
-		AdmissionConfig                 string
-		ClusterName                     string
-		KubernetesVersion               string
-		UseHyperKubeImage               bool
-		ServiceCIDR                     string
-		PodCIDR                         string
-		CloudProvider                   string
-		CloudConfig                     bool
-		KubeletCloudConfig              bool
-		NodeLabels                      string
-		ControllerManagerSigningCA      string
-		OIDCIssuerURL                   string
-		OIDCClientID                    string
-		ImageRepository                 string
-		EncryptionProviderPrefix        string
-		WithPluginPSP                   bool
-		WithoutPluginDenyEscalatingExec bool
-		WithAuditLog                    bool
-		Taints                          []kubernetes.Taint
-		AuditLogDir                     string
-		AuditPolicyFile                 string
-		EtcdEndpoints                   []string
-		EtcdCAFile                      string
-		EtcdCertFile                    string
-		EtcdKeyFile                     string
-		EtcdPrefix                      string
-		KubeReservedCPU                 string
-		KubeReservedMemory              string
+		APIServerAdvertiseAddress   string
+		APIServerBindPort           string
+		CRISocket                   string
+		ControlPlaneEndpoint        string
+		APIServerCertSANs           []string
+		KubeletCertificateAuthority string
+		AdmissionConfig             string
+		ClusterName                 string
+		KubernetesVersion           string
+		ServiceCIDR                 string
+		PodCIDR                     string
+		CloudProvider               string
+		CloudConfig                 bool
+		KubeletCloudConfig          bool
+		NodeLabels                  string
+		ControllerManagerSigningCA  string
+		OIDCIssuerURL               string
+		OIDCClientID                string
+		ImageRepository             string
+		EncryptionProviderPrefix    string
+		WithPluginPSP               bool
+		WithAuditLog                bool
+		Taints                      []kubernetes.Taint
+		AuditLogDir                 string
+		AuditPolicyFile             string
+		EtcdEndpoints               []string
+		EtcdCAFile                  string
+		EtcdCertFile                string
+		EtcdKeyFile                 string
+		EtcdPrefix                  string
+		KubeReservedCPU             string
+		KubeReservedMemory          string
 	}
 
 	imageRepository := "k8s.gcr.io"
 	if c.useImageRepositoryToK8s {
-		imageRepository = c.imageRepository
+		if c.imageRepository != "" {
+			imageRepository = c.imageRepository
+		}
 	}
 
 	d := data{
-		APIServerAdvertiseAddress:       c.advertiseAddress,
-		APIServerBindPort:               bindPort,
-		CRISocket:                       cri.GetCRISocket(c.containerRuntime),
-		ControlPlaneEndpoint:            c.apiServerHostPort,
-		APIServerCertSANs:               c.apiServerCertSANs,
-		KubeletCertificateAuthority:     c.kubeletCertificateAuthority,
-		AdmissionConfig:                 admissionConfig,
-		ClusterName:                     c.clusterName,
-		KubernetesVersion:               c.kubernetesVersion,
-		UseHyperKubeImage:               c.useHyperKubeImage,
-		ServiceCIDR:                     c.serviceCIDR,
-		PodCIDR:                         c.podNetworkCIDR,
-		CloudProvider:                   c.cloudProvider,
-		CloudConfig:                     cloudConfig,
-		KubeletCloudConfig:              kubeletCloudConfig,
-		NodeLabels:                      strings.Join(nodeLabels, ","),
-		ControllerManagerSigningCA:      c.controllerManagerSigningCA,
-		OIDCIssuerURL:                   c.oidcIssuerURL,
-		OIDCClientID:                    c.oidcClientID,
-		ImageRepository:                 imageRepository,
-		EncryptionProviderPrefix:        encryptionProviderPrefix,
-		WithPluginPSP:                   c.withPluginPSP,
-		WithoutPluginDenyEscalatingExec: c.withoutPluginDenyEscalatingExec,
-		WithAuditLog:                    !c.withoutAuditLog,
-		Taints:                          taints,
-		AuditLogDir:                     auditLogDir,
-		AuditPolicyFile:                 auditPolicyFile,
-		EtcdEndpoints:                   c.etcdEndpoints,
-		EtcdCAFile:                      c.etcdCAFile,
-		EtcdCertFile:                    c.etcdCertFile,
-		EtcdKeyFile:                     c.etcdKeyFile,
-		EtcdPrefix:                      c.etcdPrefix,
-		KubeReservedCPU:                 kubeReservedCPU,
-		KubeReservedMemory:              kubeReservedMemory,
+		APIServerAdvertiseAddress:   c.advertiseAddress,
+		APIServerBindPort:           bindPort,
+		CRISocket:                   cri.GetCRISocket(c.containerRuntime),
+		ControlPlaneEndpoint:        c.apiServerHostPort,
+		APIServerCertSANs:           c.apiServerCertSANs,
+		KubeletCertificateAuthority: c.kubeletCertificateAuthority,
+		AdmissionConfig:             admissionConfig,
+		ClusterName:                 c.clusterName,
+		KubernetesVersion:           c.kubernetesVersion,
+		ServiceCIDR:                 c.serviceCIDR,
+		PodCIDR:                     c.podNetworkCIDR,
+		CloudProvider:               c.cloudProvider,
+		CloudConfig:                 cloudConfig,
+		KubeletCloudConfig:          kubeletCloudConfig,
+		NodeLabels:                  strings.Join(nodeLabels, ","),
+		ControllerManagerSigningCA:  c.controllerManagerSigningCA,
+		OIDCIssuerURL:               c.oidcIssuerURL,
+		OIDCClientID:                c.oidcClientID,
+		ImageRepository:             imageRepository,
+		EncryptionProviderPrefix:    encryptionProviderPrefix,
+		WithPluginPSP:               c.withPluginPSP,
+		WithAuditLog:                !c.withoutAuditLog,
+		Taints:                      taints,
+		AuditLogDir:                 auditLogDir,
+		AuditPolicyFile:             auditPolicyFile,
+		EtcdEndpoints:               c.etcdEndpoints,
+		EtcdCAFile:                  c.etcdCAFile,
+		EtcdCertFile:                c.etcdCertFile,
+		EtcdKeyFile:                 c.etcdKeyFile,
+		EtcdPrefix:                  c.etcdPrefix,
+		KubeReservedCPU:             kubeReservedCPU,
+		KubeReservedMemory:          kubeReservedMemory,
 	}
 
 	return file.WriteTemplate(filename, tmpl, d)

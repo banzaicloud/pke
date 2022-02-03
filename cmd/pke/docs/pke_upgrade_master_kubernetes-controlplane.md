@@ -19,7 +19,7 @@ pke upgrade master kubernetes-controlplane [flags]
 ```
   -h, --help                                  help for kubernetes-controlplane
       --kubernetes-additional-control-plane   Treat node as additional control plane
-      --kubernetes-version string             Kubernetes version (default "1.19.10")
+      --kubernetes-version string             Kubernetes version (default "1.22.1")
 ```
 
 ### SEE ALSO

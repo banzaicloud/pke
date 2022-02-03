@@ -35,7 +35,7 @@ pke install single kubernetes-controlplane [flags]
       --etcd-key-file string                              An SSL key file used to secure etcd communication
       --etcd-prefix string                                The prefix to prepend to all resource paths in etcd
   -h, --help                                              help for kubernetes-controlplane
-      --image-repository string                           Prefix for image repository (default "banzaicloud")
+      --image-repository string                           Prefix for image repository
       --kubelet-certificate-authority string              Path to a cert file for the certificate authority. Used for kubelet server certificate verify. (default "/etc/kubernetes/pki/ca.crt")
       --kubernetes-advertise-address string               Kubernetes API Server advertise address
       --kubernetes-api-server string                      Kubernetes API Server host port
@@ -56,7 +56,7 @@ pke install single kubernetes-controlplane [flags]
       --kubernetes-oidc-issuer-url string                 URL of the OIDC provider which allows the API server to discover public signing keys
       --kubernetes-pod-network-cidr string                range of IP addresses for the pod network (default "10.20.0.0/16")
       --kubernetes-service-cidr string                    range of IP address for service VIPs (default "10.10.0.0/16")
-      --kubernetes-version string                         Kubernetes version (default "1.19.10")
+      --kubernetes-version string                         Kubernetes version (default "1.22.1")
       --lb-range string                                   Advertise the specified IPv4 range via ARP and allocate addresses for LoadBalancer Services (non-cloud only, example: 192.168.0.100-192.168.0.110)
       --pipeline-cluster-id int32                         Cluster ID to use with Pipeline API
       --pipeline-insecure                                 If the Pipeline API should not verify the API's certificate
@@ -78,7 +78,6 @@ pke install single kubernetes-controlplane [flags]
       --vsphere-username string                           The name of vCenter SSO user to use for deploying persistent volumes (Should be avoided in favor of a K8S secret)
       --with-plugin-psp                                   Enable PodSecurityPolicy admission plugin
       --without-audit-log                                 Disable apiserver audit log
-      --without-plugin-deny-escalating-exec               Disable DenyEscalatingExec admission plugin
 ```
 
 ### SEE ALSO

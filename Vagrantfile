@@ -15,26 +15,18 @@ Vagrant.configure("2") do |config|
 
     $num_instances = 4
 
-    # centos 8 nodes
+    # almalinux 8 nodes
     (1..$num_instances).each do |n|
-        config.vm.define "centos#{n}" do |node|
-            node.vm.box = "centos/8"
+        config.vm.define "almalinux#{n}" do |node|
+            node.vm.box = "boxomatic/almalinux-8"
+            node.vm.box_version = "20220116.0.1"
 
-            # Monkey patch for https://github.com/dotless-de/vagrant-vbguest/issues/367
-            class Foo < VagrantVbguest::Installers::CentOS
-                def has_rel_repo?
-                    unless instance_variable_defined?(:@has_rel_repo)
-                        rel = release_version
-                        @has_rel_repo = communicate.test("yum repolist")
-                    end
-                    @has_rel_repo
-                end
-
+            class Foo < VagrantVbguest::Installers::Linux
                 def install_kernel_devel(opts=nil, &block)
-                    cmd = "yum update kernel -y"
+                    cmd = "dnf update kernel -y"
                     communicate.sudo(cmd, opts, &block)
 
-                    cmd = "yum install -y kernel-devel"
+                    cmd = "dnf install -y kernel-devel"
                     communicate.sudo(cmd, opts, &block)
 
                     cmd = "shutdown -r now"
@@ -48,9 +40,9 @@ Vagrant.configure("2") do |config|
             node.vbguest.installer = Foo
 
             node.vm.network "private_network", ip: "192.168.64.#{n+10}"
-            node.vm.hostname = "centos#{n}"
+            node.vm.hostname = "almalinux#{n}"
             node.vm.provider "virtualbox" do |vb|
-                vb.name = "centos#{n}"
+                vb.name = "almalinux#{n}"
                 vb.memory = "2048"
                 vb.cpus = "2"
                 vb.customize ["modifyvm", :id, "--audio", "none"]
@@ -68,14 +60,14 @@ Vagrant.configure("2") do |config|
                 echo 'ip_tables' >> /etc/modules-load.d/iptables.conf
                 echo 'set host name resolution'
                 cat >> /etc/hosts <<EOF
-192.168.64.11 centos1
-192.168.64.12 centos2
-192.168.64.13 centos3
-192.168.64.14 centos4
+192.168.64.11 almalinux1
+192.168.64.12 almalinux2
+192.168.64.13 almalinux3
+192.168.64.14 almalinux4
 EOF
                 cat /etc/hosts
 
-                hostnamectl set-hostname centos#{n}
+                hostnamectl set-hostname almalinux#{n}
 
                 SHELL
             end
@@ -120,63 +112,6 @@ EOF
 
                 SHELL
             end
-        end
-    end
-
-    config.vm.define "ubuntu-docker-bionic" do |node|
-        node.vm.box = "ubuntu/bionic64"
-        node.vm.network "private_network", ip: "192.168.64.30"
-        node.vm.hostname = "ubuntu-docker"
-
-        node.vm.provider "virtualbox" do |vb|
-            vb.name = "ubuntu-docker"
-            vb.memory = "2048"
-            vb.cpus = "2"
-            vb.customize ["modifyvm", :id, "--audio", "none"]
-            vb.customize ["modifyvm", :id, "--memory", "2048"]
-            vb.customize ["modifyvm", :id, "--cpus", "2"]
-        end
-
-        node.vm.provision "shell" do |s|
-            s.inline = <<-SHELL
-
-            apt-get update
-            apt-get install -y ntp wget curl vim net-tools socat
-            echo 'sync time'
-            systemctl start ntp
-            systemctl enable ntp
-
-            echo 'set host name resolution'
-            cat >> /etc/hosts <<EOF
-192.168.64.30 ubuntu-docker
-EOF
-            cat /etc/hosts
-
-            hostnamectl set-hostname ubuntu-docker
-
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-            add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-            apt-get update && apt-get install -y \
-                containerd.io=1.2.13-1 \
-                docker-ce=5:19.03.8~3-0~ubuntu-$(lsb_release -cs) \
-                docker-ce-cli=5:19.03.8~3-0~ubuntu-$(lsb_release -cs)
-
-            cat > /etc/docker/daemon.json <<EOF
-{
-  "exec-opts": ["native.cgroupdriver=systemd"],
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-size": "100m"
-  },
-  "storage-driver": "overlay2"
-}
-EOF
-
-            mkdir -p /etc/systemd/system/docker.service.d
-            systemctl daemon-reload
-            systemctl restart docker
-
-            SHELL
         end
     end
 
