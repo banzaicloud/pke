@@ -18,7 +18,7 @@ package container
 func containerdConfigTemplate() string {
 	var tmpl = "[plugins.cri]\n" +
 		"{{ if ne .ImageRepository \"\" }}\n" +
-		"sandbox_image = \"{{ .ImageRepository }}/pause:3.1\"\n" +
+		"sandbox_image = \"{{ .ImageRepository }}/pause:3.6\"\n" +
 		"{{ else }}\n" +
 		"sandbox_image = \"k8s.gcr.io/pause:3.6\"\n" +
 		"{{ end }}"

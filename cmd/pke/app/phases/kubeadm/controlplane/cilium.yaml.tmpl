@@ -462,7 +462,7 @@ spec:
               name: cilium-config
               optional: true
         {{ if ne .ImageRepository "" }}
-        image: "{{ .ImageRepository }}/cilium:v1.9.1"
+        image: "{{ .ImageRepository }}/cilium:{{ .Version }}"
         {{ else }}
         image: "cilium/cilium:{{ .Version }}"
         {{ end }}

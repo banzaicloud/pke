@@ -480,7 +480,7 @@ func ciliumTemplate() string {
 		"              name: cilium-config\n" +
 		"              optional: true\n" +
 		"        {{ if ne .ImageRepository \"\" }}\n" +
-		"        image: \"{{ .ImageRepository }}/cilium:v1.9.1\"\n" +
+		"        image: \"{{ .ImageRepository }}/cilium:{{ .Version }}\"\n" +
 		"        {{ else }}\n" +
 		"        image: \"cilium/cilium:{{ .Version }}\"\n" +
 		"        {{ end }}\n" +
