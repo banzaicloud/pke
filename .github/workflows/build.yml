@@ -27,3 +27,9 @@ jobs:
 
       - name: Build code
         run: make build
+
+      - name: Lint code
+        run: make lint
+
+      - name: Run test
+        run: GOARGS="-p=2" make test
