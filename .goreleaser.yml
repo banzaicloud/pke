@@ -33,10 +33,3 @@ nfpms:
         bindir: /usr/local/bin
         license: Apache 2.0
         file_name_template: "{{ .ProjectName }}-{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-
-blobs:
-    -
-       provider: s3
-       bucket: banzaicloud.com
-       region: us-east-1
-       folder: "downloads/pke"
