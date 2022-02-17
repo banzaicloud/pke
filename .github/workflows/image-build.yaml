@@ -10,13 +10,23 @@ jobs:
     needs: release
 
     steps:
-    - uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          await github.rest.actions.createWorkflowDispatch({
-            owner: 'banzaicloud',
-            repo: 'pke-image',
-            workflow_id: 'packer.yml',
-            ref: 'master'
-          })
+
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Set env
+        run: ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Trigger pke-image build
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'banzaicloud',
+              repo: 'pke-image',
+              workflow_id: 'packer-build.yml',
+              ref: 'master',
+              inputs: {
+                tag: '${{ steps.vars.outputs.tag }}'
+              }
+            })
