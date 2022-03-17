@@ -6,7 +6,7 @@ NETWORK_PROVIDER="${3:-cilium}"
 
 systemctl is-active kubelet || ( \
     /banzaicloud/pke version -o yaml || ( \
-        curl -vL https://banzaicloud.com/downloads/pke/latest -o /banzaicloud/pke && \
+        curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /banzaicloud/pke && \
         chmod +x /banzaicloud/pke
     ) && \
 
