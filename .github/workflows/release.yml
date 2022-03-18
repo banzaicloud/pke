@@ -50,7 +50,7 @@ jobs:
               owner: 'banzaicloud',
               repo: 'pke-image',
               workflow_id: 'packer-build.yml',
-              ref: 'master',
+              ref: 'fix/packer',
               inputs: {
                 tag: '${{ steps.set-ref.outputs.tag }}'
               }
