@@ -2,7 +2,7 @@ name: Release PKE
 on:
   push:
     tags:
-      - "*"
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
   release:
@@ -50,7 +50,7 @@ jobs:
               owner: 'banzaicloud',
               repo: 'pke-image',
               workflow_id: 'packer-build.yml',
-              ref: 'fix/packer',
+              ref: 'master',
               inputs: {
                 tag: '${{ steps.set-ref.outputs.tag }}'
               }
