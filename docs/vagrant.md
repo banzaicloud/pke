@@ -30,7 +30,7 @@ To install Vagrant on a macOS, complete the following steps:
     ```bash
     vagrant ssh centos1 -c 'sudo -s'
 
-    curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+    curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
     chmod +x /usr/local/bin/pke
     export PATH=$PATH:/usr/local/bin/
 
@@ -51,7 +51,7 @@ To install Vagrant on a macOS, complete the following steps:
     ```bash
     vagrant ssh centos1 -c 'sudo -s'
 
-    curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+    curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
     chmod +x /usr/local/bin/pke
     export PATH=$PATH:/usr/local/bin/
 
@@ -80,7 +80,7 @@ To install Vagrant on a macOS, complete the following steps:
     vagrant ssh centos2
     sudo -s
 
-    curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+    curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
     chmod +x /usr/local/bin/pke
     export PATH=$PATH:/usr/local/bin/
 

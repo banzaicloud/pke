@@ -50,7 +50,7 @@ Launch a single virtual machine that meets the above mentioned requirements, and
 > If you don't need the vSphere persistent volume integration, leave out the `pke install` arguments starting from `--kubernetes-cloud-provider`.
 
 ```
-curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -88,7 +88,7 @@ master=192.0.2.1
 ```
 
 ```
-curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -151,7 +151,7 @@ We recommend to create a template in vSphere for nodes. Simply install an operat
 After that, download PKE, and install the components it would normally download and install at for each node separately:
 
 ```
-curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 

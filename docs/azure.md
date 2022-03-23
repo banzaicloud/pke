@@ -292,7 +292,7 @@ Install PKE.
 > `--kubernetes-cluster-name` is used for load balancer naming.
 
 ```bash
-curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -350,7 +350,7 @@ Install PKE.
 > `--kubernetes-cluster-name` is used for load balancer naming.
 
 ```bash
-curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
@@ -416,7 +416,7 @@ export CERTHASH=<copy here value from previous step>
 Install PKE.
 
 ```bash
-curl -vL https://banzaicloud.com/downloads/pke/latest -o /usr/local/bin/pke
+curl -vL https://github.com/banzaicloud/pke/releases/download/0.9.0/pke-0.9.0 -o /usr/local/bin/pke
 chmod +x /usr/local/bin/pke
 export PATH=$PATH:/usr/local/bin/
 
