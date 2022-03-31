@@ -68,9 +68,9 @@ spec:
       containers:
         - name: kubelet-csr-approver
           {{ if ne .ImageRepository "" }}
-          image: "{{ .ImageRepository }}/kubelet-csr-approver:v0.1.2"
+          image: "{{ .ImageRepository }}/kubelet-csr-approver:v0.1.3"
           {{ else }}
-          image: "postfinance/kubelet-csr-approver:v0.1.2"
+          image: "ghcr.io/banzaicloud/kubelet-csr-approver:v0.1.3"
           {{ end }}
           resources:
             limits:

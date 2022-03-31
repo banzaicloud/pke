@@ -86,9 +86,9 @@ func certificateAutoApproverTemplate() string {
 		"      containers:\n" +
 		"        - name: kubelet-csr-approver\n" +
 		"          {{ if ne .ImageRepository \"\" }}\n" +
-		"          image: \"{{ .ImageRepository }}/kubelet-csr-approver:v0.1.2\"\n" +
+		"          image: \"{{ .ImageRepository }}/kubelet-csr-approver:v0.1.3\"\n" +
 		"          {{ else }}\n" +
-		"          image: \"postfinance/kubelet-csr-approver:v0.1.2\"\n" +
+		"          image: \"ghcr.io/banzaicloud/kubelet-csr-approver:v0.1.3\"\n" +
 		"          {{ end }}\n" +
 		"          resources:\n" +
 		"            limits:\n" +
