@@ -19,14 +19,23 @@ func certificateAutoApproverTemplate() string {
 	var tmpl = "apiVersion: v1\n" +
 		"kind: ServiceAccount\n" +
 		"metadata:\n" +
-		"  name: kubelet-csr-approver\n" +
+		"  name: auto-approver\n" +
 		"  namespace: kube-system\n" +
 		"---\n" +
 		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRole\n" +
 		"metadata:\n" +
-		"  name: kubelet-csr-approver\n" +
+		"  name: auto-approver\n" +
 		"rules:\n" +
+		"- apiGroups:\n" +
+		"  - certificates.k8s.io\n" +
+		"  resources:\n" +
+		"  - signers\n" +
+		"  resourceNames:\n" +
+		"  - \"kubernetes.io/legacy-unknown\"\n" +
+		"  - \"kubernetes.io/kubelet-serving\"\n" +
+		"  verbs:\n" +
+		"  - approve\n" +
 		"- apiGroups:\n" +
 		"  - certificates.k8s.io\n" +
 		"  resources:\n" +
@@ -40,82 +49,64 @@ func certificateAutoApproverTemplate() string {
 		"  resources:\n" +
 		"  - certificatesigningrequests/approval\n" +
 		"  verbs:\n" +
+		"  - create\n" +
 		"  - update\n" +
 		"- apiGroups:\n" +
-		"  - certificates.k8s.io\n" +
-		"  resourceNames:\n" +
-		"  - kubernetes.io/kubelet-serving\n" +
+		"  - authorization.k8s.io\n" +
 		"  resources:\n" +
-		"  - signers\n" +
+		"  - subjectaccessreviews\n" +
 		"  verbs:\n" +
-		"  - approve\n" +
+		"  - create\n" +
 		"---\n" +
-		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"kind: ClusterRoleBinding\n" +
+		"apiVersion: rbac.authorization.k8s.io/v1\n" +
 		"metadata:\n" +
-		"  name: kubelet-csr-approver\n" +
-		"  namespace: kube-system\n" +
-		"roleRef:\n" +
-		"  apiGroup: rbac.authorization.k8s.io\n" +
-		"  kind: ClusterRole\n" +
-		"  name: kubelet-csr-approver\n" +
+		"  name: auto-approver\n" +
 		"subjects:\n" +
 		"- kind: ServiceAccount\n" +
-		"  name: kubelet-csr-approver\n" +
 		"  namespace: kube-system\n" +
+		"  name: auto-approver\n" +
+		"roleRef:\n" +
+		"  kind: ClusterRole\n" +
+		"  name: auto-approver\n" +
+		"  apiGroup: rbac.authorization.k8s.io\n" +
 		"---\n" +
 		"apiVersion: apps/v1\n" +
 		"kind: Deployment\n" +
 		"metadata:\n" +
-		"  name: kubelet-csr-approver\n" +
+		"  name: auto-approver\n" +
 		"  namespace: kube-system\n" +
 		"spec:\n" +
+		"  replicas: 1\n" +
 		"  selector:\n" +
 		"    matchLabels:\n" +
-		"      app: kubelet-csr-approver\n" +
+		"      name: auto-approver\n" +
 		"  template:\n" +
 		"    metadata:\n" +
-		"      annotations:\n" +
-		"        prometheus.io/port: '8080'\n" +
-		"        prometheus.io/scrape: 'true'\n" +
 		"      labels:\n" +
-		"        app: kubelet-csr-approver\n" +
+		"        name: auto-approver\n" +
 		"    spec:\n" +
-		"      serviceAccountName: kubelet-csr-approver\n" +
-		"      priorityClassName: system-cluster-critical\n" +
-		"      containers:\n" +
-		"        - name: kubelet-csr-approver\n" +
-		"          {{ if ne .ImageRepository \"\" }}\n" +
-		"          image: \"{{ .ImageRepository }}/kubelet-csr-approver:v0.1.3\"\n" +
-		"          {{ else }}\n" +
-		"          image: \"ghcr.io/banzaicloud/kubelet-csr-approver:v0.1.3\"\n" +
-		"          {{ end }}\n" +
-		"          resources:\n" +
-		"            limits:\n" +
-		"              memory: \"128Mi\"\n" +
-		"              cpu: \"500m\"\n" +
-		"          args:\n" +
-		"            - -metrics-bind-address\n" +
-		"            - \":8080\"\n" +
-		"            - -health-probe-bind-address\n" +
-		"            - \":8081\"\n" +
-		"          livenessProbe:\n" +
-		"            httpGet:\n" +
-		"              path: /healthz\n" +
-		"              port: 8081\n" +
-		"          env:\n" +
-		"            - name: PROVIDER_REGEX\n" +
-		"              value: \\w*\n" +
-		"            - name: MAX_EXPIRATION_SECONDS\n" +
-		"              value: '31622400' # 366 days\n" +
-		"            - name: BYPASS_DNS_RESOLUTION\n" +
-		"              value: 'true'\n" +
+		"      serviceAccountName: auto-approver\n" +
 		"      tolerations:\n" +
 		"        - effect: NoSchedule\n" +
-		"          key: node-role.kubernetes.io/master\n" +
-		"          operator: Equal\n" +
-		"        - effect: NoSchedule\n" +
-		"          key: node-role.kubernetes.io/control-plane\n" +
-		"          operator: Equal"
+		"          operator: Exists\n" +
+		"      nodeSelector:\n" +
+		"        node-role.kubernetes.io/master: \"\"\n" +
+		"      priorityClassName: system-cluster-critical\n" +
+		"      containers:\n" +
+		"        - name: auto-approver\n" +
+		"          image: ghcr.io/banzaicloud/auto-approver:0.2.0\n" +
+		"          args:\n" +
+		"            - \"--v=2\"\n" +
+		"          imagePullPolicy: Always\n" +
+		"          env:\n" +
+		"            - name: WATCH_NAMESPACE\n" +
+		"              value: \"\"\n" +
+		"            - name: POD_NAME\n" +
+		"              valueFrom:\n" +
+		"                fieldRef:\n" +
+		"                  fieldPath: metadata.name\n" +
+		"            - name: OPERATOR_NAME\n" +
+		"              value: \"auto-approver\"\n"
 	return tmpl
 }
