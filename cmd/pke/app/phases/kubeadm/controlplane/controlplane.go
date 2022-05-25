@@ -504,7 +504,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 			single = true
 		}
 		// TODO get cilium version from flag
-		version := "v1.11.1"
+		version := "v1.9.1"
 		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, version, c.mtu, single); err != nil {
 			return err
 		}
