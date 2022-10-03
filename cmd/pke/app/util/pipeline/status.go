@@ -21,9 +21,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
-	"github.com/spf13/cobra"
 )
 
 type pipelineStatusReporter struct {

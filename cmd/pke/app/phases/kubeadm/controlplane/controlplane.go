@@ -33,6 +33,10 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
+	"github.com/lestrrat-go/backoff"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
 	"github.com/banzaicloud/pke/.gen/pipeline"
 	"github.com/banzaicloud/pke/cmd/pke/app/config"
 	"github.com/banzaicloud/pke/cmd/pke/app/constants"
@@ -47,9 +51,6 @@ import (
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/transport"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/validator"
-	"github.com/lestrrat-go/backoff"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 const (
@@ -92,6 +93,7 @@ type ControlPlane struct {
 	advertiseAddress                 string
 	apiServerHostPort                string
 	clusterName                      string
+	nodeName                         string
 	serviceCIDR                      string
 	podNetworkCIDR                   string
 	mtu                              uint
@@ -179,6 +181,8 @@ func (c *ControlPlane) RegisterFlags(flags *pflag.FlagSet) {
 	flags.Uint(constants.FlagMTU, 0, "maximum transmission unit. 0 means default value of the Kubernetes network provider is used")
 	// Kubernetes cluster name
 	flags.String(constants.FlagClusterName, "pke", "Kubernetes cluster name")
+	// Kubernetes kubadm init node name
+	flags.String(constants.FlagNodeName, "", "Kubernetes kubeadm node name for init")
 	// Kubernetes certificates
 	flags.StringSlice(constants.FlagAPIServerCertSANs, []string{}, "sets extra Subject Alternative Names for the API Server signing cert")
 	flags.String(constants.FlagControllerManagerSigningCA, "", "Kubernetes Controller Manager signing cert")
@@ -504,7 +508,7 @@ func (c *ControlPlane) Run(out io.Writer) error {
 			single = true
 		}
 		// TODO get cilium version from flag
-		version := "v1.9.1"
+		version := "v1.11.1"
 		if err := installCilium(out, kubeConfig, c.podNetworkCIDR, c.imageRepository, version, c.mtu, single); err != nil {
 			return err
 		}
@@ -624,6 +628,10 @@ func (c *ControlPlane) masterBootstrapParameters(cmd *cobra.Command) (err error)
 		return
 	}
 	c.clusterName, err = cmd.Flags().GetString(constants.FlagClusterName)
+	if err != nil {
+		return
+	}
+	c.nodeName, err = cmd.Flags().GetString(constants.FlagNodeName)
 	if err != nil {
 		return
 	}
@@ -858,6 +866,11 @@ func (c *ControlPlane) installMaster(out io.Writer) error {
 		"init",
 		"--config=" + kubeadmConfig,
 	}
+
+	if c.cloudProvider == constants.CloudProviderAmazon && c.nodeName != "" {
+		args = append(args, "--node-name="+c.nodeName)
+	}
+
 	_, err = runner.Cmd(out, cmdKubeadm, args...).CombinedOutputAsync()
 	if err != nil {
 		return err

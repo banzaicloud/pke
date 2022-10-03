@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
+
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
 
@@ -28,7 +29,7 @@ const (
 	kubectl                   = "kubectl"
 	kubelet                   = "kubelet"
 	kubernetescni             = "kubernetes-cni"
-	kubernetesCNIVersion      = "0.8.7"
+	kubernetesCNIVersion      = "1.1.1"
 	disableExcludesKubernetes = "--disableexcludes=kubernetes"
 	selinuxConfig             = "/etc/selinux/config"
 )

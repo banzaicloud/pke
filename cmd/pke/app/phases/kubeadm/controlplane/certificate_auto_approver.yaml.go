@@ -107,6 +107,6 @@ func certificateAutoApproverTemplate() string {
 		"                fieldRef:\n" +
 		"                  fieldPath: metadata.name\n" +
 		"            - name: OPERATOR_NAME\n" +
-		"              value: \"auto-approver\"\n"
+		"              value: \"auto-approver\""
 	return tmpl
 }
