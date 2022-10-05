@@ -103,6 +103,9 @@ const (
 	// FlagClusterName cluster name
 	FlagClusterName = "kubernetes-cluster-name"
 
+	// FlagNodeName nodename for init
+	FlagNodeName = "kubernetes-node-name"
+
 	// FlagOIDCIssuerURL OIDC issuer URL
 	FlagOIDCIssuerURL = "kubernetes-oidc-issuer-url"
 	// FlagOIDCClientID OIDC client ID

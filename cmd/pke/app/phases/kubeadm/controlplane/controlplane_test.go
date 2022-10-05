@@ -21,8 +21,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 	"github.com/stretchr/testify/require"
+
+	"github.com/banzaicloud/pke/cmd/pke/app/constants"
 )
 
 func TestWriteKubeadmConfig(t *testing.T) {

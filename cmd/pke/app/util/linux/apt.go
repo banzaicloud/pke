@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"emperror.dev/errors"
+
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/runner"
 )
@@ -140,7 +141,7 @@ func mapAptPackageVersion(pkg, kubernetesVersion string) string {
 		return "kubelet=" + getAptPackageVersion(kubernetesVersion)
 
 	case kubernetescni:
-		return "kubernetes-cni=0.8.7-00"
+		return "kubernetes-cni=1.1.1-00"
 
 	default:
 		return ""

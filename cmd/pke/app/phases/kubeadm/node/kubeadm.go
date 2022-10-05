@@ -22,11 +22,12 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/Masterminds/semver"
+	"github.com/pbnjay/memory"
+
 	"github.com/banzaicloud/pke/cmd/pke/app/phases/kubeadm"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/cri"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/kubernetes"
-	"github.com/pbnjay/memory"
 )
 
 //go:generate templify -t ${GOTMPL} -p node -f kubeadmConfigV1Beta2 kubeadm_v1beta2.yaml.tmpl

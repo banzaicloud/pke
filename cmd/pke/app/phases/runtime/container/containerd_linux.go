@@ -23,13 +23,14 @@ import (
 	"text/template"
 
 	"emperror.dev/errors"
+
 	"github.com/banzaicloud/pke/cmd/pke/app/util/file"
 	"github.com/banzaicloud/pke/cmd/pke/app/util/linux"
 )
 
 const (
-	containerdVersion     = "1.5.9"
-	containerdSHA256      = "f64c8e3b736b370c963b08c33ac70f030fc311bc48fcfd00461465af2fff3488"
+	containerdVersion     = "1.6.8"
+	containerdSHA256      = "8e227caa318faa136e4387ffd6f96baeaad5582d176202fe9da69cde87036033"
 	containerdURL         = "https://github.com/containerd/containerd/releases/download/v%s/cri-containerd-cni-%s-linux-amd64.tar.gz"
 	containerdVersionPath = "/opt/containerd/cluster/version"
 	containerdConf        = "/etc/containerd/config.toml"
@@ -108,8 +109,8 @@ func installContainerd(out io.Writer, imageRepository string) error {
 		return errors.Wrapf(err, "unable to create temporary file: %q", f.Name())
 	}
 	defer func() { _ = f.Close() }()
-	// export CONTAINERD_VERSION="1.5.9"
-	// export CONTAINERD_SHA256="f64c8e3b736b370c963b08c33ac70f030fc311bc48fcfd00461465af2fff3488"
+	// export CONTAINERD_VERSION="1.6.8"
+	// export CONTAINERD_SHA256="8e227caa318faa136e4387ffd6f96baeaad5582d176202fe9da69cde87036033"
 	// wget https://github.com/containerd/containerd/releases/download/v${CONTAINERD_VERSION}/cri-containerd-cni-${CONTAINERD_VERSION}-linux-amd64.tar.gz
 	dl := fmt.Sprintf(containerdURL, containerdVersion, containerdVersion)
 	u, err := url.Parse(dl)
