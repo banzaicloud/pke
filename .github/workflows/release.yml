@@ -40,7 +40,7 @@ jobs:
 
       - name: Set ref
         id: set-ref
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
 
       - name: Trigger pke-image build
         uses: actions/github-script@v6
