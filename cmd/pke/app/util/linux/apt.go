@@ -33,7 +33,7 @@ const (
 	banzaiCloudDEBRepo = "/etc/apt/sources.list.d/banzaicloud.repo"
 	k8sDEBRepoFile     = "/etc/apt/sources.list.d/kubernetes.list"
 	k8sDEBRepo         = `deb https://apt.kubernetes.io/ kubernetes-xenial main`
-	k8sDEBRepoGPG      = "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+	k8sDEBRepoGPG      = "https://dl.k8s.io/apt/doc/apt-key.gpg"
 )
 
 var _ ContainerdPackages = (*AptInstaller)(nil)
